@@ -6,6 +6,7 @@
 
 ### 后端
 - **框架**: Flask 3.0 + Flask-RESTX
+- **数据库**: MariaDB 10.x
 - **ORM**: SQLAlchemy 3.x (解决 SQL 注入问题)
 - **迁移**: Flask-Migrate (Alembic)
 - **认证**: JWT (PyJWT)
