@@ -1,0 +1,41 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+
+# Virtual environment
+venv/
+.env
+.env.local
+.env.production
+
+# Flask
+instance/
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Uploads
+uploads/
+
+# Node.js
+node_modules/
+dist/
+build/
+.npmrc
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log

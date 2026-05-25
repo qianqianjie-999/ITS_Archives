@@ -1,0 +1,170 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>操作日志</h2>
+</div>
+
+<div class="table-responsive">
+    <table class="table table-bordered table-hover" id="logTable">
+        <thead class="table-light">
+            <tr>
+                <th>ID</th>
+                <th>用户名</th>
+                <th>操作类型</th>
+                <th>实体类型</th>
+                <th>实体ID</th>
+                <th>操作时间</th>
+                <th>IP地址</th>
+                <th>详情</th>
+            </tr>
+        </thead>
+        <tbody id="logTableBody">
+        </tbody>
+    </table>
+</div>
+
+<nav>
+    <ul class="pagination justify-content-center" id="pagination"></ul>
+</nav>
+
+<div class="modal fade" id="logDetailModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">操作详情</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="logDetailContent">
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">关闭</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let currentPage = 1;
+const perPage = 20;
+
+$(document).ready(function() {
+    loadLogs();
+
+    $('#logTable').on('click', '.detail-btn', function() {
+        const logId = $(this).data('log-id');
+        showLogDetail(logId);
+    });
+});
+
+function loadLogs() {
+    $.get(`/api/logs?page=${currentPage}&per_page=${perPage}`, function(res) {
+        if (res.status !== 'success') {
+            alert('加载失败');
+            return;
+        }
+
+        let rows = '';
+        res.logs.forEach(log => {
+            rows += `<tr>
+                <td>${log.id}</td>
+                <td>${log.username || '-'}</td>
+                <td><span class="badge bg-primary">${log.operation_type}</span></td>
+                <td>${log.entity_type || '-'}</td>
+                <td>${log.entity_id || '-'}</td>
+                <td>${log.operation_time || '-'}</td>
+                <td>${log.ip_address || '-'}</td>
+                <td>
+                    <button class="btn btn-sm btn-info detail-btn" data-log-id="${log.id}">详情</button>
+                </td>
+            </tr>`;
+        });
+
+        if (rows === '') {
+            rows = '<tr><td colspan="8" class="text-center">暂无数据</td></tr>';
+        }
+
+        $('#logTableBody').html(rows);
+        renderPagination(res.total, res.page, res.per_page);
+    });
+}
+
+function renderPagination(total, page, perPage) {
+    const totalPages = Math.ceil(total / perPage);
+    let html = '';
+
+    if (totalPages <= 1) {
+        $('#pagination').html('');
+        return;
+    }
+
+    if (page > 1) {
+        html += `<li class="page-item"><a class="page-link" href="#" onclick="goToPage(${page - 1})">上一页</a></li>`;
+    }
+
+    const startPage = Math.max(1, page - 2);
+    const endPage = Math.min(totalPages, page + 2);
+
+    if (startPage > 1) {
+        html += `<li class="page-item"><a class="page-link" href="#" onclick="goToPage(1)">1</a></li>`;
+        if (startPage > 2) {
+            html += `<li class="page-item disabled"><span class="page-link">...</span></li>`;
+        }
+    }
+
+    for (let i = startPage; i <= endPage; i++) {
+        html += `<li class="page-item ${i === page ? 'active' : ''}">
+            <a class="page-link" href="#" onclick="goToPage(${i})">${i}</a>
+        </li>`;
+    }
+
+    if (endPage < totalPages) {
+        if (endPage < totalPages - 1) {
+            html += `<li class="page-item disabled"><span class="page-link">...</span></li>`;
+        }
+        html += `<li class="page-item"><a class="page-link" href="#" onclick="goToPage(${totalPages})">${totalPages}</a></li>`;
+    }
+
+    if (page < totalPages) {
+        html += `<li class="page-item"><a class="page-link" href="#" onclick="goToPage(${page + 1})">下一页</a></li>`;
+    }
+
+    $('#pagination').html(`<ul class="pagination">${html}</ul>`);
+}
+
+function goToPage(page) {
+    currentPage = page;
+    loadLogs();
+}
+
+function showLogDetail(logId) {
+    $.get(`/api/logs?page=${currentPage}&per_page=${perPage}`, function(res) {
+        const log = res.logs.find(l => l.id === logId);
+        if (!log) return;
+
+        let content = `
+            <table class="table table-bordered">
+                <tr><th style="width: 150px;">日志ID</th><td>${log.id}</td></tr>
+                <tr><th>用户名</th><td>${log.username || '-'}</td></tr>
+                <tr><th>操作类型</th><td><span class="badge bg-primary">${log.operation_type}</span></td></tr>
+                <tr><th>实体类型</th><td>${log.entity_type || '-'}</td></tr>
+                <tr><th>实体ID</th><td>${log.entity_id || '-'}</td></tr>
+                <tr><th>操作时间</th><td>${log.operation_time || '-'}</td></tr>
+                <tr><th>IP地址</th><td>${log.ip_address || '-'}</td></tr>
+        `;
+
+        if (log.old_value) {
+            content += `<tr><th>旧值</th><td><pre style="max-height: 200px; overflow: auto;">${JSON.stringify(log.old_value, null, 2)}</pre></td></tr>`;
+        }
+
+        if (log.new_value) {
+            content += `<tr><th>新值</th><td><pre style="max-height: 200px; overflow: auto;">${JSON.stringify(log.new_value, null, 2)}</pre></td></tr>`;
+        }
+
+        content += '</table>';
+
+        $('#logDetailContent').html(content);
+        new bootstrap.Modal(document.getElementById('logDetailModal')).show();
+    });
+}
+</script>
+{% endblock %}

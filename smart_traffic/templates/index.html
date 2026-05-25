@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>路口列表</h2>
+    <div>
+        <button class="btn btn-success me-2" onclick="exportIntersections()">导出Excel</button>
+    </div>
+</div>
+<div class="table-responsive">
+    <table class="table table-bordered table-hover" id="intersectionTable">
+        <thead class="table-light">
+            <tr>
+                <th>ID</th>
+                <th>名称</th>
+                <th>类型</th>
+                <th>最新质保到期</th>
+                <th>状态</th>
+                <th>操作</th>
+            </tr>
+        </thead>
+        <tbody id="intersectionTableBody">
+        </tbody>
+    </table>
+</div>
+
+<script>
+$(document).ready(function() {
+    loadIntersections();
+});
+
+function loadIntersections() {
+    $.get('/api/intersections', function(data) {
+        let rows = '';
+        data.forEach(item => {
+            let statusClass = '';
+            if (item.warranty_status === '在保') statusClass = 'warranty-active';
+            else if (item.warranty_status === '过保') statusClass = 'warranty-expired';
+            else statusClass = 'warranty-none';
+
+            rows += `<tr>
+                <td>${item.id}</td>
+                <td><a href="/intersection/${item.id}" class="text-decoration-none">${item.name}</a></td>
+                <td>${item.type || '-'}</td>
+                <td>${item.latest_expire_date || '-'}</td>
+                <td class="${statusClass}">${item.warranty_status}</td>
+                <td>
+                    <button class="btn btn-sm btn-primary" onclick="extendWarranty(${item.id})">续保</button>
+                </td>
+            </tr>`;
+        });
+        $('#intersectionTableBody').html(rows);
+    });
+}
+
+function extendWarranty(id) {
+    let projectName = prompt("请输入续保项目名称", "2027年续保");
+    if (!projectName) return;
+
+    let expireDate = prompt("请输入质保到期日期 (YYYY-MM-DD)", "2027-12-31");
+    if (!expireDate) return;
+
+    $.ajax({
+        url: '/api/intersection/extend_warranty',
+        method: 'POST',
+        contentType: 'application/json',
+        data: JSON.stringify({
+            intersection_id: id,
+            project_name: projectName,
+            warranty_expire_date: expireDate
+        }),
+        success: function(res) {
+            if (res.status === 'success') {
+                alert("续保成功！");
+                loadIntersections();
+            } else {
+                alert("失败：" + (res.message || '未知错误'));
+            }
+        },
+        error: function() {
+            alert("请求失败");
+        }
+    });
+}
+
+function exportIntersections() {
+    window.location.href = '/api/export/intersections';
+}
+</script>
+{% endblock %}

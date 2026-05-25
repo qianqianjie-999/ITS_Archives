@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>点位列表（违停球/卡口）</h2>
+    <button class="btn btn-success" onclick="exportPoints()">导出Excel</button>
+</div>
+<div class="table-responsive">
+    <table class="table table-bordered table-hover" id="pointTable">
+        <thead class="table-light">
+            <tr>
+                <th>ID</th>
+                <th>名称</th>
+                <th>区域</th>
+                <th>类型</th>
+                <th>最新质保到期</th>
+                <th>状态</th>
+            </tr>
+        </thead>
+        <tbody id="pointTableBody">
+        </tbody>
+    </table>
+</div>
+
+<script>
+$(document).ready(function() {
+    loadPoints();
+});
+
+function loadPoints() {
+    $.get('/api/points', function(data) {
+        let rows = '';
+        data.forEach(p => {
+            let cls = p.warranty_status === '在保' ? 'warranty-active' :
+                     (p.warranty_status === '过保' ? 'warranty-expired' : 'warranty-none');
+            rows += `<tr>
+                <td>${p.id}</td>
+                <td>${p.name}</td>
+                <td>${p.area || '-'}</td>
+                <td>${p.type || '-'}</td>
+                <td>${p.latest_expire_date || '-'}</td>
+                <td class="${cls}">${p.warranty_status}</td>
+            </tr>`;
+        });
+        $('#pointTableBody').html(rows || '<tr><td colspan="6" class="text-center">暂无数据</td></tr>');
+    });
+}
+
+function exportPoints() {
+    window.location.href = '/api/export/points';
+}
+</script>
+{% endblock %}
