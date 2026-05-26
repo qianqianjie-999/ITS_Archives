@@ -1,0 +1,141 @@
+<template>
+  <div class="intersection-list">
+    <el-card>
+      <template #header>
+        <div class="card-header">
+          <span>路口列表</span>
+          <el-button v-if="userStore.isEditor" type="primary" @click="showDialog = true">新增路口</el-button>
+        </div>
+      </template>
+      <el-table :data="intersections" stripe v-loading="loading">
+        <el-table-column prop="id" label="ID" width="80" />
+        <el-table-column prop="name" label="路口名称" />
+        <el-table-column prop="type" label="类型" width="120" />
+        <el-table-column prop="latest_expire_date" label="质保到期" width="120">
+          <template #default="{ row }">
+            {{ row.latest_expire_date || '-' }}
+          </template>
+        </el-table-column>
+        <el-table-column prop="warranty_status" label="状态" width="100">
+          <template #default="{ row }">
+            <el-tag :type="getStatusType(row.warranty_status)">
+              {{ row.warranty_status }}
+            </el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column label="操作" width="200">
+          <template #default="{ row }">
+            <el-button type="primary" size="small" @click="goToDetail(row.id)">
+              详情
+            </el-button>
+            <el-button v-if="userStore.isEditor" type="danger" size="small" @click="deleteIntersection(row.id)">
+              删除
+            </el-button>
+          </template>
+        </el-table-column>
+      </el-table>
+    </el-card>
+
+    <el-dialog v-model="showDialog" :title="editIntersectionForm.id ? '编辑路口' : '新增路口'" width="400px">
+      <el-form :model="editIntersectionForm" label-width="80px">
+        <el-form-item label="路口名称" required>
+          <el-input v-model="editIntersectionForm.name" />
+        </el-form-item>
+        <el-form-item label="类型">
+          <el-input v-model="editIntersectionForm.type" />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="showDialog = false">取消</el-button>
+        <el-button type="primary" @click="submitIntersection">确定</el-button>
+      </template>
+    </el-dialog>
+  </div>
+</template>
+
+<script setup lang="ts">
+import { ref, onMounted, reactive } from 'vue'
+import { useRouter } from 'vue-router'
+import { ElMessage, ElMessageBox } from 'element-plus'
+import { intersectionApi } from '@/api/intersections'
+import { useUserStore } from '@/stores/user'
+import type { Intersection } from '@/types'
+
+const router = useRouter()
+const userStore = useUserStore()
+const intersections = ref<Intersection[]>([])
+const loading = ref(false)
+const showDialog = ref(false)
+
+const editIntersectionForm = reactive<Partial<Intersection>>({
+  id: undefined,
+  name: '',
+  type: ''
+})
+
+function getStatusType(status?: string) {
+  switch (status) {
+    case '在保': return 'success'
+    case '过保': return 'danger'
+    default: return 'info'
+  }
+}
+
+function goToDetail(id: number) {
+  router.push(`/intersections/${id}`)
+}
+
+async function submitIntersection() {
+  try {
+    if (editIntersectionForm.id) {
+      await intersectionApi.update(editIntersectionForm.id, editIntersectionForm)
+      ElMessage.success('更新成功')
+    } else {
+      await intersectionApi.create(editIntersectionForm)
+      ElMessage.success('创建成功')
+    }
+    showDialog.value = false
+    editIntersectionForm.id = undefined
+    editIntersectionForm.name = ''
+    editIntersectionForm.type = ''
+    fetchData()
+  } catch (error) {
+    ElMessage.error('操作失败')
+  }
+}
+
+async function deleteIntersection(id: number) {
+  try {
+    await ElMessageBox.confirm('确定要删除该路口吗？', '警告', { type: 'warning' })
+    await intersectionApi.delete(id)
+    ElMessage.success('删除成功')
+    fetchData()
+  } catch (error) {
+    if (error !== 'cancel') {
+      ElMessage.error('删除失败')
+    }
+  }
+}
+
+async function fetchData() {
+  loading.value = true
+  try {
+    const res = await intersectionApi.list()
+    intersections.value = res as unknown as Intersection[]
+  } catch (error) {
+    ElMessage.error('获取数据失败')
+  } finally {
+    loading.value = false
+  }
+}
+
+onMounted(fetchData)
+</script>
+
+<style scoped>
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+</style>
