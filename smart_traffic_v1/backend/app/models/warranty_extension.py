@@ -21,5 +21,6 @@ class WarrantyExtension(db.Model):
             'facility_id': self.facility_id,
             'project_id': self.project_id,
             'project_name': self.project.name if self.project else None,
+            'warranty_expire_date': self.project.warranty_expire_date.isoformat() if self.project else None,
             'extension_date': self.extension_date.isoformat() if self.extension_date else None
         }

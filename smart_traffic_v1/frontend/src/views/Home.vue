@@ -33,8 +33,8 @@
           <el-icon :size="28"><Aim /></el-icon>
         </div>
         <div class="stat-content">
-          <div class="stat-value">{{ stats.points }}</div>
-          <div class="stat-label">点位总数</div>
+          <div class="stat-value">{{ stats.parkingEnforcements }}</div>
+          <div class="stat-label">违停点位</div>
         </div>
         <div class="stat-trend positive">
           <el-icon :size="12"><ArrowUp /></el-icon>
@@ -47,8 +47,8 @@
           <el-icon :size="28"><Folder /></el-icon>
         </div>
         <div class="stat-content">
-          <div class="stat-value">{{ stats.projects }}</div>
-          <div class="stat-label">项目总数</div>
+          <div class="stat-value">{{ stats.checkpoints }}</div>
+          <div class="stat-label">卡口点位</div>
         </div>
         <div class="stat-trend positive">
           <el-icon :size="12"><ArrowUp /></el-icon>
@@ -67,6 +67,26 @@
         <div class="stat-trend warning">
           <el-icon :size="12"><Bell /></el-icon>
           <span>需要关注</span>
+        </div>
+      </div>
+
+      <div class="stat-card">
+        <div class="stat-icon-wrapper bg-purple">
+          <el-icon :size="28"><FolderOpened /></el-icon>
+        </div>
+        <div class="stat-content">
+          <div class="stat-value">{{ stats.projects }}</div>
+          <div class="stat-label">项目总数</div>
+        </div>
+      </div>
+
+      <div class="stat-card">
+        <div class="stat-icon-wrapper bg-cyan">
+          <el-icon :size="28"><Monitor /></el-icon>
+        </div>
+        <div class="stat-content">
+          <div class="stat-value">{{ stats.backendDevices }}</div>
+          <div class="stat-label">后端设备</div>
         </div>
       </div>
     </div>
@@ -134,29 +154,24 @@
             <el-icon :size="24" class="action-icon"><Plus /></el-icon>
             <span class="action-text">新建路口</span>
           </button>
-          <button class="action-card" @click="navigateTo('/points')">
-            <el-icon :size="24" class="action-icon"><Plus /></el-icon>
-            <span class="action-text">新建点位</span>
+          <button class="action-card" @click="navigateTo('/parking-enforcements')">
+            <el-icon :size="24" class="action-icon"><Camera /></el-icon>
+            <span class="action-text">违停管理</span>
+          </button>
+          <button class="action-card" @click="navigateTo('/checkpoints')">
+            <el-icon :size="24" class="action-icon"><Camera /></el-icon>
+            <span class="action-text">卡口管理</span>
+          </button>
+          <button class="action-card" @click="navigateTo('/backend-devices')">
+            <el-icon :size="24" class="action-icon"><Monitor /></el-icon>
+            <span class="action-text">后端设备</span>
+          </button>
+          <button class="action-card" @click="exportStatistics">
+            <el-icon :size="24" class="action-icon"><Download /></el-icon>
+            <span class="action-text">导出统计</span>
           </button>
         </div>
       </div>
-    </div>
-
-    <div class="section-card full-width">
-      <div class="section-header">
-        <h2 class="section-title">最近操作记录</h2>
-        <el-button size="small" @click="viewAllLogs">查看全部</el-button>
-      </div>
-      <el-table :data="recentLogs" stripe class="logs-table">
-        <el-table-column prop="action" label="操作" width="150">
-          <template #default="{ row }">
-            <span :class="['action-tag', row.action_type]">{{ row.action_label }}</span>
-          </template>
-        </el-table-column>
-        <el-table-column prop="target_name" label="目标" width="200" />
-        <el-table-column prop="operator" label="操作人" width="120" />
-        <el-table-column prop="created_at" label="时间" width="180" />
-      </el-table>
     </div>
   </div>
 </template>
@@ -164,12 +179,14 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
+import { ElMessage } from 'element-plus'
 import { useUserStore } from '@/stores/user'
 import { intersectionApi } from '@/api/intersections'
 import { pointApi } from '@/api/points'
 import { projectApi } from '@/api/projects'
+import apiClient from '@/api'
 import { 
-  Location, Aim, Folder, Clock, ArrowUp, Bell, Plus 
+  Location, Aim, Folder, FolderOpened, Clock, ArrowUp, Bell, Plus, Camera, Monitor, Download 
 } from '@element-plus/icons-vue'
 
 const router = useRouter()
@@ -177,22 +194,16 @@ const userStore = useUserStore()
 
 const stats = ref({
   intersections: 0,
-  points: 0,
+  parkingEnforcements: 0,
+  checkpoints: 0,
   projects: 0,
+  backendDevices: 0,
   warrantyInCoverage: 0,
   warrantyExpired: 0,
   warrantyExpiring: 0
 })
 
 const todayCount = ref(3)
-
-const recentLogs = ref([
-  { action: 'create', action_type: 'success', action_label: '新增', target_name: '文化路-人民路路口', operator: '管理员', created_at: '2024-01-15 14:30:25' },
-  { action: 'update', action_type: 'info', action_label: '修改', target_name: '智慧交通一期项目', operator: '管理员', created_at: '2024-01-15 13:45:18' },
-  { action: 'create', action_type: 'success', action_label: '新增', target_name: '违停抓拍点位A1', operator: '编辑员', created_at: '2024-01-15 11:20:00' },
-  { action: 'delete', action_type: 'danger', action_label: '删除', target_name: '旧城区信号灯记录', operator: '管理员', created_at: '2024-01-15 09:15:42' },
-  { action: 'update', action_type: 'info', action_label: '修改', target_name: '电子警察设备信息', operator: '编辑员', created_at: '2024-01-14 16:30:55' }
-])
 
 const warrantyInCoverage = computed(() => {
   const total = stats.value.warrantyInCoverage + stats.value.warrantyExpired
@@ -212,28 +223,50 @@ function navigateTo(path: string) {
   router.push(path)
 }
 
-function viewAllLogs() {
-  router.push('/logs')
-}
-
 async function fetchStats() {
   try {
-    const [intersections, points, projects] = await Promise.all([
+    const [intersections, parkingEnforcements, checkpoints, projects, backendDevices] = await Promise.all([
       intersectionApi.list(),
-      pointApi.list(),
-      projectApi.list()
+      pointApi.getParkingEnforcementsAll(),
+      pointApi.getCheckpointsAll(),
+      projectApi.list(),
+      pointApi.listBackendDevices()
     ])
     
     stats.value = {
       intersections: (intersections as any)?.length || 0,
-      points: (points as any)?.length || 0,
+      parkingEnforcements: (parkingEnforcements as any)?.length || 0,
+      checkpoints: (checkpoints as any)?.length || 0,
       projects: (projects as any)?.length || 0,
+      backendDevices: (backendDevices as any)?.length || 0,
       warrantyInCoverage: 128,
       warrantyExpired: 32,
       warrantyExpiring: 15
     }
   } catch (error) {
     console.error('获取统计数据失败', error)
+  }
+}
+
+async function exportStatistics() {
+  try {
+    ElMessage.info('正在导出数据，请稍候...')
+    const response = await apiClient.get('/export/statistics', {
+      responseType: 'blob'
+    }) as unknown as Blob
+    const url = window.URL.createObjectURL(new Blob([response]))
+    const link = document.createElement('a')
+    link.href = url
+    const filename = `智能交通设备统计_${new Date().toISOString().split('T')[0]}.xlsx`
+    link.download = filename
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    window.URL.revokeObjectURL(url)
+    ElMessage.success('导出成功')
+  } catch (error) {
+    console.error('导出失败', error)
+    ElMessage.error('导出失败')
   }
 }
 
@@ -300,7 +333,7 @@ onMounted(fetchStats)
 
 .card-container {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
   gap: $spacing-md;
   margin-bottom: $spacing-lg;
 }
@@ -335,6 +368,8 @@ onMounted(fetchStats)
   &.bg-success { background: linear-gradient(135deg, $success-color 0%, #389e0d 100%); }
   &.bg-warning { background: linear-gradient(135deg, $warning-color 0%, #d48806 100%); }
   &.bg-info { background: linear-gradient(135deg, #13c2c2 0%, #08979c 100%); }
+  &.bg-purple { background: linear-gradient(135deg, #722ed1 0%, #531dab 100%); }
+  &.bg-cyan { background: linear-gradient(135deg, #08979c 0%, #006b6b 100%); }
 }
 
 .stat-content {
@@ -382,10 +417,6 @@ onMounted(fetchStats)
   border-radius: $radius-md;
   padding: $spacing-lg;
   box-shadow: $shadow-sm;
-  
-  &.full-width {
-    grid-column: span 2;
-  }
 }
 
 .section-header {
@@ -513,40 +544,11 @@ onMounted(fetchStats)
   }
 }
 
-.logs-table {
-  .action-tag {
-    display: inline-block;
-    padding: 2px 8px;
-    border-radius: $radius-sm;
-    font-size: $font-size-xs;
-    font-weight: 500;
-    
-    &.success {
-      background: $success-light;
-      color: $success-color;
-    }
-    
-    &.info {
-      background: $info-light;
-      color: $info-color;
-    }
-    
-    &.danger {
-      background: $error-light;
-      color: $error-color;
-    }
-  }
-}
-
 @media (max-width: 900px) {
   .section-row {
     grid-template-columns: 1fr;
   }
-  
-  .section-card.full-width {
-    grid-column: span 1;
-  }
-  
+
   .card-container {
     grid-template-columns: 1fr;
   }

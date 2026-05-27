@@ -15,15 +15,19 @@ export interface Project {
   warranty_period?: string
   warranty_expire_date: string
   builder?: string
-  constructor?: string
+  construction_unit?: string
 }
 
 export interface Intersection {
   id: number
   name: string
-  type?: string
-  warranty_status?: string
-  latest_expire_date?: string
+  type: string
+  east_west_road?: string
+  north_south_road?: string
+  traffic_light_warranty_status?: string
+  traffic_light_warranty_expire?: string
+  electronic_police_warranty_status?: string
+  electronic_police_warranty_expire?: string
 }
 
 export interface TrafficLight {
@@ -31,7 +35,10 @@ export interface TrafficLight {
     intersection_id: number
     project_id: number
     project_name?: string
+    acceptance_date?: string
+    warranty_period?: string
     warranty_expire_date?: string
+    warranty_status?: string
     signal_type?: string
     signal_count?: number
     left_arrow_count?: number
@@ -43,6 +50,8 @@ export interface TrafficLight {
     radar_count?: number
     guide_screen_count?: number
     power_source?: string
+    construction_unit?: string
+    construction_company?: string
 }
 
 export interface ElectronicPolice {
@@ -50,7 +59,10 @@ export interface ElectronicPolice {
     intersection_id: number
     project_id: number
     project_name?: string
+    acceptance_date?: string
+    warranty_period?: string
     warranty_expire_date?: string
+    warranty_status?: string
     capture_type?: string
     terminal_server_count?: number
     forward_capture_count?: number
@@ -60,6 +72,8 @@ export interface ElectronicPolice {
     ptz_count?: number
     signal_detector_count?: number
     network_source?: string
+    construction_unit?: string
+    construction_company?: string
 }
 
 export interface Point {
@@ -76,14 +90,18 @@ export interface ParkingEnforcement {
     point_id: number
     project_id: number
     project_name?: string
-    area?: string
+    acceptance_date?: string
+    warranty_period?: string
     warranty_expire_date?: string
-    device_count?: number
+    warranty_status?: string
+    camera_area?: string
     camera_count?: number
     parking_sign_count?: number
     monitor_sign_count?: number
     power_source?: string
     network_source?: string
+    construction_unit?: string
+    construction_company?: string
 }
 
 export interface Checkpoint {
@@ -91,15 +109,34 @@ export interface Checkpoint {
     point_id: number
     project_id: number
     project_name?: string
-    type?: string
+    acceptance_date?: string
+    warranty_period?: string
     warranty_expire_date?: string
-    device_count?: number
+    warranty_status?: string
+    checkpoint_type?: string
     camera_count?: number
     strobe_light_count?: number
     radar_count?: number
     sign_count?: number
     power_source?: string
     network_source?: string
+    construction_unit?: string
+    construction_company?: string
+}
+
+export interface BackendDevice {
+    id: number
+    point_id?: number
+    project_id?: number
+    project_name?: string
+    acceptance_date?: string
+    warranty_period?: string
+    warranty_expire_date?: string
+    warranty_status?: string
+    name: string
+    type?: string
+    construction_unit?: string
+    construction_company?: string
 }
 
 export interface Attachment {

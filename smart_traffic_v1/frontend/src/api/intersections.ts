@@ -18,6 +18,10 @@ export const intersectionApi = {
 
   delete: (id: number) => apiClient.delete(`/intersections/${id}`),
 
+  getTrafficLightsAll: () => apiClient.get<TrafficLight[]>('/intersections/traffic-lights'),
+
+  getElectronicPolicesAll: () => apiClient.get<ElectronicPolice[]>('/intersections/electronic-polices'),
+
   createTrafficLight: (intersectionId: number, data: Partial<TrafficLight>) =>
     apiClient.post(`/intersections/${intersectionId}/traffic-light`, data),
 
@@ -36,9 +40,10 @@ export const intersectionApi = {
   deleteElectronicPolice: (intersectionId: number, epId: number) =>
     apiClient.delete(`/intersections/${intersectionId}/electronic-police/${epId}`),
 
-  extendWarranty: (intersectionId: number, projectName: string, warrantyExpireDate: string) =>
+  extendWarranty: (intersectionId: number, projectName: string, deviceType: string, warrantyExpireDate: string) =>
     apiClient.post(`/intersections/${intersectionId}/extend-warranty`, {
       project_name: projectName,
+      device_type: deviceType,
       warranty_expire_date: warrantyExpireDate
     })
 }

@@ -14,7 +14,7 @@ class Project(db.Model):
     warranty_period: Mapped[Optional[str]] = mapped_column(String(50))
     warranty_expire_date: Mapped[Date] = mapped_column(Date, nullable=False)
     builder: Mapped[Optional[str]] = mapped_column(String(100))
-    constructor: Mapped[Optional[str]] = mapped_column(String(100))
+    construction_unit: Mapped[Optional[str]] = mapped_column(String(100))
 
     traffic_lights: Mapped[List["TrafficLight"]] = relationship(back_populates="project", lazy='dynamic')
     electronic_polices: Mapped[List["ElectronicPolice"]] = relationship(back_populates="project", lazy='dynamic')
@@ -32,5 +32,5 @@ class Project(db.Model):
             'warranty_period': self.warranty_period,
             'warranty_expire_date': self.warranty_expire_date.isoformat() if self.warranty_expire_date else None,
             'builder': self.builder,
-            'constructor': self.constructor
+            'construction_unit': self.construction_unit
         }

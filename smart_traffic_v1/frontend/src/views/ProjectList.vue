@@ -10,15 +10,15 @@
       <el-table :data="projects" stripe v-loading="loading">
         <el-table-column prop="id" label="ID" width="80" />
         <el-table-column prop="name" label="项目名称" />
-        <el-table-column prop="contract_amount" label="合同金额" width="120">
+        <el-table-column prop="contract_amount" label="合同金额(万元)" width="140">
           <template #default="{ row }">
-            {{ row.contract_amount ? `¥${row.contract_amount.toLocaleString()}` : '-' }}
+            {{ row.contract_amount ? `¥${row.contract_amount.toLocaleString()}万元` : '-' }}
           </template>
         </el-table-column>
         <el-table-column prop="acceptance_date" label="验收日期" width="120" />
         <el-table-column prop="warranty_expire_date" label="质保到期" width="120" />
         <el-table-column prop="builder" label="建设单位" />
-        <el-table-column prop="constructor" label="施工单位" />
+        <el-table-column prop="construction_unit" label="施工单位" />
         <el-table-column v-if="userStore.isEditor" label="操作" width="150">
           <template #default="{ row }">
             <el-button type="primary" size="small" @click="editProject(row)">编辑</el-button>
@@ -49,7 +49,7 @@
           <el-input v-model="editProjectForm.builder" />
         </el-form-item>
         <el-form-item label="施工单位">
-          <el-input v-model="editProjectForm.constructor" />
+          <el-input v-model="editProjectForm.construction_unit" />
         </el-form-item>
       </el-form>
       <template #footer>
@@ -80,7 +80,7 @@ const editProjectForm = reactive<Partial<Project>>({
   warranty_period: '',
   warranty_expire_date: '',
   builder: '',
-  constructor: ''
+  construction_unit: ''
 })
 
 function editProject(project: Project) {

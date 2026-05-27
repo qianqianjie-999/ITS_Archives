@@ -11,6 +11,8 @@
         <el-table-column prop="id" label="ID" width="80" />
         <el-table-column prop="name" label="路口名称" />
         <el-table-column prop="type" label="类型" width="120" />
+        <el-table-column prop="east_west_road" label="东西路" />
+        <el-table-column prop="north_south_road" label="南北路" />
         <el-table-column prop="latest_expire_date" label="质保到期" width="120">
           <template #default="{ row }">
             {{ row.latest_expire_date || '-' }}
@@ -23,10 +25,13 @@
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="200">
+        <el-table-column label="操作" width="240">
           <template #default="{ row }">
             <el-button type="primary" size="small" @click="goToDetail(row.id)">
               详情
+            </el-button>
+            <el-button v-if="userStore.isEditor" type="success" size="small" @click="editIntersection(row)">
+              编辑
             </el-button>
             <el-button v-if="userStore.isEditor" type="danger" size="small" @click="deleteIntersection(row.id)">
               删除
@@ -43,6 +48,12 @@
         </el-form-item>
         <el-form-item label="类型">
           <el-input v-model="editIntersectionForm.type" />
+        </el-form-item>
+        <el-form-item label="东西路">
+          <el-input v-model="editIntersectionForm.east_west_road" />
+        </el-form-item>
+        <el-form-item label="南北路">
+          <el-input v-model="editIntersectionForm.north_south_road" />
         </el-form-item>
       </el-form>
       <template #footer>
@@ -70,19 +81,31 @@ const showDialog = ref(false)
 const editIntersectionForm = reactive<Partial<Intersection>>({
   id: undefined,
   name: '',
-  type: ''
+  type: '',
+  east_west_road: '',
+  north_south_road: ''
 })
 
 function getStatusType(status?: string) {
   switch (status) {
     case '在保': return 'success'
     case '过保': return 'danger'
+    case '混合': return 'warning'
     default: return 'info'
   }
 }
 
 function goToDetail(id: number) {
   router.push(`/intersections/${id}`)
+}
+
+function editIntersection(row: Intersection) {
+  editIntersectionForm.id = row.id
+  editIntersectionForm.name = row.name
+  editIntersectionForm.type = row.type || ''
+  editIntersectionForm.east_west_road = row.east_west_road || ''
+  editIntersectionForm.north_south_road = row.north_south_road || ''
+  showDialog.value = true
 }
 
 async function submitIntersection() {
@@ -98,6 +121,8 @@ async function submitIntersection() {
     editIntersectionForm.id = undefined
     editIntersectionForm.name = ''
     editIntersectionForm.type = ''
+    editIntersectionForm.east_west_road = ''
+    editIntersectionForm.north_south_road = ''
     fetchData()
   } catch (error) {
     ElMessage.error('操作失败')

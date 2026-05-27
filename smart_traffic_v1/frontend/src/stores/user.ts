@@ -12,12 +12,12 @@ export const useUserStore = defineStore('user', () => {
   const isEditor = computed(() => user.value?.role === 'editor' || user.value?.role === 'admin')
 
   async function login(username: string, password: string) {
-    const response = await authApi.login(username, password) as unknown as LoginResponse
-    if (response.status === 'success' && response.token && response.user) {
-      token.value = response.token
-      user.value = response.user
-      localStorage.setItem('token', response.token)
-      localStorage.setItem('user', JSON.stringify(response.user))
+    const response = await authApi.login(username, password) as any
+    if (response.status === 'success' && response.data?.token && response.data?.user) {
+      token.value = response.data.token
+      user.value = response.data.user
+      localStorage.setItem('token', response.data.token)
+      localStorage.setItem('user', JSON.stringify(response.data.user))
       return true
     }
     return false

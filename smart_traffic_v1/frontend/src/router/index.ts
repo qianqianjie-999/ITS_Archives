@@ -36,30 +36,39 @@ const routes: RouteRecordRaw[] = [
         component: () => import('@/views/IntersectionDetail.vue')
       },
       {
-        path: 'points',
-        name: 'PointList',
-        component: () => import('@/views/PointList.vue')
-      },
-      {
-        path: 'points/create',
-        name: 'PointCreate',
-        component: () => import('@/views/PointDetail.vue')
-      },
-      {
-        path: 'points/:id',
-        name: 'PointDetail',
-        component: () => import('@/views/PointDetail.vue')
-      },
-      {
         path: 'projects',
         name: 'ProjectList',
         component: () => import('@/views/ProjectList.vue')
       },
       {
-        path: 'logs',
-        name: 'LogList',
-        component: () => import('@/views/LogList.vue'),
-        meta: { requiresAdmin: true }
+        path: 'parking-enforcements',
+        name: 'ParkingEnforcementList',
+        component: () => import('@/views/ParkingEnforcementList.vue')
+      },
+      {
+        path: 'parking-enforcements/:id',
+        name: 'ParkingEnforcementDetail',
+        component: () => import('@/views/ParkingEnforcementDetail.vue')
+      },
+      {
+        path: 'checkpoints',
+        name: 'CheckpointList',
+        component: () => import('@/views/CheckpointList.vue')
+      },
+      {
+        path: 'checkpoints/:id',
+        name: 'CheckpointDetail',
+        component: () => import('@/views/CheckpointDetail.vue')
+      },
+      {
+        path: 'backend-devices',
+        name: 'BackendDeviceList',
+        component: () => import('@/views/BackendDeviceList.vue')
+      },
+      {
+        path: 'statistics',
+        name: 'Statistics',
+        component: () => import('@/views/Statistics.vue')
       }
     ]
   }
@@ -81,8 +90,6 @@ router.beforeEach(async (to, _from, next) => {
   if (to.meta.requiresAuth && !userStore.isLoggedIn) {
     next('/login')
   } else if (to.path === '/login' && userStore.isLoggedIn) {
-    next('/')
-  } else if (to.meta.requiresAdmin && !userStore.isAdmin) {
     next('/')
   } else {
     next()

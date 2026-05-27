@@ -1,9 +1,9 @@
 <template>
-  <div class="point-list">
+  <div class="parking-enforcement-list">
     <el-card>
       <template #header>
         <div class="card-header">
-          <span>点位列表</span>
+          <span>违停点位列表</span>
           <el-button v-if="userStore.isEditor" type="primary" @click="showDialog = true">新增点位</el-button>
         </div>
       </template>
@@ -12,22 +12,26 @@
         <el-table-column prop="name" label="点位名称" />
         <el-table-column prop="area" label="区域" />
         <el-table-column prop="type" label="类型" width="120" />
-        <el-table-column prop="latest_expire_date" label="质保到期" width="120">
-          <template #default="{ row }">
-            {{ row.latest_expire_date || '-' }}
-          </template>
-        </el-table-column>
-        <el-table-column prop="warranty_status" label="状态" width="100">
+        <el-table-column prop="warranty_status" label="质保状态" width="100">
           <template #default="{ row }">
             <el-tag :type="getStatusType(row.warranty_status)">
               {{ row.warranty_status }}
             </el-tag>
           </template>
         </el-table-column>
+        <el-table-column prop="warranty_expire_date" label="质保到期" width="120">
+          <template #default="{ row }">
+            {{ row.warranty_expire_date || '-' }}
+          </template>
+        </el-table-column>
         <el-table-column label="操作" width="200">
           <template #default="{ row }">
-            <el-button type="primary" size="small" @click="goToDetail(row.id)">详情</el-button>
-            <el-button v-if="userStore.isEditor" type="danger" size="small" @click="deletePoint(row.id)">删除</el-button>
+            <el-button type="primary" size="small" @click="goToDetail(row.id)">
+              详情
+            </el-button>
+            <el-button v-if="userStore.isEditor" type="danger" size="small" @click="deletePoint(row.id)">
+              删除
+            </el-button>
           </template>
         </el-table-column>
       </el-table>
@@ -63,7 +67,6 @@ import type { Point } from '@/types'
 
 const router = useRouter()
 const userStore = useUserStore()
-
 const points = ref<Point[]>([])
 const loading = ref(false)
 const showDialog = ref(false)
@@ -84,53 +87,74 @@ function getStatusType(status?: string) {
 }
 
 function goToDetail(id: number) {
-  router.push(`/points/${id}`)
+  router.push(`/parking-enforcements/${id}`)
 }
 
-async function submitPoint() {
-  try {
-    if (editPointForm.id) {
-      await pointApi.update(editPointForm.id, editPointForm)
-      ElMessage.success('更新成功')
-    } else {
-      await pointApi.create(editPointForm)
-      ElMessage.success('创建成功')
-    }
-    showDialog.value = false
-    editPointForm.id = undefined
-    editPointForm.name = ''
-    editPointForm.area = ''
-    editPointForm.type = ''
-    fetchData()
-  } catch (error) {
-    ElMessage.error('操作失败')
+function editPoint(point: Point) {
+  editPointForm.id = point.id
+  editPointForm.name = point.name
+  editPointForm.area = point.area || ''
+  editPointForm.type = point.type || ''
+  showDialog.value = true
+}
+
+function submitPoint() {
+  if (!editPointForm.name) {
+    ElMessage.error('请输入点位名称')
+    return
+  }
+  
+  const data = {
+    name: editPointForm.name,
+    area: editPointForm.area,
+    type: editPointForm.type
+  }
+
+  if (editPointForm.id) {
+    pointApi.update(editPointForm.id, data).then(() => {
+      ElMessage.success('编辑成功')
+      showDialog.value = false
+      loadPoints()
+    }).catch(() => {
+      ElMessage.error('编辑失败')
+    })
+  } else {
+    pointApi.create(data).then(() => {
+      ElMessage.success('新增成功')
+      showDialog.value = false
+      loadPoints()
+    }).catch(() => {
+      ElMessage.error('新增失败')
+    })
   }
 }
 
-async function deletePoint(id: number) {
-  try {
-    await ElMessageBox.confirm('确定要删除该点位吗？', '警告', { type: 'warning' })
-    await pointApi.delete(id)
-    ElMessage.success('删除成功')
-    fetchData()
-  } catch (error) {
-    if (error !== 'cancel') {
+function deletePoint(id: number) {
+  ElMessageBox.confirm('确定删除该点位？', '提示', {
+    confirmButtonText: '确定',
+    cancelButtonText: '取消',
+    type: 'warning'
+  }).then(() => {
+    pointApi.delete(id).then(() => {
+      ElMessage.success('删除成功')
+      loadPoints()
+    }).catch(() => {
       ElMessage.error('删除失败')
-    }
-  }
+    })
+  }).catch(() => {})
 }
 
-async function fetchData() {
+function loadPoints() {
   loading.value = true
-  try {
-    const res = await pointApi.list()
-    points.value = res as unknown as Point[]
-  } catch (error) {
-    ElMessage.error('获取数据失败')
-  } finally {
+  pointApi.list().then(data => {
+    points.value = data
     loading.value = false
-  }
+  }).catch(() => {
+    loading.value = false
+  })
 }
 
-onMounted(fetchData)
+onMounted(() => {
+  loadPoints()
+})
 </script>

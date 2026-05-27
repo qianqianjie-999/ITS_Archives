@@ -14,7 +14,7 @@ project_model = ns.model('Project', {
     'warranty_period': fields.String(),
     'warranty_expire_date': fields.String(required=True),
     'builder': fields.String(),
-    'constructor': fields.String()
+    'construction_unit': fields.String()
 })
 
 @ns.route('/')
@@ -47,7 +47,7 @@ class ProjectList(Resource):
             warranty_period=data.get('warranty_period'),
             warranty_expire_date=date.fromisoformat(data['warranty_expire_date']),
             builder=data.get('builder'),
-            constructor=data.get('constructor')
+            construction_unit=data.get('construction_unit')
         )
         db.session.add(project)
         db.session.commit()
@@ -69,7 +69,7 @@ class ProjectDetail(Resource):
 
         data = request.json
         for key in ['name', 'contract_amount', 'acceptance_date', 'warranty_period',
-                    'warranty_expire_date', 'builder', 'constructor']:
+                    'warranty_expire_date', 'builder', 'construction_unit']:
             if key in data:
                 if key in ['acceptance_date', 'warranty_expire_date'] and data[key]:
                     setattr(project, key, date.fromisoformat(data[key]))

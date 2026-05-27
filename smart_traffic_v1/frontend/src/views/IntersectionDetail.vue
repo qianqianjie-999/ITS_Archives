@@ -11,13 +11,21 @@
       <el-descriptions :column="2" border v-if="intersection">
         <el-descriptions-item label="名称">{{ intersection.name }}</el-descriptions-item>
         <el-descriptions-item label="类型">{{ intersection.type }}</el-descriptions-item>
-        <el-descriptions-item label="质保状态">
-          <el-tag :type="getStatusType(intersection.warranty_status)">
-            {{ intersection.warranty_status }}
+        <el-descriptions-item label="信号灯质保状态">
+          <el-tag :type="getStatusType(intersection.traffic_light_warranty_status)">
+            {{ intersection.traffic_light_warranty_status }}
           </el-tag>
         </el-descriptions-item>
-        <el-descriptions-item label="质保到期">
-          {{ intersection.latest_expire_date || '-' }}
+        <el-descriptions-item label="信号灯质保到期">
+          {{ intersection.traffic_light_warranty_expire || '-' }}
+        </el-descriptions-item>
+        <el-descriptions-item label="电子警察质保状态">
+          <el-tag :type="getStatusType(intersection.electronic_police_warranty_status)">
+            {{ intersection.electronic_police_warranty_status }}
+          </el-tag>
+        </el-descriptions-item>
+        <el-descriptions-item label="电子警察质保到期">
+          {{ intersection.electronic_police_warranty_expire || '-' }}
         </el-descriptions-item>
       </el-descriptions>
 
@@ -30,17 +38,29 @@
             <el-button v-if="userStore.isEditor" type="primary" size="small" @click="showTrafficLightDialog = true">新增信号灯</el-button>
           </div>
           <el-table :data="trafficLights" stripe>
-            <el-table-column prop="project_name" label="项目名称" />
-            <el-table-column prop="signal_type" label="信号机类型" />
-            <el-table-column prop="signal_count" label="信号灯数" />
-            <el-table-column prop="left_arrow_count" label="左箭头数" />
-            <el-table-column prop="straight_arrow_count" label="直箭头数" />
-            <el-table-column prop="right_arrow_count" label="右箭头数" />
-            <el-table-column prop="full_screen_count" label="全屏数" />
-            <el-table-column prop="non_motor_count" label="非机动车数" />
-            <el-table-column prop="pedestrian_count" label="人行信号灯数" />
-            <el-table-column prop="radar_count" label="雷达数" />
-            <el-table-column prop="guide_screen_count" label="诱导屏数" />
+            <el-table-column prop="project_name" label="归属项目" />
+            <el-table-column prop="acceptance_date" label="项目验收日期" width="140" />
+            <el-table-column prop="warranty_period" label="项目质保期" width="120" />
+            <el-table-column prop="warranty_expire_date" label="项目质保到期时间" width="160" />
+            <el-table-column prop="warranty_status" label="质保状态" width="100">
+              <template #default="{ row }">
+                <el-tag :type="getStatusType(row.warranty_status)">
+                  {{ row.warranty_status }}
+                </el-tag>
+              </template>
+            </el-table-column>
+            <el-table-column prop="construction_unit" label="建设单位" />
+            <el-table-column prop="construction_company" label="施工单位" />
+            <el-table-column prop="signal_type" label="信号机类型" width="120" />
+            <el-table-column prop="signal_count" label="信号机数量" width="120" />
+            <el-table-column prop="left_arrow_count" label="左转箭头灯数量" width="140" />
+            <el-table-column prop="straight_arrow_count" label="直行箭头灯数量" width="140" />
+            <el-table-column prop="right_arrow_count" label="右转箭头灯数量" width="140" />
+            <el-table-column prop="full_screen_count" label="满屏灯数量" width="120" />
+            <el-table-column prop="non_motor_count" label="非机动灯数量" width="120" />
+            <el-table-column prop="pedestrian_count" label="人行灯数量" width="120" />
+            <el-table-column prop="radar_count" label="车流量雷达数量" width="140" />
+            <el-table-column prop="guide_screen_count" label="诱导屏数量" width="120" />
             <el-table-column prop="power_source" label="取电说明" />
             <el-table-column v-if="userStore.isEditor" label="操作" width="150">
               <template #default="{ row }">
@@ -57,15 +77,27 @@
             <el-button v-if="userStore.isEditor" type="primary" size="small" @click="showElectronicPoliceDialog = true">新增电子警察</el-button>
           </div>
           <el-table :data="electronicPolices" stripe>
-            <el-table-column prop="project_name" label="项目名称" />
-            <el-table-column prop="capture_type" label="抓拍类型" />
-            <el-table-column prop="terminal_server_count" label="终端服务器数" />
-            <el-table-column prop="forward_capture_count" label="正向抓拍数" />
-            <el-table-column prop="reverse_capture_count" label="反向抓拍数" />
-            <el-table-column prop="led_light_count" label="LED补光灯数" />
-            <el-table-column prop="strobe_light_count" label="频闪灯数" />
-            <el-table-column prop="ptz_count" label="球机数" />
-            <el-table-column prop="signal_detector_count" label="信号检测器数" />
+            <el-table-column prop="project_name" label="归属项目" />
+            <el-table-column prop="acceptance_date" label="项目验收日期" width="140" />
+            <el-table-column prop="warranty_period" label="项目质保期" width="120" />
+            <el-table-column prop="warranty_expire_date" label="项目质保到期时间" width="160" />
+            <el-table-column prop="warranty_status" label="质保状态" width="100">
+              <template #default="{ row }">
+                <el-tag :type="getStatusType(row.warranty_status)">
+                  {{ row.warranty_status }}
+                </el-tag>
+              </template>
+            </el-table-column>
+            <el-table-column prop="construction_unit" label="建设单位" />
+            <el-table-column prop="construction_company" label="施工单位" />
+            <el-table-column prop="capture_type" label="抓拍类型" width="140" />
+            <el-table-column prop="terminal_server_count" label="终端服务器数量" width="140" />
+            <el-table-column prop="forward_capture_count" label="正向抓拍数量" width="120" />
+            <el-table-column prop="reverse_capture_count" label="反向抓拍数量" width="120" />
+            <el-table-column prop="led_light_count" label="LED灯数量" width="100" />
+            <el-table-column prop="strobe_light_count" label="爆闪灯数量" width="100" />
+            <el-table-column prop="ptz_count" label="监控球机数量" width="120" />
+            <el-table-column prop="signal_detector_count" label="信号灯检测器数量" width="140" />
             <el-table-column prop="network_source" label="取网说明" />
             <el-table-column v-if="userStore.isEditor" label="操作" width="150">
               <template #default="{ row }">
@@ -110,7 +142,6 @@
           </div>
           <el-table :data="warrantyRecords" stripe>
             <el-table-column prop="project_name" label="项目名称" />
-            <el-table-column prop="acceptance_date" label="验收日期" />
             <el-table-column prop="warranty_expire_date" label="质保到期" />
             <el-table-column prop="extension_date" label="延期日期" />
           </el-table>
@@ -118,12 +149,19 @@
       </el-tabs>
     </el-card>
 
-    <el-dialog v-model="showWarrantyDialog" title="申请质保延期" width="400px">
+    <el-dialog v-model="showWarrantyDialog" title="申请质保延期" width="500px">
       <el-form :model="warrantyForm" label-width="100px">
         <el-form-item label="项目名称" required>
-          <el-input v-model="warrantyForm.projectName" />
+          <el-input v-model="warrantyForm.projectName" placeholder="请输入质保延期项目名称" />
         </el-form-item>
-        <el-form-item label="质保到期日期" required>
+        <el-form-item label="设备类型" required>
+          <el-radio-group v-model="warrantyForm.deviceType">
+            <el-radio label="traffic_light">信号灯</el-radio>
+            <el-radio label="electronic_police">电子警察</el-radio>
+            <el-radio label="both">两者都延期</el-radio>
+          </el-radio-group>
+        </el-form-item>
+        <el-form-item label="新质保到期" required>
           <el-date-picker v-model="warrantyForm.expireDate" type="date" style="width: 100%" />
         </el-form-item>
       </el-form>
@@ -320,6 +358,7 @@ const projectOptions = ref<ProjectOption[]>([])
 
 const warrantyForm = reactive({
   projectName: '',
+  deviceType: 'both',
   expireDate: ''
 })
 
@@ -359,6 +398,7 @@ function getStatusType(status?: string) {
   switch (status) {
     case '在保': return 'success'
     case '过保': return 'danger'
+    case '混合': return 'warning'
     default: return 'info'
   }
 }
@@ -589,11 +629,13 @@ async function submitWarranty() {
     await intersectionApi.extendWarranty(
       Number(route.params.id),
       warrantyForm.projectName,
+      warrantyForm.deviceType,
       warrantyForm.expireDate
     )
     ElMessage.success('申请成功')
     showWarrantyDialog.value = false
     warrantyForm.projectName = ''
+    warrantyForm.deviceType = 'both'
     warrantyForm.expireDate = ''
     await fetchWarrantyRecords()
     await fetchData()
