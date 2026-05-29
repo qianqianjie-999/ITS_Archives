@@ -8,7 +8,7 @@
         </div>
       </template>
       <el-table :data="projects" stripe v-loading="loading">
-        <el-table-column prop="id" label="ID" width="80" />
+        <el-table-column type="index" label="序号" width="60" />
         <el-table-column prop="name" label="项目名称" />
         <el-table-column prop="contract_amount" label="合同金额(万元)" width="140">
           <template #default="{ row }">
@@ -34,7 +34,7 @@
           <el-input v-model="editProjectForm.name" />
         </el-form-item>
         <el-form-item label="合同金额">
-          <el-input-number v-model="editProjectForm.contract_amount" :precision="2" :step="1000" />
+          <el-input-number v-model="editProjectForm.contract_amount" :precision="2" :step="1000" /><span style="margin-left:8px">万元</span>
         </el-form-item>
         <el-form-item label="验收日期">
           <el-date-picker v-model="editProjectForm.acceptance_date" type="date" value-format="YYYY-MM-DD" />
@@ -84,23 +84,33 @@ const editProjectForm = reactive<Partial<Project>>({
 })
 
 function editProject(project: Project) {
-  Object.assign(editProjectForm, project)
+  Object.assign(editProjectForm, {
+    id: project.id,
+    name: project.name,
+    contract_amount: project.contract_amount,
+    acceptance_date: project.acceptance_date,
+    warranty_period: project.warranty_period,
+    warranty_expire_date: project.warranty_expire_date,
+    builder: project.builder,
+    construction_unit: project.construction_unit
+  })
   showDialog.value = true
 }
 
 async function submitProject() {
   try {
+    const data = { ...editProjectForm }
     if (editProjectForm.id) {
-      await projectApi.update(editProjectForm.id, editProjectForm)
+      await projectApi.update(editProjectForm.id, data)
       ElMessage.success('更新成功')
     } else {
-      await projectApi.create(editProjectForm)
+      await projectApi.create(data)
       ElMessage.success('创建成功')
     }
     showDialog.value = false
     fetchData()
-  } catch (error) {
-    ElMessage.error('操作失败')
+  } catch (error: any) {
+    ElMessage.error(error?.response?.data?.message || '操作失败')
   }
 }
 
@@ -110,9 +120,9 @@ async function deleteProject(id: number) {
     await projectApi.delete(id)
     ElMessage.success('删除成功')
     fetchData()
-  } catch (error) {
+  } catch (error: any) {
     if (error !== 'cancel') {
-      ElMessage.error('删除失败')
+      ElMessage.error(error?.response?.data?.message || '删除失败')
     }
   }
 }

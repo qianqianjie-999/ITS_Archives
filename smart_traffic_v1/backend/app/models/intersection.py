@@ -8,7 +8,7 @@ class Intersection(db.Model):
     __tablename__ = 'intersection'
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    name: Mapped[str] = mapped_column(String(100), nullable=False)
+    name: Mapped[str] = mapped_column(String(100), nullable=False, unique=True)
     type: Mapped[Optional[str]] = mapped_column(Enum('十字路口', '丁字路口', '行人过街', '其他', name='intersection_type'))
     east_west_road: Mapped[Optional[str]] = mapped_column(String(100))
     north_south_road: Mapped[Optional[str]] = mapped_column(String(100))
@@ -109,6 +109,8 @@ class TrafficLight(db.Model):
         return {
             'id': self.id,
             'intersection_id': self.intersection_id,
+            'intersection_name': self.intersection.name if self.intersection else None,
+            'intersection_type': self.intersection.type if self.intersection else None,
             'project_id': self.project_id,
             'project_name': self.project.name if self.project else None,
             'acceptance_date': self.project.acceptance_date.isoformat() if self.project and self.project.acceptance_date else None,
@@ -126,8 +128,8 @@ class TrafficLight(db.Model):
             'radar_count': self.radar_count,
             'guide_screen_count': self.guide_screen_count,
             'power_source': self.power_source,
-            'construction_unit': self.project.construction_unit if self.project else None,
-            'construction_company': self.project.builder if self.project else None
+            'construction_unit': self.project.builder if self.project else None,
+            'construction_company': self.project.construction_unit if self.project else None
         }
 
 
@@ -173,6 +175,8 @@ class ElectronicPolice(db.Model):
         return {
             'id': self.id,
             'intersection_id': self.intersection_id,
+            'intersection_name': self.intersection.name if self.intersection else None,
+            'intersection_type': self.intersection.type if self.intersection else None,
             'project_id': self.project_id,
             'project_name': self.project.name if self.project else None,
             'acceptance_date': self.project.acceptance_date.isoformat() if self.project and self.project.acceptance_date else None,
@@ -188,6 +192,6 @@ class ElectronicPolice(db.Model):
             'ptz_count': self.ptz_count,
             'signal_detector_count': self.signal_detector_count,
             'network_source': self.network_source,
-            'construction_unit': self.project.construction_unit if self.project else None,
-            'construction_company': self.project.builder if self.project else None
+            'construction_unit': self.project.builder if self.project else None,
+            'construction_company': self.project.construction_unit if self.project else None
         }

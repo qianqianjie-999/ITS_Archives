@@ -3,6 +3,7 @@ from flask_restx import Namespace, Resource, fields
 from ..extensions import db
 from ..models.intersection import Intersection, TrafficLight, ElectronicPolice
 from ..models.project import Project
+from ..utils.decorators import token_required, role_required
 from datetime import date
 
 ns = Namespace('intersections', description='路口管理')
@@ -72,6 +73,8 @@ class IntersectionList(Resource):
             result.append(data)
         return result
 
+    @token_required
+    @role_required('admin', 'editor')
     @ns.expect(intersection_model)
     def post(self):
         data = request.json
@@ -101,12 +104,14 @@ class IntersectionDetail(Resource):
             'electronic_polices': [ep.to_dict() for ep in electronic_polices]
         }
 
+    @token_required
+    @role_required('admin', 'editor')
     @ns.expect(intersection_model)
     def put(self, intersection_id):
         intersection = db.session.query(Intersection).get(intersection_id)
         if not intersection:
             return {'status': 'error', 'message': '路口不存在'}, 404
-        
+
         data = request.json
         if 'name' in data:
             intersection.name = data['name']
@@ -116,15 +121,17 @@ class IntersectionDetail(Resource):
             intersection.east_west_road = data['east_west_road']
         if 'north_south_road' in data:
             intersection.north_south_road = data['north_south_road']
-        
+
         db.session.commit()
         return {'status': 'success', 'data': intersection.to_dict()}
 
+    @token_required
+    @role_required('admin')
     def delete(self, intersection_id):
         intersection = db.session.query(Intersection).get(intersection_id)
         if not intersection:
             return {'status': 'error', 'message': '路口不存在'}, 404
-        
+
         db.session.delete(intersection)
         db.session.commit()
         return {'status': 'success', 'message': '删除成功'}
@@ -143,6 +150,8 @@ class ElectronicPoliceListAll(Resource):
 
 @ns.route('/<int:intersection_id>/traffic-light')
 class TrafficLightCreate(Resource):
+    @token_required
+    @role_required('admin', 'editor')
     @ns.expect(traffic_light_model)
     def post(self, intersection_id):
         intersection = db.session.query(Intersection).get(intersection_id)
@@ -163,9 +172,7 @@ class TrafficLightCreate(Resource):
             pedestrian_count=data.get('pedestrian_count', 0),
             radar_count=data.get('radar_count', 0),
             guide_screen_count=data.get('guide_screen_count', 0),
-            power_source=data.get('power_source', ''),
-            construction_unit=data.get('construction_unit', ''),
-            construction_company=data.get('construction_company', '')
+            power_source=data.get('power_source', '')
         )
         db.session.add(traffic_light)
         db.session.commit()
@@ -173,6 +180,8 @@ class TrafficLightCreate(Resource):
 
 @ns.route('/<int:intersection_id>/traffic-light/<int:tl_id>')
 class TrafficLightUpdate(Resource):
+    @token_required
+    @role_required('admin', 'editor')
     @ns.expect(traffic_light_model)
     def put(self, intersection_id, tl_id):
         traffic_light = db.session.query(TrafficLight).filter_by(id=tl_id, intersection_id=intersection_id).first()
@@ -182,13 +191,15 @@ class TrafficLightUpdate(Resource):
         data = request.json
         for key in ['project_name', 'signal_type', 'signal_count', 'left_arrow_count', 'straight_arrow_count',
                     'right_arrow_count', 'full_screen_count', 'non_motor_count', 'pedestrian_count',
-                    'radar_count', 'guide_screen_count', 'power_source', 'construction_unit', 'construction_company']:
+                    'radar_count', 'guide_screen_count', 'power_source']:
             if key in data:
                 setattr(traffic_light, key, data[key])
 
         db.session.commit()
         return {'status': 'success', 'data': traffic_light.to_dict()}
 
+    @token_required
+    @role_required('admin')
     def delete(self, intersection_id, tl_id):
         traffic_light = db.session.query(TrafficLight).filter_by(id=tl_id, intersection_id=intersection_id).first()
         if not traffic_light:
@@ -200,6 +211,8 @@ class TrafficLightUpdate(Resource):
 
 @ns.route('/<int:intersection_id>/electronic-police')
 class ElectronicPoliceCreate(Resource):
+    @token_required
+    @role_required('admin', 'editor')
     @ns.expect(electronic_police_model)
     def post(self, intersection_id):
         intersection = db.session.query(Intersection).get(intersection_id)
@@ -218,9 +231,7 @@ class ElectronicPoliceCreate(Resource):
             strobe_light_count=data.get('strobe_light_count', 0),
             ptz_count=data.get('ptz_count', 0),
             signal_detector_count=data.get('signal_detector_count', 0),
-            network_source=data.get('network_source', ''),
-            construction_unit=data.get('construction_unit', ''),
-            construction_company=data.get('construction_company', '')
+            network_source=data.get('network_source', '')
         )
         db.session.add(ep)
         db.session.commit()
@@ -228,6 +239,8 @@ class ElectronicPoliceCreate(Resource):
 
 @ns.route('/<int:intersection_id>/electronic-police/<int:ep_id>')
 class ElectronicPoliceUpdate(Resource):
+    @token_required
+    @role_required('admin', 'editor')
     @ns.expect(electronic_police_model)
     def put(self, intersection_id, ep_id):
         ep = db.session.query(ElectronicPolice).filter_by(id=ep_id, intersection_id=intersection_id).first()
@@ -239,14 +252,15 @@ class ElectronicPoliceUpdate(Resource):
             ep.project_id = data['project_id']
         for key in ['capture_type', 'terminal_server_count', 'forward_capture_count',
                     'reverse_capture_count', 'led_light_count', 'strobe_light_count',
-                    'ptz_count', 'signal_detector_count', 'network_source',
-                    'construction_unit', 'construction_company']:
+                    'ptz_count', 'signal_detector_count', 'network_source']:
             if key in data:
                 setattr(ep, key, data[key])
 
         db.session.commit()
         return {'status': 'success', 'data': ep.to_dict()}
 
+    @token_required
+    @role_required('admin')
     def delete(self, intersection_id, ep_id):
         ep = db.session.query(ElectronicPolice).filter_by(id=ep_id, intersection_id=intersection_id).first()
         if not ep:
@@ -258,6 +272,8 @@ class ElectronicPoliceUpdate(Resource):
 
 @ns.route('/<int:intersection_id>/extend-warranty')
 class ExtendWarranty(Resource):
+    @token_required
+    @role_required('admin', 'editor')
     def post(self, intersection_id):
         intersection = db.session.query(Intersection).get(intersection_id)
         if not intersection:
@@ -265,35 +281,41 @@ class ExtendWarranty(Resource):
 
         data = request.json
         device_type = data.get('device_type', 'both')
-        project_name = data.get('project_name', f'质保延期项目_{intersection.name}')
+        project_id = data.get('project_id')
         warranty_expire_date = date.fromisoformat(data['warranty_expire_date'])
-        
-        project = Project(
-            name=project_name,
-            acceptance_date=date.today(),
-            warranty_expire_date=warranty_expire_date
-        )
-        db.session.add(project)
-        db.session.flush()
-        
+
+        if project_id:
+            project = db.session.query(Project).get(project_id)
+            if not project:
+                return {'status': 'error', 'message': '项目不存在'}, 404
+        else:
+            project_name = data.get('project_name', f'质保延期项目_{intersection.name}')
+            project = Project(
+                name=project_name,
+                acceptance_date=date.today(),
+                warranty_expire_date=warranty_expire_date
+            )
+            db.session.add(project)
+            db.session.flush()
+
         updated_count = 0
-        
+
         if device_type in ['traffic_light', 'both']:
             traffic_lights = db.session.query(TrafficLight).filter_by(intersection_id=intersection_id).all()
             for tl in traffic_lights:
                 tl.extended_warranty_expire_date = warranty_expire_date
                 updated_count += 1
-        
+
         if device_type in ['electronic_police', 'both']:
             electronic_polices = db.session.query(ElectronicPolice).filter_by(intersection_id=intersection_id).all()
             for ep in electronic_polices:
                 ep.extended_warranty_expire_date = warranty_expire_date
                 updated_count += 1
-        
+
         if updated_count == 0:
             db.session.rollback()
             return {'status': 'error', 'message': '没有可延期的设备'}, 400
-        
+
         from ..models.warranty_extension import WarrantyExtension
         extension = WarrantyExtension(
             facility_type='intersection',
@@ -302,7 +324,7 @@ class ExtendWarranty(Resource):
             extension_date=date.today()
         )
         db.session.add(extension)
-        
+
         db.session.commit()
-        
+
         return {'status': 'success', 'project_id': project.id, 'message': f'已为{updated_count}个设备申请质保延期'}

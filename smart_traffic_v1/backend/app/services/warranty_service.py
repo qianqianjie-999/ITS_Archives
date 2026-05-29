@@ -2,7 +2,7 @@ from datetime import date
 from typing import List, Dict, Optional
 from ..extensions import db
 from ..models.intersection import Intersection, TrafficLight, ElectronicPolice
-from ..models.point import Point, ParkingEnforcement, Checkpoint
+from ..models.point import ParkingEnforcementPoint, CheckpointPoint, ParkingEnforcement, Checkpoint
 from ..models.project import Project
 from ..models.backend_device import BackendDevice
 from ..models.warranty_extension import WarrantyExtension
@@ -45,22 +45,21 @@ class WarrantyService:
         }
 
     @staticmethod
-    def get_point_warranty_status(point_id: int) -> Dict:
-        point = db.session.query(Point).get(point_id)
+    def get_point_warranty_status(point_id: int, point_type: str = 'parking_enforcement') -> Dict:
+        model_cls = ParkingEnforcementPoint if point_type == 'parking_enforcement' else CheckpointPoint
+        point = db.session.query(model_cls).get(point_id)
         if not point:
             return None
 
         expire_dates = []
 
-        parking_enforcements = db.session.query(ParkingEnforcement).filter_by(point_id=point_id).all()
-        for pe in parking_enforcements:
-            if pe.project and pe.project.warranty_expire_date:
-                expire_dates.append(pe.project.warranty_expire_date)
-
-        checkpoints = db.session.query(Checkpoint).filter_by(point_id=point_id).all()
-        for cp in checkpoints:
-            if cp.project and cp.project.warranty_expire_date:
-                expire_dates.append(cp.project.warranty_expire_date)
+        if point_type == 'parking_enforcement':
+            devices = db.session.query(ParkingEnforcement).filter_by(point_id=point_id).all()
+        else:
+            devices = db.session.query(Checkpoint).filter_by(point_id=point_id).all()
+        for d in devices:
+            if d.project and d.project.warranty_expire_date:
+                expire_dates.append(d.project.warranty_expire_date)
 
         extensions = db.session.query(WarrantyExtension).filter_by(
             facility_type='point',

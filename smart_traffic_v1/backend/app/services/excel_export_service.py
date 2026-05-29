@@ -6,7 +6,7 @@ from openpyxl.utils import get_column_letter
 from flask import send_file
 from ..extensions import db
 from ..models.intersection import Intersection, TrafficLight, ElectronicPolice
-from ..models.point import Point, ParkingEnforcement, Checkpoint
+from ..models.point import ParkingEnforcementPoint, CheckpointPoint, ParkingEnforcement, Checkpoint
 from ..models.project import Project
 from ..models.backend_device import BackendDevice
 
@@ -22,7 +22,7 @@ class ExcelExportService:
                 'warranty_period': '',
                 'warranty_expire_date': '',
                 'builder': '',
-                'constructor': ''
+                'construction_unit': ''
             }
         return {
             'name': project.name or '',
@@ -30,7 +30,7 @@ class ExcelExportService:
             'warranty_period': project.warranty_period or '',
             'warranty_expire_date': project.warranty_expire_date.isoformat() if project.warranty_expire_date else '',
             'builder': project.builder or '',
-            'constructor': project.constructor or ''
+            'construction_unit': project.construction_unit or ''
         }
 
     @staticmethod
@@ -53,8 +53,9 @@ class ExcelExportService:
         return intersection.name if intersection else ''
 
     @staticmethod
-    def _get_point_info(point_id):
-        point = db.session.query(Point).get(point_id)
+    def _get_point_info(point_id, table='parking_enforcement'):
+        model_cls = ParkingEnforcementPoint if table == 'parking_enforcement' else CheckpointPoint
+        point = db.session.query(model_cls).get(point_id)
         if not point:
             return {'name': '', 'area': '', 'type': ''}
         return {
@@ -133,7 +134,7 @@ class ExcelExportService:
             '路口名称', '路口类型', '归属项目', '项目验收日期', '项目质保期',
             '项目质保到期时间', '质保状态', '建设单位', '施工单位',
             '抓拍类型', '终端服务器数量', '正向抓拍数量', '反向抓拍数量',
-            'LED灯', '爆闪灯', '监控球机数量', '信号灯检测器数量', '取网说明'
+            'LED灯', '爆闪灯', '监控球机数量', '信号检测器数量', '取网说明'
         ]
         ws.append(headers)
         ws.append(['', '', '', '', '', '', '', '', '', '', 0, 0, 0, 0, 0, 0, 0, ''])
@@ -212,7 +213,7 @@ class ExcelExportService:
                     project_info['warranty_expire_date'],
                     warranty_status,
                     project_info['builder'],
-                    project_info['constructor'],
+                    project_info['construction_unit'],
                     tl.signal_type or '',
                     tl.signal_count or 0,
                     tl.left_arrow_count or 0,
@@ -236,7 +237,7 @@ class ExcelExportService:
             '路口名称', '路口类型', '归属项目', '项目验收日期', '项目质保期',
             '项目质保到期时间', '质保状态', '建设单位', '施工单位',
             '抓拍类型', '终端服务器数量', '正向抓拍数量', '反向抓拍数量',
-            'LED灯', '爆闪灯', '监控球机数量', '信号灯检测器数量', '取网说明'
+            'LED灯', '爆闪灯', '监控球机数量', '信号检测器数量', '取网说明'
         ]
         ws.append(headers)
 
@@ -266,7 +267,7 @@ class ExcelExportService:
                     project_info['warranty_expire_date'],
                     warranty_status,
                     project_info['builder'],
-                    project_info['constructor'],
+                    project_info['construction_unit'],
                     ep.capture_type or '',
                     ep.terminal_server_count or 0,
                     ep.forward_capture_count or 0,
@@ -316,7 +317,7 @@ class ExcelExportService:
                     project_info['warranty_expire_date'],
                     warranty_status,
                     project_info['builder'],
-                    project_info['constructor'],
+                    project_info['construction_unit'],
                     pe.camera_count or 0,
                     pe.parking_sign_count or 0,
                     pe.monitor_sign_count or 0,
@@ -342,7 +343,7 @@ class ExcelExportService:
 
         for cp_type in checkpoint_types:
             type_cps = [cp for cp in cp_list
-                       if ExcelExportService._get_point_info(cp.point_id)['type'] == cp_type]
+                       if ExcelExportService._get_point_info(cp.point_id, 'checkpoint')['type'] == cp_type]
 
             if not type_cps:
                 row = ['', cp_type, '', '', '', '', '无项目', '', '', '', '', '', '', '', '']
@@ -351,7 +352,7 @@ class ExcelExportService:
 
             for cp in type_cps:
                 project_info = ExcelExportService._get_project_info(cp.project_id)
-                point_info = ExcelExportService._get_point_info(cp.point_id)
+                point_info = ExcelExportService._get_point_info(cp.point_id, 'checkpoint')
                 warranty_status = ExcelExportService._get_warranty_status(cp.project_id)
 
                 row = [
@@ -363,7 +364,7 @@ class ExcelExportService:
                     project_info['warranty_expire_date'],
                     warranty_status,
                     project_info['builder'],
-                    project_info['constructor'],
+                    project_info['construction_unit'],
                     cp.camera_count or 0,
                     cp.strobe_light_count or 0,
                     cp.radar_count or 0,
@@ -409,7 +410,7 @@ class ExcelExportService:
                     project_info['warranty_expire_date'],
                     warranty_status,
                     project_info['builder'],
-                    project_info['constructor']
+                    project_info['construction_unit']
                 ]
                 ws.append(row)
 

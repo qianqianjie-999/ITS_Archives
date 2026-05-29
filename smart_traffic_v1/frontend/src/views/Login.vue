@@ -8,7 +8,7 @@
             <div class="logo-circle">
               <el-icon :size="32" color="#1890ff"><MapLocation /></el-icon>
             </div>
-            <h1 class="system-title">智能交通建设档案系统</h1>
+            <h1 class="system-title">汶上县智能交通建设档案系统</h1>
             <p class="system-desc">Intelligent Traffic Construction Archive System</p>
           </div>
         </div>
@@ -61,7 +61,7 @@
         </el-form>
         
         <div class="login-footer">
-          <p>© 2024 智能交通建设档案系统. All rights reserved.</p>
+          <p>© 2024 汶上县智能交通建设档案系统. All rights reserved.</p>
         </div>
       </div>
     </div>
@@ -106,7 +106,7 @@ async function handleLogin() {
     if (valid) {
       loading.value = true
       try {
-        const success = await userStore.login(form.username, form.password)
+        const success = await userStore.login(form.username, form.password, rememberMe.value)
         if (success) {
           ElMessage.success('登录成功')
           router.push('/')

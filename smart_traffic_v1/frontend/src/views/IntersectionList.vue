@@ -8,23 +8,11 @@
         </div>
       </template>
       <el-table :data="intersections" stripe v-loading="loading">
-        <el-table-column prop="id" label="ID" width="80" />
+        <el-table-column type="index" label="序号" width="60" />
         <el-table-column prop="name" label="路口名称" />
         <el-table-column prop="type" label="类型" width="120" />
         <el-table-column prop="east_west_road" label="东西路" />
         <el-table-column prop="north_south_road" label="南北路" />
-        <el-table-column prop="latest_expire_date" label="质保到期" width="120">
-          <template #default="{ row }">
-            {{ row.latest_expire_date || '-' }}
-          </template>
-        </el-table-column>
-        <el-table-column prop="warranty_status" label="状态" width="100">
-          <template #default="{ row }">
-            <el-tag :type="getStatusType(row.warranty_status)">
-              {{ row.warranty_status }}
-            </el-tag>
-          </template>
-        </el-table-column>
         <el-table-column label="操作" width="240">
           <template #default="{ row }">
             <el-button type="primary" size="small" @click="goToDetail(row.id)">
@@ -86,15 +74,6 @@ const editIntersectionForm = reactive<Partial<Intersection>>({
   north_south_road: ''
 })
 
-function getStatusType(status?: string) {
-  switch (status) {
-    case '在保': return 'success'
-    case '过保': return 'danger'
-    case '混合': return 'warning'
-    default: return 'info'
-  }
-}
-
 function goToDetail(id: number) {
   router.push(`/intersections/${id}`)
 }
@@ -124,8 +103,8 @@ async function submitIntersection() {
     editIntersectionForm.east_west_road = ''
     editIntersectionForm.north_south_road = ''
     fetchData()
-  } catch (error) {
-    ElMessage.error('操作失败')
+  } catch (error: any) {
+    ElMessage.error(error?.response?.data?.message || '操作失败')
   }
 }
 
@@ -135,9 +114,9 @@ async function deleteIntersection(id: number) {
     await intersectionApi.delete(id)
     ElMessage.success('删除成功')
     fetchData()
-  } catch (error) {
+  } catch (error: any) {
     if (error !== 'cancel') {
-      ElMessage.error('删除失败')
+      ElMessage.error(error?.response?.data?.message || '删除失败')
     }
   }
 }

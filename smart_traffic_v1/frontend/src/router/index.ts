@@ -82,7 +82,7 @@ const router = createRouter({
 router.beforeEach(async (to, _from, next) => {
   const userStore = useUserStore()
 
-  if (!userStore.token && localStorage.getItem('token')) {
+  if (!userStore.user && (localStorage.getItem('token') || sessionStorage.getItem('token'))) {
     userStore.initFromStorage()
     await userStore.fetchCurrentUser()
   }

@@ -97,7 +97,7 @@
             <el-table-column prop="led_light_count" label="LED灯数量" width="100" />
             <el-table-column prop="strobe_light_count" label="爆闪灯数量" width="100" />
             <el-table-column prop="ptz_count" label="监控球机数量" width="120" />
-            <el-table-column prop="signal_detector_count" label="信号灯检测器数量" width="140" />
+            <el-table-column prop="signal_detector_count" label="信号检测器数量" width="140" />
             <el-table-column prop="network_source" label="取网说明" />
             <el-table-column v-if="userStore.isEditor" label="操作" width="150">
               <template #default="{ row }">
@@ -143,7 +143,7 @@
           <el-table :data="warrantyRecords" stripe>
             <el-table-column prop="project_name" label="项目名称" />
             <el-table-column prop="warranty_expire_date" label="质保到期" />
-            <el-table-column prop="extension_date" label="延期日期" />
+            <el-table-column prop="extension_date" label="开始日期" />
           </el-table>
         </el-tab-pane>
       </el-tabs>
@@ -152,7 +152,9 @@
     <el-dialog v-model="showWarrantyDialog" title="申请质保延期" width="500px">
       <el-form :model="warrantyForm" label-width="100px">
         <el-form-item label="项目名称" required>
-          <el-input v-model="warrantyForm.projectName" placeholder="请输入质保延期项目名称" />
+          <el-select v-model="warrantyForm.project_id" placeholder="请选择项目" filterable style="width: 100%">
+            <el-option v-for="p in projectOptions" :key="p.id" :label="p.name" :value="p.id" />
+          </el-select>
         </el-form-item>
         <el-form-item label="设备类型" required>
           <el-radio-group v-model="warrantyForm.deviceType">
@@ -300,7 +302,7 @@
             </el-form-item>
           </el-col>
         </el-row>
-        <el-form-item label="信号灯检测器数量">
+        <el-form-item label="信号检测器数量">
           <el-input-number v-model="electronicPoliceForm.signal_detector_count" :min="0" />
         </el-form-item>
         <el-form-item label="取网说明">
@@ -357,7 +359,7 @@ interface ProjectOption {
 const projectOptions = ref<ProjectOption[]>([])
 
 const warrantyForm = reactive({
-  projectName: '',
+  project_id: undefined as number | undefined,
   deviceType: 'both',
   expireDate: ''
 })
@@ -439,8 +441,8 @@ async function submitTrafficLight() {
     showTrafficLightDialog.value = false
     resetTrafficLightForm()
     fetchData()
-  } catch (error) {
-    ElMessage.error('操作失败')
+  } catch (error: any) {
+    ElMessage.error(error?.response?.data?.message || '操作失败')
   }
 }
 
@@ -450,9 +452,9 @@ async function deleteTrafficLight(id: number) {
     await intersectionApi.deleteTrafficLight(Number(route.params.id), id)
     ElMessage.success('删除成功')
     fetchData()
-  } catch (error) {
+  } catch (error: any) {
     if (error !== 'cancel') {
-      ElMessage.error('删除失败')
+      ElMessage.error(error?.response?.data?.message || '删除失败')
     }
   }
 }
@@ -508,8 +510,8 @@ async function submitElectronicPolice() {
     showElectronicPoliceDialog.value = false
     resetElectronicPoliceForm()
     fetchData()
-  } catch (error) {
-    ElMessage.error('操作失败')
+  } catch (error: any) {
+    ElMessage.error(error?.response?.data?.message || '操作失败')
   }
 }
 
@@ -519,9 +521,22 @@ async function deleteElectronicPolice(id: number) {
     await intersectionApi.deleteElectronicPolice(Number(route.params.id), id)
     ElMessage.success('删除成功')
     fetchData()
-  } catch (error) {
+  } catch (error: any) {
     if (error !== 'cancel') {
-      ElMessage.error('删除失败')
+      ElMessage.error(error?.response?.data?.message || '删除失败')
+    }
+  }
+}
+
+async function deleteAttachment(id: number) {
+  try {
+    await ElMessageBox.confirm('确定要删除该附件吗？', '警告', { type: 'warning' })
+    await attachmentApi.delete(id)
+    ElMessage.success('删除成功')
+    fetchAttachments()
+  } catch (error: any) {
+    if (error !== 'cancel') {
+      ElMessage.error(error?.response?.data?.message || '删除失败')
     }
   }
 }
@@ -577,18 +592,6 @@ async function downloadAttachment(id: number) {
   }
 }
 
-async function deleteAttachment(id: number) {
-  try {
-    await ElMessageBox.confirm('确定要删除该附件吗？', '警告', { type: 'warning' })
-    await attachmentApi.delete(id)
-    ElMessage.success('删除成功')
-    fetchAttachments()
-  } catch (error) {
-    if (error !== 'cancel') {
-      ElMessage.error('删除失败')
-    }
-  }
-}
 
 function formatFileSize(bytes: number): string {
   if (bytes < 1024) return bytes + ' B'
@@ -622,19 +625,19 @@ async function fetchWarrantyRecords() {
 
 async function submitWarranty() {
   try {
-    if (!warrantyForm.projectName || !warrantyForm.expireDate) {
+    if (!warrantyForm.project_id || !warrantyForm.expireDate) {
       ElMessage.warning('请填写完整信息')
       return
     }
     await intersectionApi.extendWarranty(
       Number(route.params.id),
-      warrantyForm.projectName,
+      warrantyForm.project_id,
       warrantyForm.deviceType,
       warrantyForm.expireDate
     )
     ElMessage.success('申请成功')
     showWarrantyDialog.value = false
-    warrantyForm.projectName = ''
+    warrantyForm.project_id = undefined
     warrantyForm.deviceType = 'both'
     warrantyForm.expireDate = ''
     await fetchWarrantyRecords()

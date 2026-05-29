@@ -5,7 +5,7 @@ from typing import List
 from flask import send_file
 from ..extensions import db
 from ..models.intersection import Intersection, TrafficLight, ElectronicPolice
-from ..models.point import Point, ParkingEnforcement, Checkpoint
+from ..models.point import ParkingEnforcementPoint, CheckpointPoint, ParkingEnforcement, Checkpoint
 from ..models.project import Project
 
 
@@ -40,33 +40,43 @@ class ExportService:
         )
 
     @staticmethod
-    def export_points() -> io.BytesIO:
-        points = db.session.query(Point).order_by(Point.id).all()
+    def export_parking_enforcement_points() -> io.BytesIO:
+        points = db.session.query(ParkingEnforcementPoint).order_by(ParkingEnforcementPoint.id).all()
 
         output = io.StringIO()
         writer = csv.writer(output)
 
-        writer.writerow(['ID', '名称', '区域', '类型', '最新质保到期', '状态'])
-
-        from ..services.warranty_service import WarrantyService
+        writer.writerow(['ID', '点位名称', '抓拍区域', '安装位置'])
 
         for p in points:
-            status = WarrantyService.get_point_warranty_status(p.id)
-            writer.writerow([
-                p.id,
-                p.name,
-                p.area or '',
-                p.type or '',
-                status.get('latest_expire_date', '') if status else '',
-                status.get('status', '') if status else ''
-            ])
+            writer.writerow([p.id, p.name, p.area or '', p.type or ''])
 
         output.seek(0)
         return send_file(
             io.BytesIO(output.getvalue().encode('utf-8-sig')),
             mimetype='text/csv',
             as_attachment=True,
-            download_name=f'points_export_{date.today()}.csv'
+            download_name=f'parking_enforcement_points_{date.today()}.csv'
+        )
+
+    @staticmethod
+    def export_checkpoint_points() -> io.BytesIO:
+        points = db.session.query(CheckpointPoint).order_by(CheckpointPoint.id).all()
+
+        output = io.StringIO()
+        writer = csv.writer(output)
+
+        writer.writerow(['ID', '点位名称', '卡口类型', '安装位置'])
+
+        for p in points:
+            writer.writerow([p.id, p.name, p.area or '', p.type or ''])
+
+        output.seek(0)
+        return send_file(
+            io.BytesIO(output.getvalue().encode('utf-8-sig')),
+            mimetype='text/csv',
+            as_attachment=True,
+            download_name=f'checkpoint_points_{date.today()}.csv'
         )
 
     @staticmethod
@@ -87,7 +97,7 @@ class ExportService:
                 p.warranty_period or '',
                 p.warranty_expire_date.isoformat() if p.warranty_expire_date else '',
                 p.builder or '',
-                p.constructor or ''
+                p.construction_unit or ''
             ])
 
         output.seek(0)

@@ -8,7 +8,7 @@
         </div>
       </template>
       <el-table :data="backendDevices" stripe v-loading="loading">
-        <el-table-column prop="id" label="ID" width="80" />
+        <el-table-column type="index" label="序号" width="60" />
         <el-table-column prop="name" label="设备名称" />
         <el-table-column prop="type" label="设备类型" width="140" />
         <el-table-column prop="project_name" label="归属项目" />
@@ -48,12 +48,6 @@
             <el-option v-for="p in projects" :key="p.id" :label="p.name" :value="p.id" />
           </el-select>
         </el-form-item>
-        <el-form-item label="建设单位">
-          <el-input v-model="editForm.construction_unit" />
-        </el-form-item>
-        <el-form-item label="施工单位">
-          <el-input v-model="editForm.construction_company" />
-        </el-form-item>
       </el-form>
       <template #footer>
         <el-button @click="showDialog = false">取消</el-button>
@@ -67,7 +61,7 @@
 import { ref, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { useUserStore } from '@/stores/user'
-import { pointApi } from '@/api/points'
+import { backendDeviceApi } from '@/api/points'
 import { projectApi } from '@/api/projects'
 import type { BackendDevice, Project } from '@/types'
 
@@ -93,15 +87,13 @@ const editForm = ref<any>({
   id: undefined,
   project_id: undefined,
   name: '',
-  type: '',
-  construction_unit: '',
-  construction_company: ''
+  type: ''
 })
 
 async function fetchData() {
   loading.value = true
   try {
-    backendDevices.value = await pointApi.listBackendDevices() as unknown as BackendDevice[]
+    backendDevices.value = await backendDeviceApi.list() as any
   } catch (error) {
     ElMessage.error('获取后端设备列表失败')
   } finally {
@@ -123,18 +115,14 @@ function openDialog(row?: BackendDevice) {
       id: row.id,
       project_id: row.project_id,
       name: row.name,
-      type: row.type,
-      construction_unit: row.construction_unit,
-      construction_company: row.construction_company
+      type: row.type
     }
   } else {
     editForm.value = {
       id: undefined,
       project_id: undefined,
       name: '',
-      type: '',
-      construction_unit: '',
-      construction_company: ''
+      type: ''
     }
   }
   showDialog.value = true
@@ -149,22 +137,20 @@ async function submitBackendDevice() {
     const data = {
       name: editForm.value.name,
       type: editForm.value.type,
-      construction_unit: editForm.value.construction_unit,
-      construction_company: editForm.value.construction_company,
       project_id: editForm.value.project_id
     }
     
     if (editForm.value.id) {
-      await pointApi.updateBackendDevice(0, editForm.value.id, data)
+      await backendDeviceApi.update(editForm.value.id, data)
       ElMessage.success('更新成功')
     } else {
-      await pointApi.createBackendDevice(0, data)
+      await backendDeviceApi.create(data)
       ElMessage.success('创建成功')
     }
     showDialog.value = false
     fetchData()
-  } catch (error) {
-    ElMessage.error('操作失败')
+  } catch (error: any) {
+    ElMessage.error(error?.response?.data?.message || '操作失败')
   }
 }
 
@@ -173,12 +159,12 @@ async function deleteBackendDevice(id: number) {
     await ElMessageBox.confirm('确定要删除这条后端设备记录吗?', '提示', {
       type: 'warning'
     })
-    await pointApi.deleteBackendDevice(0, id)
+    await backendDeviceApi.delete(id)
     ElMessage.success('删除成功')
     fetchData()
-  } catch (error) {
+  } catch (error: any) {
     if (error !== 'cancel') {
-      ElMessage.error('删除失败')
+      ElMessage.error(error?.response?.data?.message || '删除失败')
     }
   }
 }

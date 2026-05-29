@@ -3,7 +3,7 @@ from datetime import datetime
 from openpyxl import load_workbook
 from ..extensions import db
 from ..models.intersection import Intersection, TrafficLight, ElectronicPolice
-from ..models.point import Point, ParkingEnforcement, Checkpoint
+from ..models.point import ParkingEnforcementPoint, CheckpointPoint, ParkingEnforcement, Checkpoint
 from ..models.project import Project
 
 
@@ -16,8 +16,12 @@ class ExcelImportService:
 
         if import_type == 'intersection':
             count, errors = ExcelImportService._import_intersections(wb)
-        elif import_type == 'point':
-            count, errors = ExcelImportService._import_points(wb)
+        elif import_type == 'parking_point':
+            c1, e1 = ExcelImportService._import_parking_enforcement_points(wb)
+            count, errors = c1, e1
+        elif import_type == 'checkpoint_point':
+            c1, e1 = ExcelImportService._import_checkpoint_points(wb)
+            count, errors = c1, e1
         elif import_type == 'project':
             count, errors = ExcelImportService._import_projects(wb)
         elif import_type == 'device':
@@ -76,7 +80,7 @@ class ExcelImportService:
                 if builder_idx >= 0:
                     project.builder = row[builder_idx]
                 if constructor_idx >= 0:
-                    project.constructor = row[constructor_idx]
+                    project.construction_unit = row[constructor_idx]
 
                 db.session.add(project)
                 db.session.commit()
@@ -130,20 +134,21 @@ class ExcelImportService:
         return count, errors
 
     @staticmethod
-    def _import_points(wb) -> tuple:
+    def _import_parking_enforcement_points(wb) -> tuple:
         count = 0
         errors = []
 
-        if '点位' not in wb.sheetnames:
-            errors.append('未找到"点位"工作表')
+        sheet_name = '违停点位' if '违停点位' in wb.sheetnames else '点位'
+        if sheet_name not in wb.sheetnames:
+            errors.append('未找到"违停点位"工作表')
             return count, errors
 
-        ws = wb['点位']
+        ws = wb[sheet_name]
         headers = [cell.value for cell in ws[1]]
 
         name_idx = headers.index('点位名称') if '点位名称' in headers else -1
-        area_idx = headers.index('所属区域') if '所属区域' in headers else -1
-        type_idx = headers.index('点位类型') if '点位类型' in headers else -1
+        area_idx = headers.index('抓拍区域') if '抓拍区域' in headers else -1
+        type_idx = headers.index('安装位置') if '安装位置' in headers else -1
 
         for row_idx, row in enumerate(ws.iter_rows(min_row=2, values_only=True), start=2):
             if not row[0]:
@@ -154,11 +159,56 @@ class ExcelImportService:
                 if not point_name:
                     continue
 
-                existing = db.session.query(Point).filter_by(name=point_name).first()
+                existing = db.session.query(ParkingEnforcementPoint).filter_by(name=point_name).first()
                 if existing:
                     continue
 
-                point = Point()
+                point = ParkingEnforcementPoint()
+                point.name = point_name
+                if area_idx >= 0:
+                    point.area = row[area_idx]
+                if type_idx >= 0:
+                    point.type = row[type_idx]
+
+                db.session.add(point)
+                db.session.commit()
+                count += 1
+            except Exception as e:
+                db.session.rollback()
+                errors.append(f'第{row_idx}行导入失败: {str(e)}')
+
+        return count, errors
+
+    @staticmethod
+    def _import_checkpoint_points(wb) -> tuple:
+        count = 0
+        errors = []
+
+        sheet_name = '卡口点位' if '卡口点位' in wb.sheetnames else '点位'
+        if sheet_name not in wb.sheetnames:
+            return count, errors
+
+        ws = wb[sheet_name]
+        headers = [cell.value for cell in ws[1]]
+
+        name_idx = headers.index('点位名称') if '点位名称' in headers else -1
+        area_idx = headers.index('卡口类型') if '卡口类型' in headers else -1
+        type_idx = headers.index('安装位置') if '安装位置' in headers else -1
+
+        for row_idx, row in enumerate(ws.iter_rows(min_row=2, values_only=True), start=2):
+            if not row[0]:
+                continue
+
+            try:
+                point_name = row[name_idx] if name_idx >= 0 else None
+                if not point_name:
+                    continue
+
+                existing = db.session.query(CheckpointPoint).filter_by(name=point_name).first()
+                if existing:
+                    continue
+
+                point = CheckpointPoint()
                 point.name = point_name
                 if area_idx >= 0:
                     point.area = row[area_idx]
@@ -296,7 +346,7 @@ class ExcelImportService:
         led_idx = headers.index('LED灯') if 'LED灯' in headers else -1
         strobe_idx = headers.index('爆闪灯') if '爆闪灯' in headers else -1
         ptz_idx = headers.index('监控球机数量') if '监控球机数量' in headers else -1
-        detector_idx = headers.index('信号灯检测器数量') if '信号灯检测器数量' in headers else -1
+        detector_idx = headers.index('信号检测器数量') if '信号检测器数量' in headers else -1
         network_idx = headers.index('取网说明') if '取网说明' in headers else -1
 
         for row_idx, row in enumerate(ws.iter_rows(min_row=2, values_only=True), start=2):
@@ -374,11 +424,11 @@ class ExcelImportService:
                 if not point_name or not project_name:
                     continue
 
-                point = db.session.query(Point).filter_by(name=point_name).first()
+                point = db.session.query(ParkingEnforcementPoint).filter_by(name=point_name).first()
                 project = db.session.query(Project).filter_by(name=project_name).first()
 
                 if not point or not project:
-                    errors.append(f'第{row_idx}行: 未找到点位或项目')
+                    errors.append(f'第{row_idx}行: 未找到违停点位或项目')
                     continue
 
                 pe = ParkingEnforcement()
@@ -431,11 +481,11 @@ class ExcelImportService:
                 if not point_name or not project_name:
                     continue
 
-                point = db.session.query(Point).filter_by(name=point_name).first()
+                point = db.session.query(CheckpointPoint).filter_by(name=point_name).first()
                 project = db.session.query(Project).filter_by(name=project_name).first()
 
                 if not point or not project:
-                    errors.append(f'第{row_idx}行: 未找到点位或项目')
+                    errors.append(f'第{row_idx}行: 未找到卡口点位或项目')
                     continue
 
                 cp = Checkpoint()

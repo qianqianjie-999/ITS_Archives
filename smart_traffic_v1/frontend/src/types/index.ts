@@ -76,12 +76,30 @@ export interface ElectronicPolice {
     construction_company?: string
 }
 
+export interface ParkingEnforcementPoint {
+    id: number
+    name: string
+    area?: string
+    type?: string
+    status?: string
+    latest_expire_date?: string
+}
+
+export interface CheckpointPoint {
+    id: number
+    name: string
+    area?: string
+    type?: string
+    status?: string
+    latest_expire_date?: string
+}
+
 export interface Point {
     id: number
     name: string
     area?: string
     type?: string
-    warranty_status?: string
+    status?: string
     latest_expire_date?: string
 }
 
@@ -139,14 +157,14 @@ export interface BackendDevice {
     construction_company?: string
 }
 
-export interface Attachment {
+export interface WarrantyExtension {
   id: number
   facility_type: string
   facility_id: number
-  filename: string
-  original_filename: string
-  file_size: number
-  upload_time: string
+  project_id: number
+  project_name?: string
+  warranty_expire_date?: string
+  extension_date?: string
 }
 
 export interface OperationLog {

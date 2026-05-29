@@ -8,13 +8,13 @@ class Project(db.Model):
     __tablename__ = 'project'
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    name: Mapped[str] = mapped_column(String(100), nullable=False)
+    name: Mapped[str] = mapped_column(String(100), nullable=False, unique=True)
     contract_amount: Mapped[Optional[Decimal]] = mapped_column(DECIMAL(15, 2))
     acceptance_date: Mapped[Optional[Date]] = mapped_column(Date)
     warranty_period: Mapped[Optional[str]] = mapped_column(String(50))
     warranty_expire_date: Mapped[Date] = mapped_column(Date, nullable=False)
     builder: Mapped[Optional[str]] = mapped_column(String(100))
-    construction_unit: Mapped[Optional[str]] = mapped_column(String(100))
+    construction_unit: Mapped[Optional[str]] = mapped_column('constructor', String(100))
 
     traffic_lights: Mapped[List["TrafficLight"]] = relationship(back_populates="project", lazy='dynamic')
     electronic_polices: Mapped[List["ElectronicPolice"]] = relationship(back_populates="project", lazy='dynamic')

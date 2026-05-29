@@ -1,10 +1,11 @@
-from flask import request, session
+from flask import request, session, g
 from flask_restx import Namespace, Resource, fields
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 import jwt
 from ..extensions import db
 from ..models.user import User
 from ..config import Config
+from ..utils.decorators import token_required
 
 ns = Namespace('auth', description='认证相关操作')
 
@@ -25,7 +26,7 @@ def generate_token(user_id: int, username: str, role: str) -> str:
         'user_id': user_id,
         'username': username,
         'role': role,
-        'exp': datetime.utcnow() + timedelta(seconds=Config.JWT_ACCESS_TOKEN_EXPIRES)
+        'exp': datetime.now(timezone.utc) + timedelta(seconds=Config.JWT_ACCESS_TOKEN_EXPIRES)
     }
     return jwt.encode(payload, Config.JWT_SECRET_KEY, algorithm='HS256')
 
@@ -43,7 +44,7 @@ class Login(Resource):
         user = db.session.query(User).filter_by(username=username, is_active=True).first()
 
         if user and user.check_password(password):
-            user.last_login = datetime.utcnow()
+            user.last_login = datetime.now(timezone.utc)
             db.session.commit()
 
             token = generate_token(user.id, user.username, user.role)
@@ -59,25 +60,19 @@ class Login(Resource):
 
 @ns.route('/logout')
 class Logout(Resource):
+    @token_required
     def post(self):
         return {'status': 'success'}
 
 
 @ns.route('/current_user')
 class CurrentUser(Resource):
+    @token_required
     def get(self):
-        auth_header = request.headers.get('Authorization')
-        if not auth_header or not auth_header.startswith('Bearer '):
-            return {'status': 'error', 'message': '未登录'}, 401
-
-        token = auth_header.split(' ')[1]
-        try:
-            payload = jwt.decode(token, Config.JWT_SECRET_KEY, algorithms=['HS256'])
-            user = db.session.query(User).get(payload['user_id'])
-            if not user:
-                return {'status': 'error', 'message': '用户不存在'}, 404
-            return {'status': 'success', 'user': user.to_dict()}
-        except jwt.ExpiredSignatureError:
-            return {'status': 'error', 'message': '令牌已过期'}, 401
-        except jwt.InvalidTokenError:
-            return {'status': 'error', 'message': '无效令牌'}, 401
+        user = db.session.query(User).filter_by(id=g.current_user.id, is_active=True).first()
+        if not user:
+            return {'status': 'error', 'message': '用户不存在或已禁用'}, 401
+        return {
+            'status': 'success',
+            'user': user.to_dict()
+        }

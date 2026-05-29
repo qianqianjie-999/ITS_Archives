@@ -1,9 +1,10 @@
-from flask import request, send_from_directory
+from flask import request, send_from_directory, current_app
 from flask_restx import Namespace, Resource, fields
 from ..extensions import db
 from ..models.attachment import Attachment
 from ..models.intersection import Intersection
-from ..models.point import Point
+from ..models.point import ParkingEnforcementPoint, CheckpointPoint
+from ..utils.decorators import token_required, role_required
 import os
 from werkzeug.utils import secure_filename
 
@@ -19,10 +20,11 @@ attachment_model = ns.model('Attachment', {
     'upload_time': fields.String(readonly=True)
 })
 
-UPLOAD_FOLDER = '/tmp/attachments'
 ALLOWED_EXTENSIONS = {'pdf', 'doc', 'docx', 'xls', 'xlsx', 'jpg', 'jpeg', 'png', 'gif'}
 
-os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+
+def _get_upload_folder():
+    return current_app.config['UPLOAD_FOLDER']
 
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
@@ -43,6 +45,8 @@ class AttachmentList(Resource):
 
 @ns.route('/upload')
 class AttachmentUpload(Resource):
+    @token_required
+    @role_required('admin', 'editor')
     def post(self):
         if 'file' not in request.files:
             return {'status': 'error', 'message': '未选择文件'}, 400
@@ -60,8 +64,8 @@ class AttachmentUpload(Resource):
             
             if related_entity_type == 'intersection':
                 facility = db.session.query(Intersection).get(related_entity_id)
-            elif related_entity_type == 'point':
-                facility = db.session.query(Point).get(related_entity_id)
+            elif related_entity_type == 'point' or related_entity_type == 'parking_enforcement':
+                facility = db.session.query(ParkingEnforcementPoint).get(related_entity_id) or db.session.query(CheckpointPoint).get(related_entity_id)
             else:
                 return {'status': 'error', 'message': '无效的实体类型'}, 400
             
@@ -70,7 +74,8 @@ class AttachmentUpload(Resource):
             
             filename = secure_filename(file.filename)
             unique_filename = f"{related_entity_type}_{related_entity_id}_{filename}"
-            file_path = os.path.join(UPLOAD_FOLDER, unique_filename)
+            upload_folder = _get_upload_folder()
+            file_path = os.path.join(upload_folder, unique_filename)
             file.save(file_path)
             
             attachment = Attachment(
@@ -94,19 +99,23 @@ class AttachmentDetail(Resource):
         attachment = db.session.query(Attachment).get(attachment_id)
         if not attachment:
             return {'status': 'error', 'message': '附件不存在'}, 404
-        
-        file_path = os.path.join(UPLOAD_FOLDER, attachment.file_name)
+
+        upload_folder = _get_upload_folder()
+        file_path = os.path.join(upload_folder, attachment.file_name)
         if not os.path.exists(file_path):
             return {'status': 'error', 'message': '文件已删除'}, 404
-        
-        return send_from_directory(UPLOAD_FOLDER, attachment.file_name, as_attachment=True, download_name=attachment.file_name)
 
+        return send_from_directory(upload_folder, attachment.file_name, as_attachment=True, download_name=attachment.file_name)
+
+    @token_required
+    @role_required('admin')
     def delete(self, attachment_id):
         attachment = db.session.query(Attachment).get(attachment_id)
         if not attachment:
             return {'status': 'error', 'message': '附件不存在'}, 404
         
-        file_path = os.path.join(UPLOAD_FOLDER, attachment.file_name)
+        upload_folder = _get_upload_folder()
+        file_path = os.path.join(upload_folder, attachment.file_name)
         if os.path.exists(file_path):
             os.remove(file_path)
         

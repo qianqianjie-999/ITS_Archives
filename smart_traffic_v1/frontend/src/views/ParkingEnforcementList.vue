@@ -8,26 +8,17 @@
         </div>
       </template>
       <el-table :data="points" stripe v-loading="loading">
-        <el-table-column prop="id" label="ID" width="80" />
+        <el-table-column type="index" label="序号" width="60" />
         <el-table-column prop="name" label="点位名称" />
-        <el-table-column prop="area" label="区域" />
-        <el-table-column prop="type" label="类型" width="120" />
-        <el-table-column prop="warranty_status" label="质保状态" width="100">
-          <template #default="{ row }">
-            <el-tag :type="getStatusType(row.warranty_status)">
-              {{ row.warranty_status }}
-            </el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column prop="warranty_expire_date" label="质保到期" width="120">
-          <template #default="{ row }">
-            {{ row.warranty_expire_date || '-' }}
-          </template>
-        </el-table-column>
-        <el-table-column label="操作" width="200">
+        <el-table-column prop="area" label="抓拍区域" />
+        <el-table-column prop="type" label="安装位置" width="120" />
+        <el-table-column label="操作" width="240">
           <template #default="{ row }">
             <el-button type="primary" size="small" @click="goToDetail(row.id)">
               详情
+            </el-button>
+            <el-button v-if="userStore.isEditor" type="success" size="small" @click="editPoint(row)">
+              编辑
             </el-button>
             <el-button v-if="userStore.isEditor" type="danger" size="small" @click="deletePoint(row.id)">
               删除
@@ -42,10 +33,10 @@
         <el-form-item label="点位名称" required>
           <el-input v-model="editPointForm.name" />
         </el-form-item>
-        <el-form-item label="区域">
+        <el-form-item label="抓拍区域">
           <el-input v-model="editPointForm.area" />
         </el-form-item>
-        <el-form-item label="类型">
+        <el-form-item label="安装位置">
           <el-input v-model="editPointForm.type" />
         </el-form-item>
       </el-form>
@@ -63,34 +54,26 @@ import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { pointApi } from '@/api/points'
 import { useUserStore } from '@/stores/user'
-import type { Point } from '@/types'
+import type { ParkingEnforcementPoint } from '@/types'
 
 const router = useRouter()
 const userStore = useUserStore()
-const points = ref<Point[]>([])
+const points = ref<ParkingEnforcementPoint[]>([])
 const loading = ref(false)
 const showDialog = ref(false)
 
-const editPointForm = reactive<Partial<Point>>({
+const editPointForm = reactive<Partial<ParkingEnforcementPoint>>({
   id: undefined,
   name: '',
   area: '',
   type: ''
 })
 
-function getStatusType(status?: string) {
-  switch (status) {
-    case '在保': return 'success'
-    case '过保': return 'danger'
-    default: return 'info'
-  }
-}
-
 function goToDetail(id: number) {
   router.push(`/parking-enforcements/${id}`)
 }
 
-function editPoint(point: Point) {
+function editPoint(point: ParkingEnforcementPoint) {
   editPointForm.id = point.id
   editPointForm.name = point.name
   editPointForm.area = point.area || ''
@@ -115,16 +98,16 @@ function submitPoint() {
       ElMessage.success('编辑成功')
       showDialog.value = false
       loadPoints()
-    }).catch(() => {
-      ElMessage.error('编辑失败')
+    }).catch((err) => {
+      ElMessage.error(err.response?.data?.message || '编辑失败')
     })
   } else {
     pointApi.create(data).then(() => {
       ElMessage.success('新增成功')
       showDialog.value = false
       loadPoints()
-    }).catch(() => {
-      ElMessage.error('新增失败')
+    }).catch((err) => {
+      ElMessage.error(err.response?.data?.message || '新增失败')
     })
   }
 }
@@ -138,8 +121,8 @@ function deletePoint(id: number) {
     pointApi.delete(id).then(() => {
       ElMessage.success('删除成功')
       loadPoints()
-    }).catch(() => {
-      ElMessage.error('删除失败')
+    }).catch((err) => {
+      ElMessage.error(err.response?.data?.message || '删除失败')
     })
   }).catch(() => {})
 }

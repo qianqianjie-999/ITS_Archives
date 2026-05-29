@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from ..extensions import db
 from ..models.user import User
 
@@ -14,7 +14,7 @@ class AuthService:
         if not user.check_password(password):
             return None, '密码错误'
 
-        user.last_login = datetime.utcnow()
+        user.last_login = datetime.now(timezone.utc)
         db.session.commit()
 
         return user, None

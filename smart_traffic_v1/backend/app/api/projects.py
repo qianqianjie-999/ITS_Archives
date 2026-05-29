@@ -2,6 +2,7 @@ from flask import request
 from flask_restx import Namespace, Resource, fields
 from ..extensions import db
 from ..models.project import Project
+from ..utils.decorators import token_required, role_required
 from datetime import date
 
 ns = Namespace('projects', description='项目管理')
@@ -22,9 +23,8 @@ class ProjectList(Resource):
     def get(self):
         facility_type = request.args.get('facility_type')
         facility_id = request.args.get('facility_id', type=int)
-        
+
         if facility_type and facility_id:
-            # 通过WarrantyExtension查询关联的项目
             from ..models.warranty_extension import WarrantyExtension
             extensions = db.session.query(WarrantyExtension).filter_by(
                 facility_type=facility_type,
@@ -34,9 +34,11 @@ class ProjectList(Resource):
             projects = db.session.query(Project).filter(Project.id.in_(project_ids)).all()
         else:
             projects = db.session.query(Project).order_by(Project.id.desc()).all()
-        
+
         return [p.to_dict() for p in projects]
 
+    @token_required
+    @role_required('admin', 'editor')
     @ns.expect(project_model)
     def post(self):
         data = request.json
@@ -61,6 +63,8 @@ class ProjectDetail(Resource):
             return {'status': 'error', 'message': '项目不存在'}, 404
         return project.to_dict()
 
+    @token_required
+    @role_required('admin', 'editor')
     @ns.expect(project_model)
     def put(self, project_id):
         project = db.session.query(Project).get(project_id)
@@ -79,6 +83,8 @@ class ProjectDetail(Resource):
         db.session.commit()
         return {'status': 'success', 'data': project.to_dict()}
 
+    @token_required
+    @role_required('admin')
     def delete(self, project_id):
         project = db.session.query(Project).get(project_id)
         if not project:

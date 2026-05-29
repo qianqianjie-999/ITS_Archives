@@ -40,9 +40,9 @@ export const intersectionApi = {
   deleteElectronicPolice: (intersectionId: number, epId: number) =>
     apiClient.delete(`/intersections/${intersectionId}/electronic-police/${epId}`),
 
-  extendWarranty: (intersectionId: number, projectName: string, deviceType: string, warrantyExpireDate: string) =>
+  extendWarranty: (intersectionId: number, projectId: number, deviceType: string, warrantyExpireDate: string) =>
     apiClient.post(`/intersections/${intersectionId}/extend-warranty`, {
-      project_name: projectName,
+      project_id: projectId,
       device_type: deviceType,
       warranty_expire_date: warrantyExpireDate
     })
