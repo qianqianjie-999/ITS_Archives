@@ -130,6 +130,50 @@
         </div>
       </div>
     </div>
+
+    <div class="content-row">
+      <div class="panel panel-ranking">
+        <div class="panel-header">
+          <h3 class="panel-title">设备服役期限排名</h3>
+        </div>
+        <div class="ranking-list" v-if="serviceRanking.length">
+          <div class="ranking-row" v-for="(item, index) in serviceRanking.slice(0, 6)" :key="item.id">
+            <div class="ranking-num" :class="getRankingClass(index)">{{ index + 1 }}</div>
+            <div class="ranking-info">
+              <span class="ranking-name">{{ item.name }}</span>
+              <span class="ranking-type">{{ item.type }}</span>
+            </div>
+            <div class="ranking-duration">
+              <span class="duration-value">{{ item.duration }}</span>
+              <span class="duration-unit">年</span>
+            </div>
+          </div>
+        </div>
+        <div class="empty-state" v-else>
+          <el-icon :size="40"><Clock /></el-icon>
+          <p>暂无设备服役数据</p>
+        </div>
+      </div>
+
+      <div class="panel panel-projects">
+        <div class="panel-header">
+          <h3 class="panel-title">最近项目</h3>
+        </div>
+        <div class="project-list" v-if="recentProjects.length">
+          <div class="project-row" v-for="p in recentProjects.slice(0, 6)" :key="p.id">
+            <div class="project-info">
+              <span class="project-name">{{ p.name }}</span>
+              <span class="project-date">{{ p.acceptance_date }}</span>
+            </div>
+            <el-tag :type="getProjectTagType(p.warranty_status)" size="small">{{ p.warranty_status }}</el-tag>
+          </div>
+        </div>
+        <div class="empty-state" v-else>
+          <el-icon :size="40"><DocumentAdd /></el-icon>
+          <p>暂无项目数据</p>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -164,6 +208,8 @@ const stats = ref({
 
 const warrantyTotal = ref({ inCoverage: 0, expired: 0, noProject: 0, total: 0 })
 const expiringDevices = ref<any[]>([])
+const serviceRanking = ref<any[]>([])
+const recentProjects = ref<any[]>([])
 
 const statCards = computed(() => {
   const s = stats.value
@@ -263,6 +309,38 @@ function collectExpiring(list: any[], nameField: string, typeLabel: string) {
   })
 }
 
+function collectServiceDuration(list: any[], nameField: string, typeLabel: string) {
+  const today = new Date()
+  list.forEach((item: any) => {
+    const acceptDate = item.acceptance_date || (item.project_info?.acceptance_date)
+    if (!acceptDate) return
+    const d = new Date(acceptDate)
+    if (d > today) return
+    const years = (today.getTime() - d.getTime()) / (1000 * 60 * 60 * 24 * 365)
+    if (years > 0) {
+      serviceRanking.value.push({
+        id: item.id,
+        name: item[nameField] || item.name,
+        type: typeLabel,
+        duration: years.toFixed(1)
+      })
+    }
+  })
+}
+
+function getRankingClass(index: number) {
+  if (index === 0) return 'rank-gold'
+  if (index === 1) return 'rank-silver'
+  if (index === 2) return 'rank-bronze'
+  return ''
+}
+
+function getProjectTagType(status: string) {
+  if (status === '在保') return 'success'
+  if (status === '过保') return 'danger'
+  return 'info'
+}
+
 async function fetchStats() {
   try {
     const [
@@ -283,6 +361,7 @@ async function fetchStats() {
     const pe = (parkingEnforcements as any[]) || []
     const cp = (checkpoints as any[]) || []
     const bd = (backendDevices as any[]) || []
+    const pr = (projects as any[]) || []
 
     stats.value = {
       intersections: (intersections as any[])?.length || 0,
@@ -290,7 +369,7 @@ async function fetchStats() {
       electronicPolices: ep.length,
       parkingEnforcements: pe.length,
       checkpoints: cp.length,
-      projects: (projects as any[])?.length || 0,
+      projects: pr.length,
       backendDevices: bd.length
     }
 
@@ -314,6 +393,20 @@ async function fetchStats() {
     collectExpiring(cp, 'point_name', '卡口')
     collectExpiring(bd, 'name', '后端设备')
     expiringDevices.value.sort((a, b) => (a.expire > b.expire ? 1 : -1))
+
+    serviceRanking.value = []
+    collectServiceDuration(tl, 'intersection_name', '信号灯')
+    collectServiceDuration(ep, 'intersection_name', '电子警察')
+    collectServiceDuration(pe, 'point_name', '违停球')
+    collectServiceDuration(cp, 'point_name', '卡口')
+    collectServiceDuration(bd, 'name', '后端设备')
+    serviceRanking.value.sort((a, b) => (parseFloat(b.duration) - parseFloat(a.duration)))
+
+    recentProjects.value = pr.sort((a: any, b: any) => {
+      const dateA = new Date(a.acceptance_date || a.created_at || 0)
+      const dateB = new Date(b.acceptance_date || b.created_at || 0)
+      return dateB.getTime() - dateA.getTime()
+    })
   } catch (error) {
     console.error('获取统计数据失败', error)
   }
@@ -464,5 +557,37 @@ onMounted(fetchStats)
 .empty-state {
   text-align: center; padding: 30px; color: #8c8c8c;
   p { margin-top: 8px; font-size: 13px; }
+}
+
+.ranking-list, .project-list { max-height: 260px; overflow-y: auto; }
+.ranking-row, .project-row {
+  display: flex; align-items: center; gap: 12px;
+  padding: 10px 0;
+  &:not(:last-child) { border-bottom: 1px solid #f5f5f5; }
+}
+
+.ranking-num {
+  width: 24px; height: 24px;
+  border-radius: 50%;
+  background: #e8e8e8;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 12px; font-weight: 600;
+  color: #8c8c8c;
+  &.rank-gold { background: linear-gradient(135deg, #ffd700, #ffb700); color: #fff; }
+  &.rank-silver { background: linear-gradient(135deg, #c0c0c0, #a8a8a8); color: #fff; }
+  &.rank-bronze { background: linear-gradient(135deg, #cd7f32, #b87333); color: #fff; }
+}
+
+.ranking-info, .project-info { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+.ranking-name, .project-name {
+  font-size: 13px; color: #1a1a2e; font-weight: 500;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.ranking-type, .project-date { font-size: 11px; color: #8c8c8c; }
+
+.ranking-duration {
+  display: flex; align-items: baseline; gap: 2px;
+  .duration-value { font-size: 16px; font-weight: 700; color: #1a1a2e; }
+  .duration-unit { font-size: 11px; color: #8c8c8c; }
 }
 </style>

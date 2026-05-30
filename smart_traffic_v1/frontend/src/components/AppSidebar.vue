@@ -42,6 +42,11 @@
           <el-icon><DataAnalysis /></el-icon>
           <span>统计报表</span>
         </el-menu-item>
+
+        <el-menu-item index="/users">
+          <el-icon><User /></el-icon>
+          <span>用户管理</span>
+        </el-menu-item>
       </el-menu>
     </div>
 
@@ -57,7 +62,7 @@
 import { computed } from 'vue'
 import { useRoute } from 'vue-router'
 import { useUserStore } from '@/stores/user'
-import { House, Folder, Location, ArrowLeft, ArrowRight, Camera, DataAnalysis } from '@element-plus/icons-vue'
+import { House, Folder, Location, ArrowLeft, ArrowRight, Camera, DataAnalysis, User } from '@element-plus/icons-vue'
 
 defineProps<{
   isCollapsed: boolean
@@ -76,6 +81,7 @@ const activeMenu = computed(() => {
   if (path.startsWith('/backend-devices')) return '/backend-devices'
   if (path.startsWith('/projects')) return '/projects'
   if (path.startsWith('/statistics')) return '/statistics'
+  if (path.startsWith('/users')) return '/users'
   return path
 })
 </script>

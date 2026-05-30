@@ -19,6 +19,7 @@ from .attachments import ns as attachments_ns
 from .logs import ns as logs_ns
 from .export import ns as export_ns
 from .import_api import ns as import_ns
+from .users import ns as users_ns
 
 api.add_namespace(auth_ns, path='/auth')
 api.add_namespace(intersections_ns, path='/intersections')
@@ -28,3 +29,4 @@ api.add_namespace(attachments_ns, path='/attachments')
 api.add_namespace(logs_ns, path='/logs')
 api.add_namespace(export_ns, path='/export')
 api.add_namespace(import_ns, path='/import')
+api.add_namespace(users_ns, path='/users')
