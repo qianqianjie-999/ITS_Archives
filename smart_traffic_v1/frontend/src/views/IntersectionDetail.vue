@@ -144,6 +144,11 @@
             <el-table-column prop="project_name" label="项目名称" />
             <el-table-column prop="warranty_expire_date" label="质保到期" />
             <el-table-column prop="extension_date" label="开始日期" />
+            <el-table-column v-if="userStore.isAdmin" label="操作" width="100">
+              <template #default="{ row }">
+                <el-button type="danger" size="small" @click="deleteWarrantyRecord(row.id)">删除</el-button>
+              </template>
+            </el-table-column>
           </el-table>
         </el-tab-pane>
       </el-tabs>
@@ -151,8 +156,8 @@
 
     <el-dialog v-model="showWarrantyDialog" title="申请质保延期" width="500px">
       <el-form :model="warrantyForm" label-width="100px">
-        <el-form-item label="项目名称" required>
-          <el-select v-model="warrantyForm.project_id" placeholder="请选择项目" filterable style="width: 100%">
+        <el-form-item label="归属项目" required>
+          <el-select v-model="warrantyForm.project_id" placeholder="请选择项目" filterable style="width: 100%" @change="onProjectChange">
             <el-option v-for="p in projectOptions" :key="p.id" :label="p.name" :value="p.id" />
           </el-select>
         </el-form-item>
@@ -345,6 +350,7 @@ const showWarrantyDialog = ref(false)
 const fileInputRef = ref<HTMLInputElement | null>(null)
 
 interface WarrantyRecord {
+  id: number
   project_name: string
   acceptance_date: string
   warranty_expire_date: string
@@ -354,6 +360,7 @@ interface WarrantyRecord {
 interface ProjectOption {
   id: number
   name: string
+  warranty_expire_date?: string
 }
 
 const projectOptions = ref<ProjectOption[]>([])
@@ -363,6 +370,13 @@ const warrantyForm = reactive({
   deviceType: 'both',
   expireDate: ''
 })
+
+function onProjectChange(projectId: number) {
+  const project = projectOptions.value.find(p => p.id === projectId)
+  if (project && project.warranty_expire_date) {
+    warrantyForm.expireDate = project.warranty_expire_date
+  }
+}
 
 const trafficLightForm = reactive<Partial<TrafficLight>>({
   id: undefined,
@@ -610,16 +624,24 @@ async function fetchAttachments() {
 
 async function fetchWarrantyRecords() {
   try {
-    const projectApi = await import('@/api/projects')
-    const records = await projectApi.projectApi.getByFacility('intersection', Number(route.params.id)) as unknown as Project[]
-    warrantyRecords.value = records.map((project) => ({
-      project_name: project.name,
-      acceptance_date: project.acceptance_date || '',
-      warranty_expire_date: project.warranty_expire_date,
-      extension_date: project.acceptance_date || ''
-    }))
+    const records = await projectApi.getWarrantyExtensions('intersection', Number(route.params.id)) as unknown as WarrantyRecord[]
+    warrantyRecords.value = records
   } catch (error) {
     console.error('获取质保延期记录失败', error)
+  }
+}
+
+async function deleteWarrantyRecord(id: number) {
+  try {
+    await ElMessageBox.confirm('确定要删除该质保延期记录吗？删除后设备的质保状态将恢复到延期前的状态。', '警告', { type: 'warning' })
+    await projectApi.deleteWarrantyExtension(id)
+    ElMessage.success('删除成功')
+    fetchWarrantyRecords()
+    fetchData()
+  } catch (error: any) {
+    if (error !== 'cancel') {
+      ElMessage.error(error?.response?.data?.message || '删除失败')
+    }
   }
 }
 
@@ -652,7 +674,8 @@ async function fetchProjects() {
     const projects = await projectApi.list() as unknown as Project[]
     projectOptions.value = projects.map(p => ({
       id: p.id,
-      name: p.name
+      name: p.name,
+      warranty_expire_date: p.warranty_expire_date
     }))
   } catch (error) {
     console.error('获取项目列表失败', error)

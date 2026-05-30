@@ -26,30 +26,24 @@ class Intersection(db.Model):
         }
 
     def _get_device_warranty(self, devices):
-        expire_dates = []
-        for device in devices:
-            expire_date = device.effective_warranty_expire_date
-            if expire_date:
-                expire_dates.append(expire_date)
+        if not devices:
+            return {'warranty_status': '无项目', 'latest_expire_date': None}
         
-        if not expire_dates:
+        latest_device = max(devices, key=lambda d: d.id)
+        expire_date = latest_device.effective_warranty_expire_date
+        
+        if not expire_date:
             return {'warranty_status': '无项目', 'latest_expire_date': None}
         
         today = date.today()
-        in_warranty = sum(1 for d in expire_dates if d >= today)
-        expired = sum(1 for d in expire_dates if d < today)
-        
-        if expired == 0:
+        if expire_date >= today:
             status = '在保'
-        elif in_warranty == 0:
-            status = '过保'
         else:
-            status = '混合'
+            status = '过保'
         
-        latest = max(expire_dates)
         return {
             'warranty_status': status,
-            'latest_expire_date': latest.isoformat()
+            'latest_expire_date': expire_date.isoformat()
         }
 
     @property

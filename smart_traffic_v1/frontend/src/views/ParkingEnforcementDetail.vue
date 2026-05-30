@@ -79,16 +79,23 @@
             </el-tag>
           </template>
         </el-table-column>
+        <el-table-column v-if="userStore.isAdmin" label="操作" width="100">
+          <template #default="{ row }">
+            <el-button type="danger" size="small" @click="deleteWarrantyExtension(row.id)">删除</el-button>
+          </template>
+        </el-table-column>
       </el-table>
     </el-card>
 
-    <el-dialog v-model="showExtendWarrantyDialog" title="质保延期" width="450px">
+    <el-dialog v-model="showExtendWarrantyDialog" title="申请质保延期" width="500px">
       <el-form :model="extendWarrantyForm" label-width="100px">
-        <el-form-item label="项目名称" required>
-          <el-input v-model="extendWarrantyForm.project_name" placeholder="请输入质保延期项目名称" />
+        <el-form-item label="归属项目" required>
+          <el-select v-model="extendWarrantyForm.project_id" placeholder="请选择项目" filterable style="width: 100%" @change="onProjectChange">
+            <el-option v-for="p in projects" :key="p.id" :label="p.name" :value="p.id" />
+          </el-select>
         </el-form-item>
-        <el-form-item label="质保到期日期" required>
-          <el-date-picker v-model="extendWarrantyForm.warranty_expire_date" type="date" placeholder="选择日期" value-format="YYYY-MM-DD" style="width:100%" />
+        <el-form-item label="新质保到期" required>
+          <el-date-picker v-model="extendWarrantyForm.warranty_expire_date" type="date" style="width: 100%" value-format="YYYY-MM-DD" />
         </el-form-item>
       </el-form>
       <template #footer>
@@ -151,9 +158,16 @@ const showAddDialog = ref(false)
 const showExtendWarrantyDialog = ref(false)
 
 const extendWarrantyForm = reactive({
-  project_name: '',
+  project_id: undefined as number | undefined,
   warranty_expire_date: ''
 })
+
+function onProjectChange(projectId: number) {
+  const project = projects.value.find(p => p.id === projectId)
+  if (project && project.warranty_expire_date) {
+    extendWarrantyForm.warranty_expire_date = project.warranty_expire_date
+  }
+}
 
 const editForm = reactive<Partial<ParkingEnforcement>>({
   id: undefined,
@@ -263,27 +277,42 @@ function loadData() {
 }
 
 function submitExtendWarranty() {
-  if (!extendWarrantyForm.project_name) {
-    ElMessage.error('请输入项目名称')
+  if (!extendWarrantyForm.project_id) {
+    ElMessage.error('请选择项目')
     return
   }
   if (!extendWarrantyForm.warranty_expire_date) {
-    ElMessage.error('请选择质保到期日期')
+    ElMessage.error('请选择新质保到期日期')
     return
   }
   const pointId = Number(route.params.id)
   pointApi.extendWarranty(pointId, {
-    project_name: extendWarrantyForm.project_name,
+    project_id: extendWarrantyForm.project_id,
     warranty_expire_date: extendWarrantyForm.warranty_expire_date
   }).then(() => {
     ElMessage.success('质保延期成功')
     showExtendWarrantyDialog.value = false
-    extendWarrantyForm.project_name = ''
+    extendWarrantyForm.project_id = undefined
     extendWarrantyForm.warranty_expire_date = ''
     loadData()
   }).catch((err) => {
     ElMessage.error(err.response?.data?.message || '质保延期失败')
   })
+}
+
+function deleteWarrantyExtension(id: number) {
+  ElMessageBox.confirm('确定要删除该质保延期记录吗？删除后设备的质保状态将恢复到延期前的状态。', '警告', {
+    confirmButtonText: '确定',
+    cancelButtonText: '取消',
+    type: 'warning'
+  }).then(() => {
+    projectApi.deleteWarrantyExtension(id).then(() => {
+      ElMessage.success('删除成功')
+      loadData()
+    }).catch((err) => {
+      ElMessage.error(err.response?.data?.message || '删除失败')
+    })
+  }).catch(() => {})
 }
 
 onMounted(() => {

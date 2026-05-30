@@ -25,29 +25,24 @@ class ParkingEnforcementPoint(db.Model):
 
     @property
     def warranty_status(self) -> dict:
-        expire_dates = []
-        for pe in self.parking_enforcements:
-            if pe.effective_warranty_expire_date:
-                expire_dates.append(pe.effective_warranty_expire_date)
+        if not self.parking_enforcements:
+            return {'status': '无项目', 'latest_expire_date': None}
+        
+        latest_pe = max(self.parking_enforcements, key=lambda pe: pe.id)
+        expire_date = latest_pe.effective_warranty_expire_date
 
-        if not expire_dates:
+        if not expire_date:
             return {'status': '无项目', 'latest_expire_date': None}
 
         today = date.today()
-        in_warranty = sum(1 for d in expire_dates if d >= today)
-        expired = sum(1 for d in expire_dates if d < today)
-
-        if expired == 0:
+        if expire_date >= today:
             status = '在保'
-        elif in_warranty == 0:
-            status = '过保'
         else:
-            status = '混合'
+            status = '过保'
 
-        latest = max(expire_dates)
         return {
             'status': status,
-            'latest_expire_date': latest.isoformat()
+            'latest_expire_date': expire_date.isoformat()
         }
 
 
@@ -71,29 +66,24 @@ class CheckpointPoint(db.Model):
 
     @property
     def warranty_status(self) -> dict:
-        expire_dates = []
-        for cp in self.checkpoints:
-            if cp.effective_warranty_expire_date:
-                expire_dates.append(cp.effective_warranty_expire_date)
+        if not self.checkpoints:
+            return {'status': '无项目', 'latest_expire_date': None}
+        
+        latest_cp = max(self.checkpoints, key=lambda cp: cp.id)
+        expire_date = latest_cp.effective_warranty_expire_date
 
-        if not expire_dates:
+        if not expire_date:
             return {'status': '无项目', 'latest_expire_date': None}
 
         today = date.today()
-        in_warranty = sum(1 for d in expire_dates if d >= today)
-        expired = sum(1 for d in expire_dates if d < today)
-
-        if expired == 0:
+        if expire_date >= today:
             status = '在保'
-        elif in_warranty == 0:
-            status = '过保'
         else:
-            status = '混合'
+            status = '过保'
 
-        latest = max(expire_dates)
         return {
             'status': status,
-            'latest_expire_date': latest.isoformat()
+            'latest_expire_date': expire_date.isoformat()
         }
 
 

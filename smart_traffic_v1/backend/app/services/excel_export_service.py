@@ -1,4 +1,5 @@
 import io
+import re
 from datetime import date
 from openpyxl import Workbook
 from openpyxl.styles import Font, Alignment, Border, Side, PatternFill
@@ -183,26 +184,36 @@ class ExcelExportService:
             '项目质保到期时间', '质保状态', '建设单位', '施工单位',
             '信号机类型', '信号机数量', '左转箭头灯数量', '直行箭头数量',
             '右转箭头数量', '满屏灯数量', '非机动灯数量', '人行灯数量',
-            '车流量雷达数量', '诱导屏数量', '取电说明'
+            '车流量雷达数量', '诱导屏数量', '取电说明', '设备服役时长（年）'
         ]
         ws.append(headers)
 
         traffic_lights = db.session.query(TrafficLight).all()
+        
+        grouped = {}
+        for tl in traffic_lights:
+            key = tl.intersection_id
+            if key not in grouped or tl.id > grouped[key].id:
+                grouped[key] = tl
+
         intersection_types = ['十字路口', '丁字路口', '行人过街', '其他']
 
         for intersection_type in intersection_types:
-            type_lights = [tl for tl in traffic_lights
+            type_lights = [tl for tl in grouped.values()
                           if ExcelExportService._get_intersection_type_name(tl.intersection_id) == intersection_type]
 
             if not type_lights:
-                row = ['', intersection_type, '', '', '', '', '无项目', '', '', '', '', '', '', '', '', '', '', '', '', '']
-                ws.append(row)
                 continue
 
             for tl in type_lights:
                 project_info = ExcelExportService._get_project_info(tl.project_id)
                 intersection_name = ExcelExportService._get_intersection_name(tl.intersection_id)
                 warranty_status = ExcelExportService._get_warranty_status(tl.project_id)
+                
+                usage_years = ''
+                if project_info['acceptance_date']:
+                    acc_date = date.fromisoformat(project_info['acceptance_date'])
+                    usage_years = round((date.today() - acc_date).days / 365, 2)
 
                 row = [
                     intersection_name,
@@ -224,7 +235,8 @@ class ExcelExportService:
                     tl.pedestrian_count or 0,
                     tl.radar_count or 0,
                     tl.guide_screen_count or 0,
-                    tl.power_source or ''
+                    tl.power_source or '',
+                    usage_years
                 ]
                 ws.append(row)
 
@@ -237,26 +249,36 @@ class ExcelExportService:
             '路口名称', '路口类型', '归属项目', '项目验收日期', '项目质保期',
             '项目质保到期时间', '质保状态', '建设单位', '施工单位',
             '抓拍类型', '终端服务器数量', '正向抓拍数量', '反向抓拍数量',
-            'LED灯', '爆闪灯', '监控球机数量', '信号检测器数量', '取网说明'
+            'LED灯', '爆闪灯', '监控球机数量', '信号灯检测器数量', '取网说明', '设备服役时长（年）'
         ]
         ws.append(headers)
 
         ep_list = db.session.query(ElectronicPolice).all()
+        
+        grouped = {}
+        for ep in ep_list:
+            key = ep.intersection_id
+            if key not in grouped or ep.id > grouped[key].id:
+                grouped[key] = ep
+
         intersection_types = ['十字路口', '丁字路口', '行人过街', '其他']
 
         for intersection_type in intersection_types:
-            type_eps = [ep for ep in ep_list
+            type_eps = [ep for ep in grouped.values()
                        if ExcelExportService._get_intersection_type_name(ep.intersection_id) == intersection_type]
 
             if not type_eps:
-                row = ['', intersection_type, '', '', '', '', '无项目', '', '', '', '', '', '', '', '', '', '', '']
-                ws.append(row)
                 continue
 
             for ep in type_eps:
                 project_info = ExcelExportService._get_project_info(ep.project_id)
                 intersection_name = ExcelExportService._get_intersection_name(ep.intersection_id)
                 warranty_status = ExcelExportService._get_warranty_status(ep.project_id)
+                
+                usage_years = ''
+                if project_info['acceptance_date']:
+                    acc_date = date.fromisoformat(project_info['acceptance_date'])
+                    usage_years = round((date.today() - acc_date).days / 365, 2)
 
                 row = [
                     intersection_name,
@@ -276,7 +298,8 @@ class ExcelExportService:
                     ep.strobe_light_count or 0,
                     ep.ptz_count or 0,
                     ep.signal_detector_count or 0,
-                    ep.network_source or ''
+                    ep.network_source or '',
+                    usage_years
                 ]
                 ws.append(row)
 
@@ -288,25 +311,35 @@ class ExcelExportService:
         headers = [
             '点位名称', '抓拍区域', '归属项目', '项目验收日期', '项目质保期',
             '项目质保到期时间', '质保状态', '建设单位', '施工单位',
-            '抓拍机数量', '违停标牌数量', '监控标牌数量', '取电说明', '取网说明'
+            '抓拍机数量', '违停标牌数量', '监控标牌数量', '取电说明', '取网说明', '设备服役时长（年）'
         ]
         ws.append(headers)
 
         pe_list = db.session.query(ParkingEnforcement).all()
+        
+        grouped = {}
+        for pe in pe_list:
+            key = pe.point_id
+            if key not in grouped or pe.id > grouped[key].id:
+                grouped[key] = pe
+
         warranty_statuses = ['在保', '过保']
 
         for warranty_status in warranty_statuses:
-            type_pes = [pe for pe in pe_list
+            type_pes = [pe for pe in grouped.values()
                        if ExcelExportService._get_warranty_status(pe.project_id) == warranty_status]
 
             if not type_pes:
-                row = ['', '', '', '', '', '', warranty_status, '', '', '', '', '', '', '']
-                ws.append(row)
                 continue
 
             for pe in type_pes:
                 project_info = ExcelExportService._get_project_info(pe.project_id)
                 point_info = ExcelExportService._get_point_info(pe.point_id)
+                
+                usage_years = ''
+                if project_info['acceptance_date']:
+                    acc_date = date.fromisoformat(project_info['acceptance_date'])
+                    usage_years = round((date.today() - acc_date).days / 365, 2)
 
                 row = [
                     point_info['name'],
@@ -322,7 +355,8 @@ class ExcelExportService:
                     pe.parking_sign_count or 0,
                     pe.monitor_sign_count or 0,
                     pe.power_source or '',
-                    pe.network_source or ''
+                    pe.network_source or '',
+                    usage_years
                 ]
                 ws.append(row)
 
@@ -334,26 +368,39 @@ class ExcelExportService:
         headers = [
             '点位名称', '卡口类型', '归属项目', '项目验收日期', '项目质保期',
             '项目质保到期时间', '质保状态', '建设单位', '施工单位',
-            '抓拍机数量', '爆闪灯数量', '测速雷达数量', '标牌数量', '取电说明', '取网说明'
+            '抓拍机数量', '爆闪灯数量', '测速雷达数量', '标牌数量', '取电说明', '取网说明', '设备服役时长（年）'
         ]
         ws.append(headers)
 
         cp_list = db.session.query(Checkpoint).all()
+        
+        grouped = {}
+        for cp in cp_list:
+            key = cp.point_id
+            if key not in grouped or cp.id > grouped[key].id:
+                grouped[key] = cp
+
         checkpoint_types = ['雷达测速卡口', '闯禁区卡口', '大货车不靠右行驶卡口', '单行道卡口']
 
         for cp_type in checkpoint_types:
-            type_cps = [cp for cp in cp_list
-                       if ExcelExportService._get_point_info(cp.point_id, 'checkpoint')['type'] == cp_type]
+            type_cps = []
+            for cp in grouped.values():
+                point_info = ExcelExportService._get_point_info(cp.point_id, 'checkpoint')
+                if point_info.get('area') == cp_type:
+                    type_cps.append(cp)
 
             if not type_cps:
-                row = ['', cp_type, '', '', '', '', '无项目', '', '', '', '', '', '', '', '']
-                ws.append(row)
                 continue
 
             for cp in type_cps:
                 project_info = ExcelExportService._get_project_info(cp.project_id)
                 point_info = ExcelExportService._get_point_info(cp.point_id, 'checkpoint')
                 warranty_status = ExcelExportService._get_warranty_status(cp.project_id)
+                
+                usage_years = ''
+                if project_info['acceptance_date']:
+                    acc_date = date.fromisoformat(project_info['acceptance_date'])
+                    usage_years = round((date.today() - acc_date).days / 365, 2)
 
                 row = [
                     point_info['name'],
@@ -370,7 +417,8 @@ class ExcelExportService:
                     cp.radar_count or 0,
                     cp.sign_count or 0,
                     cp.power_source or '',
-                    cp.network_source or ''
+                    cp.network_source or '',
+                    usage_years
                 ]
                 ws.append(row)
 
@@ -381,25 +429,38 @@ class ExcelExportService:
         ws = wb.create_sheet('后端设备')
         headers = [
             '设备名称', '设备类型', '归属项目', '项目验收日期', '项目质保期',
-            '项目质保到期时间', '质保状态', '建设单位', '施工单位'
+            '项目质保到期时间', '质保状态', '建设单位', '施工单位', '设备服役时长（年）'
         ]
         ws.append(headers)
 
-        devices = db.session.query(BackendDevice).all()
+        all_devices = db.session.query(BackendDevice).all()
+        
+        suffix_pattern = re.compile(r' \(\d+\)$')
+        grouped = {}
+        for d in all_devices:
+            if suffix_pattern.search(d.name):
+                continue
+            key = d.name
+            if key not in grouped or d.id > grouped[key].id:
+                grouped[key] = d
+        
         device_types = ['网络交换设备', '网络安全设备', '服务器', '存储设备', '显示设备', '操作设备', '消防设备', '用电设备', '空调设备']
 
         for device_type in device_types:
-            type_devices = [d for d in devices
+            type_devices = [d for d in grouped.values()
                           if ExcelExportService._get_backend_device_type_name(d.id) == device_type]
 
             if not type_devices:
-                row = ['', device_type, '', '', '', '', '无项目', '', '']
-                ws.append(row)
                 continue
 
             for d in type_devices:
                 project_info = ExcelExportService._get_project_info(d.project_id)
                 warranty_status = ExcelExportService._get_warranty_status(d.project_id)
+                
+                usage_years = ''
+                if project_info['acceptance_date']:
+                    acc_date = date.fromisoformat(project_info['acceptance_date'])
+                    usage_years = round((date.today() - acc_date).days / 365, 2)
 
                 row = [
                     d.name or '',
@@ -410,7 +471,8 @@ class ExcelExportService:
                     project_info['warranty_expire_date'],
                     warranty_status,
                     project_info['builder'],
-                    project_info['construction_unit']
+                    project_info['construction_unit'],
+                    usage_years
                 ]
                 ws.append(row)
 

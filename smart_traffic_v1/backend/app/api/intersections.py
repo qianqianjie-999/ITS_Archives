@@ -140,13 +140,27 @@ class IntersectionDetail(Resource):
 class TrafficLightListAll(Resource):
     def get(self):
         traffic_lights = db.session.query(TrafficLight).all()
-        return [tl.to_dict() for tl in traffic_lights]
+        
+        grouped = {}
+        for tl in traffic_lights:
+            key = tl.intersection_id
+            if key not in grouped or tl.id > grouped[key].id:
+                grouped[key] = tl
+        
+        return [tl.to_dict() for tl in grouped.values()]
 
 @ns.route('/electronic-polices')
 class ElectronicPoliceListAll(Resource):
     def get(self):
         electronic_polices = db.session.query(ElectronicPolice).all()
-        return [ep.to_dict() for ep in electronic_polices]
+        
+        grouped = {}
+        for ep in electronic_polices:
+            key = ep.intersection_id
+            if key not in grouped or ep.id > grouped[key].id:
+                grouped[key] = ep
+        
+        return [ep.to_dict() for ep in grouped.values()]
 
 @ns.route('/<int:intersection_id>/traffic-light')
 class TrafficLightCreate(Resource):
@@ -298,21 +312,49 @@ class ExtendWarranty(Resource):
             db.session.add(project)
             db.session.flush()
 
-        updated_count = 0
+        created_count = 0
 
         if device_type in ['traffic_light', 'both']:
             traffic_lights = db.session.query(TrafficLight).filter_by(intersection_id=intersection_id).all()
             for tl in traffic_lights:
-                tl.extended_warranty_expire_date = warranty_expire_date
-                updated_count += 1
+                new_tl = TrafficLight(
+                    intersection_id=intersection_id,
+                    project_id=project.id,
+                    signal_type=tl.signal_type,
+                    signal_count=tl.signal_count,
+                    left_arrow_count=tl.left_arrow_count,
+                    straight_arrow_count=tl.straight_arrow_count,
+                    right_arrow_count=tl.right_arrow_count,
+                    full_screen_count=tl.full_screen_count,
+                    non_motor_count=tl.non_motor_count,
+                    pedestrian_count=tl.pedestrian_count,
+                    radar_count=tl.radar_count,
+                    guide_screen_count=tl.guide_screen_count,
+                    power_source=tl.power_source
+                )
+                db.session.add(new_tl)
+                created_count += 1
 
         if device_type in ['electronic_police', 'both']:
             electronic_polices = db.session.query(ElectronicPolice).filter_by(intersection_id=intersection_id).all()
             for ep in electronic_polices:
-                ep.extended_warranty_expire_date = warranty_expire_date
-                updated_count += 1
+                new_ep = ElectronicPolice(
+                    intersection_id=intersection_id,
+                    project_id=project.id,
+                    capture_type=ep.capture_type,
+                    terminal_server_count=ep.terminal_server_count,
+                    forward_capture_count=ep.forward_capture_count,
+                    reverse_capture_count=ep.reverse_capture_count,
+                    led_light_count=ep.led_light_count,
+                    strobe_light_count=ep.strobe_light_count,
+                    ptz_count=ep.ptz_count,
+                    signal_detector_count=ep.signal_detector_count,
+                    network_source=ep.network_source
+                )
+                db.session.add(new_ep)
+                created_count += 1
 
-        if updated_count == 0:
+        if created_count == 0:
             db.session.rollback()
             return {'status': 'error', 'message': '没有可延期的设备'}, 400
 
@@ -327,4 +369,4 @@ class ExtendWarranty(Resource):
 
         db.session.commit()
 
-        return {'status': 'success', 'project_id': project.id, 'message': f'已为{updated_count}个设备申请质保延期'}
+        return {'status': 'success', 'project_id': project.id, 'message': f'已为{created_count}个设备创建质保延期记录'}

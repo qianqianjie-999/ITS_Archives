@@ -85,4 +85,9 @@ export const backendDeviceApi = {
   update: (id: number, data: Partial<BackendDevice>) => apiClient.put(`/points/backend-device/${id}`, data),
 
   delete: (id: number) => apiClient.delete(`/points/backend-device/${id}`),
+
+  extendWarranty: (bdId: number, data: ExtendWarrantyData) =>
+    apiClient.post(`/points/backend-device/${bdId}/extend-warranty`, data),
+
+  getHistory: (bdId: number) => apiClient.get<any[]>(`/points/backend-device/${bdId}/history`),
 }

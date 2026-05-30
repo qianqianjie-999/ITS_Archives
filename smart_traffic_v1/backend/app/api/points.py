@@ -245,8 +245,14 @@ class CheckpointPointDetail(Resource):
 class ParkingEnforcementListAll(Resource):
     def get(self):
         pes = db.session.query(ParkingEnforcement).all()
-        return [pe.to_dict() for pe in pes]
-
+        
+        grouped = {}
+        for pe in pes:
+            key = pe.point_id
+            if key not in grouped or pe.id > grouped[key].id:
+                grouped[key] = pe
+        
+        return [pe.to_dict() for pe in grouped.values()]
 
 @ns.route('/parking-points/<int:point_id>/devices')
 class ParkingEnforcementByPoint(Resource):
@@ -317,7 +323,14 @@ class ParkingEnforcementUpdate(Resource):
 class CheckpointListAll(Resource):
     def get(self):
         checkpoints = db.session.query(Checkpoint).all()
-        return [cp.to_dict() for cp in checkpoints]
+        
+        grouped = {}
+        for cp in checkpoints:
+            key = cp.point_id
+            if key not in grouped or cp.id > grouped[key].id:
+                grouped[key] = cp
+        
+        return [cp.to_dict() for cp in grouped.values()]
 
 
 @ns.route('/checkpoint-points/<int:point_id>/devices')
@@ -398,23 +411,42 @@ class ParkingPointExtendWarranty(Resource):
 
         data = request.json
         project_id = data.get('project_id')
+        warranty_expire_date = date.fromisoformat(data['warranty_expire_date'])
+
         if project_id:
             project = db.session.query(Project).get(project_id)
             if not project:
                 return {'status': 'error', 'message': '项目不存在'}, 404
-            project.warranty_expire_date = date.fromisoformat(data['warranty_expire_date'])
         else:
+            project_name = data.get('project_name', f'质保延期项目_{point.name}')
             project = Project(
-                name=data['project_name'],
+                name=project_name,
                 acceptance_date=date.today(),
-                warranty_expire_date=date.fromisoformat(data['warranty_expire_date'])
+                warranty_expire_date=warranty_expire_date
             )
             db.session.add(project)
             db.session.flush()
 
-            devices = db.session.query(ParkingEnforcement).filter_by(point_id=point_id).all()
-            for d in devices:
-                d.project_id = project.id
+        created_count = 0
+
+        devices = db.session.query(ParkingEnforcement).filter_by(point_id=point_id).all()
+        for d in devices:
+            new_pe = ParkingEnforcement(
+                point_id=point_id,
+                project_id=project.id,
+                camera_area=d.camera_area,
+                camera_count=d.camera_count,
+                parking_sign_count=d.parking_sign_count,
+                monitor_sign_count=d.monitor_sign_count,
+                power_source=d.power_source,
+                network_source=d.network_source
+            )
+            db.session.add(new_pe)
+            created_count += 1
+
+        if created_count == 0:
+            db.session.rollback()
+            return {'status': 'error', 'message': '没有可延期的设备'}, 400
 
         extension = WarrantyExtension(
             facility_type='point',
@@ -423,8 +455,9 @@ class ParkingPointExtendWarranty(Resource):
             extension_date=date.today()
         )
         db.session.add(extension)
+
         db.session.commit()
-        return {'status': 'success', 'data': project.to_dict()}
+        return {'status': 'success', 'project_id': project.id, 'message': f'已为{created_count}个设备创建质保延期记录'}
 
 
 @ns.route('/checkpoint-points/<int:point_id>/extend-warranty')
@@ -439,23 +472,43 @@ class CheckpointPointExtendWarranty(Resource):
 
         data = request.json
         project_id = data.get('project_id')
+        warranty_expire_date = date.fromisoformat(data['warranty_expire_date'])
+
         if project_id:
             project = db.session.query(Project).get(project_id)
             if not project:
                 return {'status': 'error', 'message': '项目不存在'}, 404
-            project.warranty_expire_date = date.fromisoformat(data['warranty_expire_date'])
         else:
+            project_name = data.get('project_name', f'质保延期项目_{point.name}')
             project = Project(
-                name=data['project_name'],
+                name=project_name,
                 acceptance_date=date.today(),
-                warranty_expire_date=date.fromisoformat(data['warranty_expire_date'])
+                warranty_expire_date=warranty_expire_date
             )
             db.session.add(project)
             db.session.flush()
 
-            devices = db.session.query(Checkpoint).filter_by(point_id=point_id).all()
-            for d in devices:
-                d.project_id = project.id
+        created_count = 0
+
+        devices = db.session.query(Checkpoint).filter_by(point_id=point_id).all()
+        for d in devices:
+            new_cp = Checkpoint(
+                point_id=point_id,
+                project_id=project.id,
+                checkpoint_type=d.checkpoint_type,
+                camera_count=d.camera_count,
+                strobe_light_count=d.strobe_light_count,
+                radar_count=d.radar_count,
+                sign_count=d.sign_count,
+                power_source=d.power_source,
+                network_source=d.network_source
+            )
+            db.session.add(new_cp)
+            created_count += 1
+
+        if created_count == 0:
+            db.session.rollback()
+            return {'status': 'error', 'message': '没有可延期的设备'}, 400
 
         extension = WarrantyExtension(
             facility_type='point',
@@ -464,8 +517,9 @@ class CheckpointPointExtendWarranty(Resource):
             extension_date=date.today()
         )
         db.session.add(extension)
+
         db.session.commit()
-        return {'status': 'success', 'data': project.to_dict()}
+        return {'status': 'success', 'project_id': project.id, 'message': f'已为{created_count}个设备创建质保延期记录'}
 
 
 # ==================== Backend Devices ====================
@@ -474,7 +528,17 @@ class CheckpointPointExtendWarranty(Resource):
 class BackendDeviceList(Resource):
     def get(self):
         backend_devices = db.session.query(BackendDevice).all()
-        return [bd.to_dict() for bd in backend_devices]
+        
+        # 过滤出不带 "(数字)" 后缀的记录（原始名称记录，即最新记录）
+        filtered_devices = []
+        import re
+        suffix_pattern = re.compile(r' \(\d+\)$')
+        
+        for bd in backend_devices:
+            if not suffix_pattern.search(bd.name):
+                filtered_devices.append(bd)
+        
+        return [bd.to_dict() for bd in filtered_devices]
 
     @token_required
     @role_required('admin', 'editor')
@@ -523,3 +587,97 @@ class BackendDeviceUpdate(Resource):
         db.session.delete(bd)
         db.session.commit()
         return {'status': 'success', 'message': '删除成功'}
+
+
+@ns.route('/backend-device/<int:bd_id>/extend-warranty')
+class BackendDeviceExtendWarranty(Resource):
+    @token_required
+    @role_required('admin', 'editor')
+    @ns.expect(extend_warranty_model)
+    def post(self, bd_id):
+        bd = db.session.query(BackendDevice).get(bd_id)
+        if not bd:
+            return {'status': 'error', 'message': '后端设备不存在'}, 404
+
+        data = request.json
+        project_id = data.get('project_id')
+        warranty_expire_date = date.fromisoformat(data['warranty_expire_date'])
+
+        if project_id:
+            project = db.session.query(Project).get(project_id)
+            if not project:
+                return {'status': 'error', 'message': '项目不存在'}, 404
+        else:
+            project_name = data.get('project_name', f'质保延期项目_{bd.name}')
+            project = Project(
+                name=project_name,
+                acceptance_date=date.today(),
+                warranty_expire_date=warranty_expire_date
+            )
+            db.session.add(project)
+            db.session.flush()
+
+        # 把现有记录重命名（加后缀），新记录用原始名称
+        base_name = bd.name
+        
+        # 查找现有记录并加后缀
+        existing_devices = db.session.query(BackendDevice).filter_by(name=base_name).all()
+        for idx, existing_bd in enumerate(existing_devices, 1):
+            new_existing_name = f"{base_name} ({idx})"
+            # 确保目标名称不重复
+            while db.session.query(BackendDevice).filter_by(name=new_existing_name).first():
+                idx += 1
+                new_existing_name = f"{base_name} ({idx})"
+            existing_bd.name = new_existing_name
+        
+        new_bd = BackendDevice(
+            point_id=bd.point_id,
+            project_id=project.id,
+            name=base_name,
+            type=bd.type,
+            server_count=bd.server_count,
+            storage_count=bd.storage_count,
+            switch_count=bd.switch_count,
+            firewall_count=bd.firewall_count,
+            fiber_converter_count=bd.fiber_converter_count,
+            power_supply_count=bd.power_supply_count,
+            cabinet_count=bd.cabinet_count,
+            other_device_count=bd.other_device_count,
+            ip_address=bd.ip_address,
+            port=bd.port,
+            location=bd.location,
+            power_source=bd.power_source,
+            network_source=bd.network_source
+        )
+        db.session.add(new_bd)
+
+        from ..models.warranty_extension import WarrantyExtension
+        extension = WarrantyExtension(
+            facility_type='backend_device',
+            facility_id=bd_id,
+            project_id=project.id,
+            extension_date=date.today()
+        )
+        db.session.add(extension)
+
+        db.session.commit()
+        return {'status': 'success', 'project_id': project.id, 'message': '已创建质保延期记录'}
+
+
+@ns.route('/backend-device/<int:bd_id>/history')
+class BackendDeviceHistory(Resource):
+    def get(self, bd_id):
+        bd = db.session.query(BackendDevice).get(bd_id)
+        if not bd:
+            return {'status': 'error', 'message': '后端设备不存在'}, 404
+        
+        # 获取设备原始名称（去掉 (数字) 后缀）
+        import re
+        base_name = re.sub(r' \(\d+\)$', '', bd.name)
+        
+        # 查找所有以此名称开头的记录，按ID升序（最早的在前）
+        history_records = db.session.query(BackendDevice).filter(
+            BackendDevice.name.like(f"{base_name}%")
+        ).order_by(BackendDevice.id.asc()).all()
+        
+        return [hr.to_dict() for hr in history_records]

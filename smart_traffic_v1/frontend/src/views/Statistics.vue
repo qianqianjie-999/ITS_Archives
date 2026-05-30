@@ -85,6 +85,7 @@
           <el-table-column prop="radar_count" label="车流量雷达" width="100" align="center" />
           <el-table-column prop="guide_screen_count" label="诱导屏" width="80" align="center" />
           <el-table-column prop="power_source" label="取电说明" min-width="120" show-overflow-tooltip />
+          <el-table-column prop="usage_days" label="使用时长（天）" width="120" align="center" />
         </el-table>
       </el-tab-pane>
 
@@ -114,6 +115,7 @@
           <el-table-column prop="ptz_count" label="监控球机" width="90" align="center" />
           <el-table-column prop="signal_detector_count" label="信号检测器" width="100" align="center" />
           <el-table-column prop="network_source" label="取网说明" min-width="120" show-overflow-tooltip />
+          <el-table-column prop="usage_days" label="使用时长（天）" width="120" align="center" />
         </el-table>
       </el-tab-pane>
 
@@ -139,6 +141,7 @@
           <el-table-column prop="monitor_sign_count" label="监控标牌" width="90" align="center" />
           <el-table-column prop="power_source" label="取电说明" min-width="120" show-overflow-tooltip />
           <el-table-column prop="network_source" label="取网说明" min-width="120" show-overflow-tooltip />
+          <el-table-column prop="usage_days" label="使用时长（天）" width="120" align="center" />
         </el-table>
       </el-tab-pane>
 
@@ -165,6 +168,7 @@
           <el-table-column prop="sign_count" label="标牌数量" width="90" align="center" />
           <el-table-column prop="power_source" label="取电说明" min-width="120" show-overflow-tooltip />
           <el-table-column prop="network_source" label="取网说明" min-width="120" show-overflow-tooltip />
+          <el-table-column prop="usage_days" label="使用时长（天）" width="120" align="center" />
         </el-table>
       </el-tab-pane>
 
@@ -190,6 +194,7 @@
           <el-table-column prop="port" label="端口" width="80" />
           <el-table-column prop="power_source" label="取电说明" min-width="120" show-overflow-tooltip />
           <el-table-column prop="network_source" label="取网说明" min-width="120" show-overflow-tooltip />
+          <el-table-column prop="usage_days" label="使用时长（天）" width="120" align="center" />
         </el-table>
       </el-tab-pane>
     </el-tabs>
@@ -241,26 +246,50 @@ function tagType(status: string) {
 
 function applyFilter(list: any[]) {
   return list.filter(item => {
-    if (filterWarranty.value && item.warranty_status !== filterWarranty.value) return false
-    if (filterProject.value && item.project_id !== filterProject.value) return false
+    if (filterWarranty.value && item.warranty_status !== filterWarranty.value) return false;
+    if (filterProject.value && item.project_id !== filterProject.value) return false;
     if (searchKeyword.value) {
-      const kw = searchKeyword.value.toLowerCase()
+      const kw = searchKeyword.value.toLowerCase();
       const haystack = [item.name, item.intersection_name, item.point_name, item.project_name, item.intersection_type, item.type]
-        .filter(Boolean).join(' ').toLowerCase()
-      if (!haystack.includes(kw)) return false
+        .filter(Boolean).join(' ').toLowerCase();
+      if (!haystack.includes(kw)) return false;
     }
-    return true
-  })
+    return true;
+  });
+}
+
+function calculateUsageDays(acceptanceDate: string): string {
+  if (!acceptanceDate) return '';
+  const accDate = new Date(acceptanceDate);
+  const today = new Date();
+  const diffTime = Math.abs(today.getTime() - accDate.getTime());
+  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+  return diffDays.toString();
 }
 
 const filteredData = computed(() => {
   return {
-    traffic_light: applyFilter(trafficLights.value),
-    electronic_police: applyFilter(electronicPolices.value),
-    parking_enforcement: applyFilter(parkingEnforcements.value),
-    checkpoint: applyFilter(checkpoints.value),
-    backend_device: applyFilter(backendDevices.value)
-  }
+    traffic_light: applyFilter(trafficLights.value).map(item => ({
+      ...item,
+      usage_days: calculateUsageDays(item.acceptance_date)
+    })),
+    electronic_police: applyFilter(electronicPolices.value).map(item => ({
+      ...item,
+      usage_days: calculateUsageDays(item.acceptance_date)
+    })),
+    parking_enforcement: applyFilter(parkingEnforcements.value).map(item => ({
+      ...item,
+      usage_days: calculateUsageDays(item.acceptance_date)
+    })),
+    checkpoint: applyFilter(checkpoints.value).map(item => ({
+      ...item,
+      usage_days: calculateUsageDays(item.acceptance_date)
+    })),
+    backend_device: applyFilter(backendDevices.value).map(item => ({
+      ...item,
+      usage_days: calculateUsageDays(item.acceptance_date)
+    }))
+  };
 })
 
 const pagedData = computed(() => {

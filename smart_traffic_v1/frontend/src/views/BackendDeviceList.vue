@@ -7,7 +7,7 @@
           <el-button v-if="userStore.isEditor" type="primary" @click="openDialog()">新增后端设备</el-button>
         </div>
       </template>
-      <el-table :data="backendDevices" stripe v-loading="loading">
+      <el-table :data="backendDevices" stripe v-loading="loading" @row-click="selectDevice">
         <el-table-column type="index" label="序号" width="60" />
         <el-table-column prop="name" label="设备名称" />
         <el-table-column prop="type" label="设备类型" width="140" />
@@ -26,12 +26,58 @@
         <el-table-column prop="construction_company" label="施工单位" />
         <el-table-column label="操作" width="200">
           <template #default="{ row }">
-            <el-button type="primary" size="small" @click="openDialog(row)">编辑</el-button>
-            <el-button v-if="userStore.isEditor" type="danger" size="small" @click="deleteBackendDevice(row.id)">删除</el-button>
+            <el-button type="primary" size="small" @click.stop="openDialog(row)">编辑</el-button>
+            <el-button v-if="userStore.isEditor" type="danger" size="small" @click.stop="deleteBackendDevice(row.id)">删除</el-button>
           </template>
         </el-table-column>
       </el-table>
     </el-card>
+
+    <el-card class="warranty-section" style="margin-top: 16px" v-if="selectedDevice">
+      <template #header>
+        <div class="card-header">
+          <span>质保延期记录 - {{ selectedDevice.name }}</span>
+          <el-button v-if="userStore.isEditor" type="primary" @click="showWarrantyDialog = true">申请质保延期</el-button>
+        </div>
+      </template>
+      <el-table :data="warrantyRecords" stripe>
+        <el-table-column prop="project_name" label="归属项目" />
+        <el-table-column prop="acceptance_date" label="验收日期" width="140" />
+        <el-table-column prop="warranty_expire_date" label="质保到期时间" width="160" />
+        <el-table-column prop="warranty_status" label="质保状态" width="100">
+          <template #default="{ row }">
+            <el-tag :type="getStatusType(row.warranty_status)">
+              {{ row.warranty_status }}
+            </el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column v-if="userStore.isAdmin" label="操作" width="100">
+          <template #default="{ row }">
+            <el-button type="danger" size="small" @click="deleteBackendDevice(row.id)">删除</el-button>
+          </template>
+        </el-table-column>
+      </el-table>
+    </el-card>
+
+    <el-dialog v-model="showWarrantyDialog" title="申请质保延期" width="500px">
+      <el-form :model="warrantyForm" label-width="100px">
+        <el-form-item label="设备名称">
+          <span>{{ selectedDevice?.name }}</span>
+        </el-form-item>
+        <el-form-item label="归属项目" required>
+          <el-select v-model="warrantyForm.project_id" placeholder="请选择项目" filterable style="width: 100%" @change="onProjectChange">
+            <el-option v-for="p in projects" :key="p.id" :label="p.name" :value="p.id" />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="新质保到期" required>
+          <el-date-picker v-model="warrantyForm.warranty_expire_date" type="date" style="width: 100%" value-format="YYYY-MM-DD" />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="showWarrantyDialog = false">取消</el-button>
+        <el-button type="primary" @click="submitWarranty">确定</el-button>
+      </template>
+    </el-dialog>
 
     <el-dialog v-model="showDialog" :title="editForm.id ? '编辑后端设备' : '新增后端设备'" width="600px">
       <el-form :model="editForm" label-width="120px">
@@ -70,6 +116,14 @@ const loading = ref(false)
 const backendDevices = ref<BackendDevice[]>([])
 const projects = ref<Project[]>([])
 const showDialog = ref(false)
+const showWarrantyDialog = ref(false)
+const selectedDevice = ref<BackendDevice | null>(null)
+const warrantyRecords = ref<any[]>([])
+
+const warrantyForm = ref<any>({
+  project_id: undefined as number | undefined,
+  warranty_expire_date: ''
+})
 
 const deviceTypes = [
   '网络交换设备',
@@ -109,6 +163,19 @@ async function fetchProjects() {
   }
 }
 
+async function fetchWarrantyRecords(deviceId: number) {
+  try {
+    warrantyRecords.value = await backendDeviceApi.getHistory(deviceId) as any[]
+  } catch (error) {
+    warrantyRecords.value = []
+  }
+}
+
+function selectDevice(row: BackendDevice) {
+  selectedDevice.value = row
+  fetchWarrantyRecords(row.id)
+}
+
 function openDialog(row?: BackendDevice) {
   if (row) {
     editForm.value = {
@@ -128,6 +195,38 @@ function openDialog(row?: BackendDevice) {
   showDialog.value = true
 }
 
+function onProjectChange(projectId: number) {
+  const project = projects.value.find(p => p.id === projectId)
+  if (project && project.warranty_expire_date) {
+    warrantyForm.value.warranty_expire_date = project.warranty_expire_date
+  }
+}
+
+async function submitWarranty() {
+  if (!warrantyForm.value.project_id) {
+    ElMessage.error('请选择项目')
+    return
+  }
+  if (!warrantyForm.value.warranty_expire_date) {
+    ElMessage.error('请选择新质保到期日期')
+    return
+  }
+  try {
+    await backendDeviceApi.extendWarranty(selectedDevice.value!.id, {
+      project_id: warrantyForm.value.project_id,
+      warranty_expire_date: warrantyForm.value.warranty_expire_date
+    })
+    ElMessage.success('质保延期成功')
+    showWarrantyDialog.value = false
+    warrantyForm.value.project_id = undefined
+    warrantyForm.value.warranty_expire_date = ''
+    fetchData()
+    fetchWarrantyRecords(selectedDevice.value!.id)
+  } catch (error: any) {
+    ElMessage.error(error?.response?.data?.message || '质保延期失败')
+  }
+}
+
 async function submitBackendDevice() {
   try {
     if (!editForm.value.name) {
@@ -139,7 +238,7 @@ async function submitBackendDevice() {
       type: editForm.value.type,
       project_id: editForm.value.project_id
     }
-    
+
     if (editForm.value.id) {
       await backendDeviceApi.update(editForm.value.id, data)
       ElMessage.success('更新成功')
@@ -161,6 +260,10 @@ async function deleteBackendDevice(id: number) {
     })
     await backendDeviceApi.delete(id)
     ElMessage.success('删除成功')
+    if (selectedDevice.value?.id === id) {
+      selectedDevice.value = null
+      warrantyRecords.value = []
+    }
     fetchData()
   } catch (error: any) {
     if (error !== 'cancel') {
@@ -170,12 +273,12 @@ async function deleteBackendDevice(id: number) {
 }
 
 function getStatusType(status?: string) {
-  switch (status) {
-    case '在保': return 'success'
-    case '过保': return 'danger'
-    case '无项目': return 'warning'
-    default: return 'info'
-  }
+  if (status === '在保') return 'success'
+  if (status === '过保') return 'danger'
+  if (status === '无项目') return 'warning'
+  if (status && new Date(status) >= new Date()) return 'success'
+  if (status && new Date(status) < new Date()) return 'danger'
+  return 'info'
 }
 
 onMounted(() => {
