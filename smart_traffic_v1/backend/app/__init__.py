@@ -27,7 +27,6 @@ def create_app(config_name=None):
     from .api.points import ns as points_ns
     from .api.projects import ns as projects_ns
     from .api.attachments import ns as attachments_ns
-    from .api.logs import ns as logs_ns
 
     @app.errorhandler(IntegrityError)
     def handle_integrity_error(error):

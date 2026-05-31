@@ -64,22 +64,3 @@ def admin_required(f):
 
         return f(*args, **kwargs)
     return decorated
-
-
-def log_operation(operation_type, entity_type, entity_id, old_value=None, new_value=None):
-    from datetime import datetime
-    import json
-    from ..models.user import OperationLog
-
-    log = OperationLog(
-        user_id=g.current_user.id if hasattr(g, 'current_user') else None,
-        username=g.current_user.username if hasattr(g, 'current_user') else None,
-        operation_type=operation_type,
-        entity_type=entity_type,
-        entity_id=entity_id,
-        old_value=json.dumps(old_value) if old_value else None,
-        new_value=json.dumps(new_value) if new_value else None,
-        ip_address=request.remote_addr
-    )
-    db.session.add(log)
-    db.session.commit()
