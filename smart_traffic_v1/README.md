@@ -16,6 +16,7 @@
 - **附件管理**：电子档案上传、下载与关联
 - **数据分析**：设备统计数据导出
 - **操作日志**：用户操作行为审计追踪
+- **用户管理**：用户账户管理、角色权限控制（管理员专属）
 
 ### 技术栈
 
@@ -69,6 +70,7 @@ smart_traffic_v1/
 │   ├── app/
 │   │   ├── api/                    # REST API 端点
 │   │   │   ├── auth.py            # 认证接口
+│   │   │   ├── users.py           # 用户管理接口
 │   │   │   ├── intersections.py   # 路口管理接口
 │   │   │   ├── points.py          # 点位管理接口
 │   │   │   ├── projects.py        # 项目管理接口
@@ -102,6 +104,7 @@ smart_traffic_v1/
 │   ├── src/
 │   │   ├── api/                   # API 调用层
 │   │   │   ├── index.ts          # Axios 实例
+│   │   │   ├── users.ts          # 用户 API
 │   │   │   ├── intersections.ts  # 路口 API
 │   │   │   ├── points.ts         # 点位 API
 │   │   │   ├── projects.ts       # 项目 API
@@ -120,6 +123,7 @@ smart_traffic_v1/
 │   │   │   ├── CheckpointDetail.vue    # 卡口详情
 │   │   │   ├── ProjectList.vue     # 项目列表
 │   │   │   ├── BackendDeviceList.vue   # 后端设备列表
+│   │   │   ├── UserList.vue         # 用户管理
 │   │   │   ├── Statistics.vue      # 统计分析
 │   │   │   └── Home.vue            # 首页
 │   │   ├── router/                # 路由配置
@@ -470,6 +474,8 @@ Swagger UI 访问：http://localhost:5000/api/docs
 |------|------|------|------|
 | 认证 | /api/auth/login | POST | 用户登录 |
 | 认证 | /api/auth/logout | POST | 用户登出 |
+| 用户 | /api/users/ | GET/POST | 用户列表/创建 |
+| 用户 | /api/users/{id} | GET/PUT/DELETE | 用户详情/更新/删除 |
 | 路口 | /api/intersections/ | GET | 路口列表 |
 | 路口 | /api/intersections/{id} | GET | 路口详情 |
 | 违停 | /api/points/parking-points | GET | 违停点位列表 |
@@ -553,4 +559,4 @@ chore: 构建/工具
 
 ## 联系方式
 
-如有问题，请提交 Issue 或联系开发团队。
+如有问题，请提交 Issue 或联系开发团队13153776277。

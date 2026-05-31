@@ -81,7 +81,7 @@ Authorization: Bearer <token>
 
 | 角色 | 权限 |
 |------|------|
-| admin | 所有权限 |
+| admin | 所有权限（包括用户管理） |
 | editor | 创建、更新权限 |
 | viewer | 只读权限 |
 
@@ -165,7 +165,145 @@ Authorization: Bearer <token>
 
 ---
 
-## 3. 路口管理 API
+## 3. 用户管理 API
+
+### 3.1 获取用户列表
+
+**端点**: `GET /users/`
+
+**需要认证**: ✅ (仅 admin)
+
+**成功响应** (200):
+```json
+[
+  {
+    "id": 1,
+    "username": "admin",
+    "display_name": "管理员",
+    "role": "admin",
+    "is_active": true,
+    "last_login": "2026-05-30T10:00:00",
+    "created_at": "2026-05-01T08:00:00"
+  },
+  {
+    "id": 2,
+    "username": "editor1",
+    "display_name": "编辑员1",
+    "role": "editor",
+    "is_active": true,
+    "last_login": "2026-05-29T15:30:00",
+    "created_at": "2026-05-10T09:00:00"
+  }
+]
+```
+
+---
+
+### 3.2 创建用户
+
+**端点**: `POST /users/`
+
+**需要认证**: ✅ (仅 admin)
+
+**请求体**:
+```json
+{
+  "username": "editor1",
+  "password": "password123",
+  "display_name": "编辑员1",
+  "role": "editor"
+}
+```
+
+**成功响应** (201):
+```json
+{
+  "id": 2,
+  "username": "editor1",
+  "display_name": "编辑员1",
+  "role": "editor",
+  "is_active": true,
+  "created_at": "2026-05-30T10:00:00"
+}
+```
+
+**错误响应** (400):
+```json
+{
+  "message": "用户名已存在"
+}
+```
+
+---
+
+### 3.3 获取单个用户
+
+**端点**: `GET /users/{user_id}`
+
+**需要认证**: ✅ (仅 admin)
+
+**成功响应** (200):
+```json
+{
+  "id": 1,
+  "username": "admin",
+  "display_name": "管理员",
+  "role": "admin",
+  "is_active": true,
+  "last_login": "2026-05-30T10:00:00",
+  "created_at": "2026-05-01T08:00:00"
+}
+```
+
+---
+
+### 3.4 更新用户
+
+**端点**: `PUT /users/{user_id}`
+
+**需要认证**: ✅ (仅 admin)
+
+**请求体**:
+```json
+{
+  "display_name": "新显示名称",
+  "role": "editor",
+  "is_active": false,
+  "password": "newpassword123"
+}
+```
+
+**说明**: 所有字段均为可选，仅更新提供的字段
+
+**成功响应** (200):
+```json
+{
+  "id": 2,
+  "username": "editor1",
+  "display_name": "新显示名称",
+  "role": "editor",
+  "is_active": false,
+  "last_login": "2026-05-29T15:30:00",
+  "created_at": "2026-05-10T09:00:00"
+}
+```
+
+---
+
+### 3.5 删除用户
+
+**端点**: `DELETE /users/{user_id}`
+
+**需要认证**: ✅ (仅 admin)
+
+**成功响应** (204):
+```
+无响应体
+```
+
+---
+
+## 4. 路口管理 API
 
 ### 3.1 获取路口列表
 
