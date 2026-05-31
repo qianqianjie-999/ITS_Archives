@@ -5,11 +5,12 @@ from .point import ParkingEnforcementPoint, CheckpointPoint, ParkingEnforcement,
 from .backend_device import BackendDevice
 from .warranty_extension import WarrantyExtension
 from .attachment import Attachment
+from .maintenance_record import MaintenanceRecord
 
 __all__ = [
     'User', 'Project', 'Intersection',
     'TrafficLight', 'ElectronicPolice',
     'ParkingEnforcementPoint', 'CheckpointPoint',
     'ParkingEnforcement', 'Checkpoint', 'BackendDevice',
-    'WarrantyExtension', 'Attachment'
+    'WarrantyExtension', 'Attachment', 'MaintenanceRecord'
 ]

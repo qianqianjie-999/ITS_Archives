@@ -59,6 +59,33 @@
       </el-table>
     </el-card>
 
+    <el-card class="maintenance-section" style="margin-top: 16px" v-if="selectedDevice">
+      <template #header>
+        <div class="card-header">
+          <span>维修记录 - {{ selectedDevice.name }}</span>
+          <el-button v-if="userStore.isEditor" type="primary" @click="showMaintenanceDialog = true">添加维修记录</el-button>
+        </div>
+      </template>
+      <el-table :data="maintenanceRecords" stripe>
+        <el-table-column prop="fault_level_text" label="故障等级" width="100">
+          <template #default="{ row }">
+            <el-tag :type="getFaultLevelType(row.fault_level)">
+              {{ row.fault_level_text }}
+            </el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column prop="fault_description" label="故障现象" />
+        <el-table-column prop="solution" label="解决办法" />
+        <el-table-column prop="record_time" label="记录时间" width="180" />
+        <el-table-column prop="recorder_name" label="记录人" width="120" />
+        <el-table-column v-if="userStore.isAdmin" label="操作" width="100">
+          <template #default="{ row }">
+            <el-button type="danger" size="small" @click="deleteMaintenanceRecord(row.id)">删除</el-button>
+          </template>
+        </el-table-column>
+      </el-table>
+    </el-card>
+
     <el-dialog v-model="showWarrantyDialog" title="申请质保延期" width="500px">
       <el-form :model="warrantyForm" label-width="100px">
         <el-form-item label="设备名称">
@@ -76,6 +103,28 @@
       <template #footer>
         <el-button @click="showWarrantyDialog = false">取消</el-button>
         <el-button type="primary" @click="submitWarranty">确定</el-button>
+      </template>
+    </el-dialog>
+
+    <el-dialog v-model="showMaintenanceDialog" title="添加维修记录" width="500px">
+      <el-form :model="maintenanceForm" label-width="100px">
+        <el-form-item label="故障等级" required>
+          <el-radio-group v-model="maintenanceForm.fault_level">
+            <el-radio label="high">高</el-radio>
+            <el-radio label="medium">中</el-radio>
+            <el-radio label="low">低</el-radio>
+          </el-radio-group>
+        </el-form-item>
+        <el-form-item label="故障现象" required>
+          <el-textarea v-model="maintenanceForm.fault_description" rows="4" placeholder="请描述故障现象" />
+        </el-form-item>
+        <el-form-item label="解决办法">
+          <el-textarea v-model="maintenanceForm.solution" rows="4" placeholder="请描述解决办法" />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="showMaintenanceDialog = false">取消</el-button>
+        <el-button type="primary" @click="submitMaintenance">确定</el-button>
       </template>
     </el-dialog>
 
@@ -109,6 +158,7 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import { useUserStore } from '@/stores/user'
 import { backendDeviceApi } from '@/api/points'
 import { projectApi } from '@/api/projects'
+import { maintenanceApi } from '@/api/maintenance'
 import type { BackendDevice, Project } from '@/types'
 
 const userStore = useUserStore()
@@ -117,12 +167,33 @@ const backendDevices = ref<BackendDevice[]>([])
 const projects = ref<Project[]>([])
 const showDialog = ref(false)
 const showWarrantyDialog = ref(false)
+const showMaintenanceDialog = ref(false)
 const selectedDevice = ref<BackendDevice | null>(null)
 const warrantyRecords = ref<any[]>([])
+const maintenanceRecords = ref<MaintenanceRecord[]>([])
+
+interface MaintenanceRecord {
+  id: number
+  facility_type: string
+  facility_id: number
+  fault_level: string
+  fault_level_text: string
+  fault_description: string
+  solution: string
+  record_time: string
+  recorder_id: number
+  recorder_name: string
+}
 
 const warrantyForm = ref<any>({
   project_id: undefined as number | undefined,
   warranty_expire_date: ''
+})
+
+const maintenanceForm = ref<any>({
+  fault_level: 'medium',
+  fault_description: '',
+  solution: ''
 })
 
 const deviceTypes = [
@@ -174,6 +245,7 @@ async function fetchWarrantyRecords(deviceId: number) {
 function selectDevice(row: BackendDevice) {
   selectedDevice.value = row
   fetchWarrantyRecords(row.id)
+  fetchMaintenanceRecords(row.id)
 }
 
 function openDialog(row?: BackendDevice) {
@@ -263,8 +335,56 @@ async function deleteBackendDevice(id: number) {
     if (selectedDevice.value?.id === id) {
       selectedDevice.value = null
       warrantyRecords.value = []
+      maintenanceRecords.value = []
     }
     fetchData()
+  } catch (error: any) {
+    if (error !== 'cancel') {
+      ElMessage.error(error?.response?.data?.message || '删除失败')
+    }
+  }
+}
+
+async function fetchMaintenanceRecords(deviceId: number) {
+  try {
+    const records = await maintenanceApi.getMaintenanceRecords('backend_device', deviceId) as unknown as MaintenanceRecord[]
+    maintenanceRecords.value = records
+  } catch (error) {
+    console.error('获取维修记录失败', error)
+    maintenanceRecords.value = []
+  }
+}
+
+async function submitMaintenance() {
+  try {
+    if (!maintenanceForm.value.fault_description) {
+      ElMessage.warning('请填写故障现象')
+      return
+    }
+    await maintenanceApi.createMaintenanceRecord({
+      facility_type: 'backend_device',
+      facility_id: selectedDevice.value!.id,
+      fault_level: maintenanceForm.value.fault_level,
+      fault_description: maintenanceForm.value.fault_description,
+      solution: maintenanceForm.value.solution
+    })
+    ElMessage.success('添加成功')
+    showMaintenanceDialog.value = false
+    maintenanceForm.value.fault_level = 'medium'
+    maintenanceForm.value.fault_description = ''
+    maintenanceForm.value.solution = ''
+    await fetchMaintenanceRecords(selectedDevice.value!.id)
+  } catch (error) {
+    ElMessage.error('添加失败')
+  }
+}
+
+async function deleteMaintenanceRecord(id: number) {
+  try {
+    await ElMessageBox.confirm('确定要删除该维修记录吗？', '警告', { type: 'warning' })
+    await maintenanceApi.deleteMaintenanceRecord(id)
+    ElMessage.success('删除成功')
+    await fetchMaintenanceRecords(selectedDevice.value!.id)
   } catch (error: any) {
     if (error !== 'cancel') {
       ElMessage.error(error?.response?.data?.message || '删除失败')
@@ -279,6 +399,15 @@ function getStatusType(status?: string) {
   if (status && new Date(status) >= new Date()) return 'success'
   if (status && new Date(status) < new Date()) return 'danger'
   return 'info'
+}
+
+function getFaultLevelType(level?: string) {
+  switch (level) {
+    case 'high': return 'danger'
+    case 'medium': return 'warning'
+    case 'low': return 'info'
+    default: return 'info'
+  }
 }
 
 onMounted(() => {

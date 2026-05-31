@@ -88,6 +88,33 @@
       </el-table>
     </el-card>
 
+    <el-card class="maintenance-section" style="margin-top: 16px">
+      <template #header>
+        <div class="card-header">
+          <span>维修记录</span>
+          <el-button v-if="userStore.isEditor" type="primary" @click="showMaintenanceDialog = true">添加维修记录</el-button>
+        </div>
+      </template>
+      <el-table :data="maintenanceRecords" stripe>
+        <el-table-column prop="fault_level_text" label="故障等级" width="100">
+          <template #default="{ row }">
+            <el-tag :type="getFaultLevelType(row.fault_level)">
+              {{ row.fault_level_text }}
+            </el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column prop="fault_description" label="故障现象" />
+        <el-table-column prop="solution" label="解决办法" />
+        <el-table-column prop="record_time" label="记录时间" width="180" />
+        <el-table-column prop="recorder_name" label="记录人" width="120" />
+        <el-table-column v-if="userStore.isAdmin" label="操作" width="100">
+          <template #default="{ row }">
+            <el-button type="danger" size="small" @click="deleteMaintenanceRecord(row.id)">删除</el-button>
+          </template>
+        </el-table-column>
+      </el-table>
+    </el-card>
+
     <el-dialog v-model="showExtendWarrantyDialog" title="申请质保延期" width="500px">
       <el-form :model="extendWarrantyForm" label-width="100px">
         <el-form-item label="归属项目" required>
@@ -102,6 +129,28 @@
       <template #footer>
         <el-button @click="showExtendWarrantyDialog = false">取消</el-button>
         <el-button type="primary" @click="submitExtendWarranty">确定</el-button>
+      </template>
+    </el-dialog>
+
+    <el-dialog v-model="showMaintenanceDialog" title="添加维修记录" width="500px">
+      <el-form :model="maintenanceForm" label-width="100px">
+        <el-form-item label="故障等级" required>
+          <el-radio-group v-model="maintenanceForm.fault_level">
+            <el-radio label="high">高</el-radio>
+            <el-radio label="medium">中</el-radio>
+            <el-radio label="low">低</el-radio>
+          </el-radio-group>
+        </el-form-item>
+        <el-form-item label="故障现象" required>
+          <el-textarea v-model="maintenanceForm.fault_description" rows="4" placeholder="请描述故障现象" />
+        </el-form-item>
+        <el-form-item label="解决办法">
+          <el-textarea v-model="maintenanceForm.solution" rows="4" placeholder="请描述解决办法" />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="showMaintenanceDialog = false">取消</el-button>
+        <el-button type="primary" @click="submitMaintenance">确定</el-button>
       </template>
     </el-dialog>
 
@@ -157,14 +206,35 @@ const point = ref<CheckpointPoint | null>(null)
 const checkpoints = ref<Checkpoint[]>([])
 const projects = ref<Project[]>([])
 const warrantyExtensions = ref<WarrantyExtension[]>([])
+const maintenanceRecords = ref<MaintenanceRecord[]>([])
 const loading = ref(false)
 const showAddDialog = ref(false)
 const showExtendWarrantyDialog = ref(false)
+const showMaintenanceDialog = ref(false)
 
 const extendWarrantyForm = reactive({
   project_id: undefined as number | undefined,
   warranty_expire_date: ''
 })
+
+const maintenanceForm = reactive({
+  fault_level: 'medium',
+  fault_description: '',
+  solution: ''
+})
+
+interface MaintenanceRecord {
+  id: number
+  facility_type: string
+  facility_id: number
+  fault_level: string
+  fault_level_text: string
+  fault_description: string
+  solution: string
+  record_time: string
+  recorder_id: number
+  recorder_name: string
+}
 
 function onProjectChange(projectId: number) {
   const project = projects.value.find(p => p.id === projectId)
@@ -190,6 +260,15 @@ function getStatusType(status?: string) {
     case '在保': return 'success'
     case '过保': return 'danger'
     case '无项目': return 'warning'
+    default: return 'info'
+  }
+}
+
+function getFaultLevelType(level?: string) {
+  switch (level) {
+    case 'high': return 'danger'
+    case 'medium': return 'warning'
+    case 'low': return 'info'
     default: return 'info'
   }
 }
@@ -322,5 +401,54 @@ function deleteWarrantyExtension(id: number) {
   }).catch(() => {})
 }
 
-onMounted(loadData)
+async function fetchMaintenanceRecords() {
+  try {
+    const records = await maintenanceApi.getMaintenanceRecords('checkpoint', Number(route.params.id)) as unknown as MaintenanceRecord[]
+    maintenanceRecords.value = records
+  } catch (error) {
+    console.error('获取维修记录失败', error)
+  }
+}
+
+async function submitMaintenance() {
+  try {
+    if (!maintenanceForm.fault_description) {
+      ElMessage.warning('请填写故障现象')
+      return
+    }
+    await maintenanceApi.createMaintenanceRecord({
+      facility_type: 'checkpoint',
+      facility_id: Number(route.params.id),
+      fault_level: maintenanceForm.fault_level,
+      fault_description: maintenanceForm.fault_description,
+      solution: maintenanceForm.solution
+    })
+    ElMessage.success('添加成功')
+    showMaintenanceDialog.value = false
+    maintenanceForm.fault_level = 'medium'
+    maintenanceForm.fault_description = ''
+    maintenanceForm.solution = ''
+    await fetchMaintenanceRecords()
+  } catch (error) {
+    ElMessage.error('添加失败')
+  }
+}
+
+async function deleteMaintenanceRecord(id: number) {
+  try {
+    await ElMessageBox.confirm('确定要删除该维修记录吗？', '警告', { type: 'warning' })
+    await maintenanceApi.deleteMaintenanceRecord(id)
+    ElMessage.success('删除成功')
+    await fetchMaintenanceRecords()
+  } catch (error: any) {
+    if (error !== 'cancel') {
+      ElMessage.error(error?.response?.data?.message || '删除失败')
+    }
+  }
+}
+
+onMounted(() => {
+  loadData()
+  fetchMaintenanceRecords()
+})
 </script>

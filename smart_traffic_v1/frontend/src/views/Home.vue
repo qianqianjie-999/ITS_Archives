@@ -1,9 +1,12 @@
 <template>
   <div class="home-page">
     <div class="page-header">
-      <div>
-        <h1 class="page-title">智能交通建设档案系统</h1>
-        <p class="page-subtitle">{{ currentDate }} · 欢迎回来，{{ userStore.user?.display_name || userStore.user?.username }}</p>
+      <div class="header-content">
+        <div class="header-text">
+          <h1 class="page-title">智能交通建设档案系统</h1>
+          <p class="page-subtitle">{{ currentDate }} · 欢迎回来，{{ userStore.user?.display_name || userStore.user?.username }}</p>
+        </div>
+        <div class="header-decoration"></div>
       </div>
     </div>
 
@@ -17,18 +20,22 @@
           <div class="stat-name">{{ card.label }}</div>
         </div>
         <div class="stat-badge" :style="{ color: card.badgeColor }">{{ card.badge }}</div>
+        <div class="stat-glow" :style="{ background: card.gradient }"></div>
       </div>
     </div>
 
     <div class="content-row">
       <div class="panel panel-warranty">
         <div class="panel-header">
-          <h3 class="panel-title">质保状态分布</h3>
+          <div class="panel-title-box">
+            <el-icon :size="18" class="panel-icon"><DataAnalysis /></el-icon>
+            <h3 class="panel-title">质保状态分布</h3>
+          </div>
         </div>
         <div class="warranty-content">
           <div class="warranty-pie">
             <svg viewBox="0 0 160 160" class="pie-svg">
-              <circle cx="80" cy="80" r="65" fill="none" stroke="#f0f0f0" stroke-width="20" />
+              <circle cx="80" cy="80" r="65" fill="none" stroke="#1e293b" stroke-width="20" />
               <circle
                 cx="80" cy="80" r="65" fill="none"
                 stroke="#52c41a" stroke-width="20"
@@ -45,7 +52,7 @@
               />
               <circle
                 cx="80" cy="80" r="65" fill="none"
-                stroke="#bfbfbf" stroke-width="20"
+                stroke="#4b5563" stroke-width="20"
                 :stroke-dasharray="pieNone + ' ' + (408.4 - pieNone)"
                 :stroke-dashoffset="-((pieInWarranty || 0) + (pieExpired || 0))"
                 transform="rotate(-90 80 80)"
@@ -68,7 +75,7 @@
               <span class="legend-count">{{ warrantyTotal.expired }}</span>
             </div>
             <div class="legend-row">
-              <span class="legend-dot" style="background:#bfbfbf"></span>
+              <span class="legend-dot" style="background:#4b5563"></span>
               <span class="legend-label">无项目</span>
               <span class="legend-count">{{ warrantyTotal.noProject }}</span>
             </div>
@@ -82,7 +89,10 @@
 
       <div class="panel panel-actions">
         <div class="panel-header">
-          <h3 class="panel-title">快捷入口</h3>
+          <div class="panel-title-box">
+            <el-icon :size="18" class="panel-icon"><PieChart /></el-icon>
+            <h3 class="panel-title">快捷入口</h3>
+          </div>
         </div>
         <div class="quick-grid">
           <div class="quick-item" v-for="q in quickLinks" :key="q.path" @click="navigateTo(q.path)">
@@ -98,7 +108,10 @@
     <div class="content-row">
       <div class="panel panel-device">
         <div class="panel-header">
-          <h3 class="panel-title">各类型设备统计</h3>
+          <div class="panel-title-box">
+            <el-icon :size="18" class="panel-icon"><DataAnalysis /></el-icon>
+            <h3 class="panel-title">各类型设备统计</h3>
+          </div>
         </div>
         <div class="device-bars">
           <div class="bar-row" v-for="bar in deviceBars" :key="bar.label">
@@ -113,7 +126,10 @@
 
       <div class="panel panel-summary">
         <div class="panel-header">
-          <h3 class="panel-title">质保到期提醒</h3>
+          <div class="panel-title-box">
+            <el-icon :size="18" class="panel-icon"><Clock /></el-icon>
+            <h3 class="panel-title">质保到期提醒</h3>
+          </div>
         </div>
         <div class="expiry-list" v-if="expiringDevices.length">
           <div class="expiry-row" v-for="d in expiringDevices.slice(0, 6)" :key="d.id">
@@ -134,7 +150,10 @@
     <div class="content-row">
       <div class="panel panel-ranking">
         <div class="panel-header">
-          <h3 class="panel-title">设备服役期限排名</h3>
+          <div class="panel-title-box">
+            <el-icon :size="18" class="panel-icon"><DataAnalysis /></el-icon>
+            <h3 class="panel-title">设备服役期限排名</h3>
+          </div>
         </div>
         <div class="ranking-list" v-if="serviceRanking.length">
           <div class="ranking-row" v-for="(item, index) in serviceRanking.slice(0, 6)" :key="item.id">
@@ -157,7 +176,10 @@
 
       <div class="panel panel-projects">
         <div class="panel-header">
-          <h3 class="panel-title">最近项目</h3>
+          <div class="panel-title-box">
+            <el-icon :size="18" class="panel-icon"><Folder /></el-icon>
+            <h3 class="panel-title">最近项目</h3>
+          </div>
         </div>
         <div class="project-list" v-if="recentProjects.length">
           <div class="project-row" v-for="p in recentProjects.slice(0, 6)" :key="p.id">
@@ -186,7 +208,7 @@ import { pointApi, checkpointPointApi, backendDeviceApi } from '@/api/points'
 import { projectApi } from '@/api/projects'
 import {
   Location, Camera, Folder, Monitor, Clock, Bell,
-  DocumentAdd, Plus, SuccessFilled
+  DocumentAdd, Plus, SuccessFilled, DataAnalysis
 } from '@element-plus/icons-vue'
 
 const router = useRouter()
@@ -214,13 +236,13 @@ const recentProjects = ref<any[]>([])
 const statCards = computed(() => {
   const s = stats.value
   return [
-    { key: 'intersections', label: '路口总数', value: s.intersections, icon: Location, gradient: 'linear-gradient(135deg, #1890ff, #096dd9)', class: '', badge: '信号灯+电警', badgeColor: '#1890ff' },
-    { key: 'trafficLights', label: '信号灯设备', value: s.trafficLights, icon: Clock, gradient: 'linear-gradient(135deg, #52c41a, #389e0d)', class: '', badge: '在路口中', badgeColor: '#52c41a' },
-    { key: 'electronicPolices', label: '电子警察设备', value: s.electronicPolices, icon: Camera, gradient: 'linear-gradient(135deg, #722ed1, #531dab)', class: '', badge: '在路口中', badgeColor: '#722ed1' },
-    { key: 'parkingEnforcements', label: '违停球设备', value: s.parkingEnforcements, icon: Bell, gradient: 'linear-gradient(135deg, #fa8c16, #d46b08)', class: '', badge: '违停点位', badgeColor: '#fa8c16' },
-    { key: 'checkpoints', label: '卡口设备', value: s.checkpoints, icon: Folder, gradient: 'linear-gradient(135deg, #13c2c2, #08979c)', class: '', badge: '卡口点位', badgeColor: '#13c2c2' },
-    { key: 'projects', label: '项目总数', value: s.projects, icon: DocumentAdd, gradient: 'linear-gradient(135deg, #eb2f96, #c41d7f)', class: '', badge: '已录入', badgeColor: '#eb2f96' },
-    { key: 'backendDevices', label: '后端设备', value: s.backendDevices, icon: Monitor, gradient: 'linear-gradient(135deg, #2f54eb, #1d39c4)', class: '', badge: '机房设备', badgeColor: '#2f54eb' }
+    { key: 'intersections', label: '路口总数', value: s.intersections, icon: Location, gradient: 'linear-gradient(135deg, rgba(0, 212, 255, 0.2), rgba(0, 212, 255, 0.05))', class: '', badge: '信号灯+电警', badgeColor: '#00d4ff' },
+    { key: 'trafficLights', label: '信号灯设备', value: s.trafficLights, icon: Clock, gradient: 'linear-gradient(135deg, rgba(82, 196, 26, 0.2), rgba(82, 196, 26, 0.05))', class: '', badge: '在路口中', badgeColor: '#52c41a' },
+    { key: 'electronicPolices', label: '电子警察设备', value: s.electronicPolices, icon: Camera, gradient: 'linear-gradient(135deg, rgba(114, 46, 209, 0.2), rgba(114, 46, 209, 0.05))', class: '', badge: '在路口中', badgeColor: '#722ed1' },
+    { key: 'parkingEnforcements', label: '违停球设备', value: s.parkingEnforcements, icon: Bell, gradient: 'linear-gradient(135deg, rgba(250, 140, 22, 0.2), rgba(250, 140, 22, 0.05))', class: '', badge: '违停点位', badgeColor: '#fa8c16' },
+    { key: 'checkpoints', label: '卡口设备', value: s.checkpoints, icon: Folder, gradient: 'linear-gradient(135deg, rgba(19, 194, 194, 0.2), rgba(19, 194, 194, 0.05))', class: '', badge: '卡口点位', badgeColor: '#13c2c2' },
+    { key: 'projects', label: '项目总数', value: s.projects, icon: DocumentAdd, gradient: 'linear-gradient(135deg, rgba(235, 45, 150, 0.2), rgba(235, 45, 150, 0.05))', class: '', badge: '已录入', badgeColor: '#eb2f96' },
+    { key: 'backendDevices', label: '后端设备', value: s.backendDevices, icon: Monitor, gradient: 'linear-gradient(135deg, rgba(47, 84, 235, 0.2), rgba(47, 84, 235, 0.05))', class: '', badge: '机房设备', badgeColor: '#2f54eb' }
   ]
 })
 
@@ -270,7 +292,7 @@ const quickLinks = [
   { path: '/parking-enforcements', label: '违停管理', icon: Camera, color: 'linear-gradient(135deg, #fa8c16, #d46b08)' },
   { path: '/checkpoints', label: '卡口管理', icon: Folder, color: 'linear-gradient(135deg, #13c2c2, #08979c)' },
   { path: '/backend-devices', label: '后端设备', icon: Monitor, color: 'linear-gradient(135deg, #2f54eb, #1d39c4)' },
-  { path: '/statistics', label: '统计报表', icon: Plus, color: 'linear-gradient(135deg, #595959, #262626)' }
+  { path: '/statistics', label: '统计报表', icon: Plus, color: 'linear-gradient(135deg, #00d4ff, #00a8cc)' }
 ]
 
 function navigateTo(path: string) {
@@ -429,8 +451,48 @@ onMounted(fetchStats)
 
 .page-header {
   margin-bottom: 28px;
-  .page-title { font-size: 26px; font-weight: 700; color: $text-primary; margin: 0; }
-  .page-subtitle { font-size: 14px; color: $text-secondary; margin: 6px 0 0; }
+
+  .header-content {
+    position: relative;
+    padding: $spacing-lg;
+    background: linear-gradient(135deg, rgba($primary-color, 0.1) 0%, rgba($primary-color, 0.02) 100%);
+    border: 1px solid rgba($primary-color, 0.15);
+    border-radius: $radius-lg;
+    overflow: hidden;
+
+    &::before {
+      content: '';
+      position: absolute;
+      top: -50%;
+      right: -10%;
+      width: 300px;
+      height: 300px;
+      background: radial-gradient(circle, rgba($primary-color, 0.1) 0%, transparent 70%);
+      pointer-events: none;
+    }
+  }
+
+  .header-text {
+    position: relative;
+    z-index: 1;
+  }
+
+  .page-title {
+    font-size: 26px;
+    font-weight: 700;
+    color: $text-primary;
+    margin: 0;
+    background: linear-gradient(90deg, $text-primary 0%, $primary-color 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .page-subtitle {
+    font-size: 14px;
+    color: $text-secondary;
+    margin: 6px 0 0;
+  }
 }
 
 .card-grid {
@@ -441,153 +503,415 @@ onMounted(fetchStats)
 }
 
 .stat-card {
-  background: #fff;
-  border-radius: 12px;
+  background: $bg-card;
+  border: 1px solid $border-color;
+  border-radius: $radius-lg;
   padding: 20px 16px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
   display: flex;
   align-items: center;
   gap: 14px;
-  transition: all 0.25s ease;
+  transition: all $transition-normal;
   position: relative;
   overflow: hidden;
-  &:hover { transform: translateY(-3px); box-shadow: 0 6px 20px rgba(0,0,0,0.1); }
+
+  &:hover {
+    transform: translateY(-3px);
+    border-color: rgba($primary-color, 0.3);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+
+    .stat-glow {
+      opacity: 1;
+    }
+  }
+}
+
+.stat-glow {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  opacity: 0;
+  transition: opacity $transition-normal;
 }
 
 .stat-icon-box {
-  width: 52px; height: 52px;
-  border-radius: 12px;
-  display: flex; align-items: center; justify-content: center;
+  width: 52px;
+  height: 52px;
+  border-radius: $radius-md;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   color: #fff;
   flex-shrink: 0;
+  border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-.stat-body { flex: 1; min-width: 0; }
-.stat-num { font-size: 26px; font-weight: 700; color: #1a1a2e; line-height: 1.2; }
-.stat-name { font-size: 12px; color: #8c8c8c; margin-top: 2px; }
-.stat-badge { position: absolute; top: 8px; right: 12px; font-size: 11px; font-weight: 500; }
+.stat-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.stat-num {
+  font-size: 26px;
+  font-weight: 700;
+  color: $text-primary;
+  line-height: 1.2;
+}
+
+.stat-name {
+  font-size: 12px;
+  color: $text-secondary;
+  margin-top: 2px;
+}
+
+.stat-badge {
+  position: absolute;
+  top: 8px;
+  right: 12px;
+  font-size: 11px;
+  font-weight: 500;
+}
 
 .content-row {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 16px;
   margin-bottom: 20px;
-  @media (max-width: 900px) { grid-template-columns: 1fr; }
-}
 
-.panel {
-  background: #fff;
-  border-radius: 12px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
-  padding: 20px;
-}
-
-.panel-header {
-  display: flex; justify-content: space-between; align-items: center;
-  margin-bottom: 16px;
-  .panel-title { font-size: 15px; font-weight: 600; color: #1a1a2e; margin: 0; }
-}
-
-.warranty-content {
-  display: flex; align-items: center; gap: 32px;
-}
-
-.warranty-pie {
-  position: relative; width: 160px; height: 160px; flex-shrink: 0;
-  .pie-svg { width: 100%; height: 100%; }
-  .pie-center {
-    position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-    text-align: center;
-    .pie-percent { font-size: 22px; font-weight: 700; color: #1a1a2e; }
-    .pie-desc { font-size: 11px; color: #8c8c8c; }
+  @media (max-width: 900px) {
+    grid-template-columns: 1fr;
   }
 }
 
-.warranty-legend { flex: 1; }
-.legend-row {
-  display: flex; align-items: center; gap: 8px; padding: 6px 0;
-  &:not(:last-child) { border-bottom: 1px solid #f5f5f5; }
-  &.total-row { margin-top: 8px; border-top: 2px solid #e8e8e8; padding-top: 10px; border-bottom: none; }
+.panel {
+  background: $bg-card;
+  border: 1px solid $border-color;
+  border-radius: $radius-lg;
+  padding: 20px;
+  transition: all $transition-normal;
+
+  &:hover {
+    border-color: rgba($primary-color, 0.2);
+  }
 }
-.legend-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
-.legend-label { flex: 1; font-size: 13px; color: #595959; }
-.legend-count { font-size: 16px; font-weight: 600; color: #1a1a2e; }
+
+.panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+
+  .panel-title-box {
+    display: flex;
+    align-items: center;
+    gap: $spacing-sm;
+  }
+
+  .panel-icon {
+    color: $primary-color;
+  }
+
+  .panel-title {
+    font-size: 15px;
+    font-weight: 600;
+    color: $text-primary;
+    margin: 0;
+  }
+}
+
+.warranty-content {
+  display: flex;
+  align-items: center;
+  gap: 32px;
+}
+
+.warranty-pie {
+  position: relative;
+  width: 160px;
+  height: 160px;
+  flex-shrink: 0;
+
+  .pie-svg {
+    width: 100%;
+    height: 100%;
+  }
+
+  .pie-center {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    text-align: center;
+
+    .pie-percent {
+      font-size: 22px;
+      font-weight: 700;
+      color: $text-primary;
+    }
+
+    .pie-desc {
+      font-size: 11px;
+      color: $text-secondary;
+    }
+  }
+}
+
+.warranty-legend {
+  flex: 1;
+}
+
+.legend-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 0;
+
+  &:not(:last-child) {
+    border-bottom: 1px solid $border-color;
+  }
+
+  &.total-row {
+    margin-top: 8px;
+    border-top: 2px solid $border-color;
+    padding-top: 10px;
+    border-bottom: none;
+  }
+}
+
+.legend-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.legend-label {
+  flex: 1;
+  font-size: 13px;
+  color: $text-secondary;
+}
+
+.legend-count {
+  font-size: 16px;
+  font-weight: 600;
+  color: $text-primary;
+}
 
 .quick-grid {
-  display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
 }
-.quick-item {
-  display: flex; flex-direction: column; align-items: center; gap: 8px;
-  padding: 16px 8px; border-radius: 10px;
-  cursor: pointer; transition: all 0.2s;
-  &:hover { background: #fafafa; transform: scale(1.04); }
-}
-.quick-icon {
-  width: 44px; height: 44px; border-radius: 10px;
-  display: flex; align-items: center; justify-content: center; color: #fff;
-}
-.quick-label { font-size: 12px; color: #595959; font-weight: 500; }
 
-.device-bars { padding: 4px 0; }
+.quick-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 16px 8px;
+  border-radius: $radius-md;
+  cursor: pointer;
+  transition: all $transition-fast;
+  background: rgba($primary-color, 0.03);
+  border: 1px solid transparent;
+
+  &:hover {
+    background: rgba($primary-color, 0.08);
+    border-color: rgba($primary-color, 0.2);
+    transform: scale(1.04);
+  }
+}
+
+.quick-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: $radius-md;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+}
+
+.quick-label {
+  font-size: 12px;
+  color: $text-secondary;
+  font-weight: 500;
+}
+
+.device-bars {
+  padding: 4px 0;
+}
+
 .bar-row {
-  display: flex; align-items: center; gap: 10px; margin-bottom: 14px;
-  &:last-child { margin-bottom: 0; }
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 14px;
+
+  &:last-child {
+    margin-bottom: 0;
+  }
 }
-.bar-label { width: 60px; font-size: 12px; color: #595959; text-align: right; flex-shrink: 0; }
+
+.bar-label {
+  width: 60px;
+  font-size: 12px;
+  color: $text-secondary;
+  text-align: right;
+  flex-shrink: 0;
+}
+
 .bar-track {
-  flex: 1; height: 10px; background: #f0f0f0; border-radius: 5px; overflow: hidden;
+  flex: 1;
+  height: 10px;
+  background: $border-color;
+  border-radius: 5px;
+  overflow: hidden;
 }
+
 .bar-fill {
-  height: 100%; border-radius: 5px;
+  height: 100%;
+  border-radius: 5px;
   transition: width 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
   min-width: 4px;
 }
-.bar-num { width: 32px; font-size: 14px; font-weight: 600; color: #1a1a2e; text-align: right; }
 
-.expiry-list { max-height: 260px; overflow-y: auto; }
-.expiry-row {
-  display: flex; justify-content: space-between; align-items: center;
-  padding: 10px 0;
-  &:not(:last-child) { border-bottom: 1px solid #f5f5f5; }
+.bar-num {
+  width: 32px;
+  font-size: 14px;
+  font-weight: 600;
+  color: $text-primary;
+  text-align: right;
 }
-.expiry-info { display: flex; flex-direction: column; }
-.expiry-name { font-size: 13px; color: #1a1a2e; font-weight: 500; }
-.expiry-type { font-size: 11px; color: #8c8c8c; }
+
+.expiry-list {
+  max-height: 260px;
+  overflow-y: auto;
+}
+
+.expiry-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 0;
+
+  &:not(:last-child) {
+    border-bottom: 1px solid $border-color;
+  }
+}
+
+.expiry-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.expiry-name {
+  font-size: 13px;
+  color: $text-primary;
+  font-weight: 500;
+}
+
+.expiry-type {
+  font-size: 11px;
+  color: $text-secondary;
+}
 
 .empty-state {
-  text-align: center; padding: 30px; color: #8c8c8c;
-  p { margin-top: 8px; font-size: 13px; }
+  text-align: center;
+  padding: 30px;
+  color: $text-secondary;
+
+  p {
+    margin-top: 8px;
+    font-size: 13px;
+  }
 }
 
-.ranking-list, .project-list { max-height: 260px; overflow-y: auto; }
-.ranking-row, .project-row {
-  display: flex; align-items: center; gap: 12px;
+.ranking-list,
+.project-list {
+  max-height: 260px;
+  overflow-y: auto;
+}
+
+.ranking-row,
+.project-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
   padding: 10px 0;
-  &:not(:last-child) { border-bottom: 1px solid #f5f5f5; }
+
+  &:not(:last-child) {
+    border-bottom: 1px solid $border-color;
+  }
 }
 
 .ranking-num {
-  width: 24px; height: 24px;
+  width: 24px;
+  height: 24px;
   border-radius: 50%;
-  background: #e8e8e8;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 12px; font-weight: 600;
-  color: #8c8c8c;
-  &.rank-gold { background: linear-gradient(135deg, #ffd700, #ffb700); color: #fff; }
-  &.rank-silver { background: linear-gradient(135deg, #c0c0c0, #a8a8a8); color: #fff; }
-  &.rank-bronze { background: linear-gradient(135deg, #cd7f32, #b87333); color: #fff; }
+  background: $border-color;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 600;
+  color: $text-secondary;
+
+  &.rank-gold {
+    background: linear-gradient(135deg, #ffd700, #ffb700);
+    color: #fff;
+  }
+
+  &.rank-silver {
+    background: linear-gradient(135deg, #c0c0c0, #a8a8a8);
+    color: #fff;
+  }
+
+  &.rank-bronze {
+    background: linear-gradient(135deg, #cd7f32, #b87333);
+    color: #fff;
+  }
 }
 
-.ranking-info, .project-info { flex: 1; display: flex; flex-direction: column; min-width: 0; }
-.ranking-name, .project-name {
-  font-size: 13px; color: #1a1a2e; font-weight: 500;
-  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+.ranking-info,
+.project-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
 }
-.ranking-type, .project-date { font-size: 11px; color: #8c8c8c; }
+
+.ranking-name,
+.project-name {
+  font-size: 13px;
+  color: $text-primary;
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ranking-type,
+.project-date {
+  font-size: 11px;
+  color: $text-secondary;
+}
 
 .ranking-duration {
-  display: flex; align-items: baseline; gap: 2px;
-  .duration-value { font-size: 16px; font-weight: 700; color: #1a1a2e; }
-  .duration-unit { font-size: 11px; color: #8c8c8c; }
+  display: flex;
+  align-items: baseline;
+  gap: 2px;
+
+  .duration-value {
+    font-size: 16px;
+    font-weight: 700;
+    color: $text-primary;
+  }
+
+  .duration-unit {
+    font-size: 11px;
+    color: $text-secondary;
+  }
 }
 </style>

@@ -45,5 +45,6 @@ export const authApi = {
 export { intersectionApi } from './intersections'
 export { pointApi } from './points'
 export { projectApi } from './projects'
+export { maintenanceApi } from './maintenance'
 
 export default apiClient

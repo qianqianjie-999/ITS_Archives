@@ -408,25 +408,25 @@ onMounted(fetchData)
 .summary-bar {
   display: flex; gap: 16px; margin-bottom: 16px;
   .summary-item {
-    flex: 1; background: #fff; border-radius: 10px; padding: 16px 20px;
-    box-shadow: 0 1px 6px rgba(0,0,0,0.05); text-align: center;
-    .sum-label { display: block; font-size: 12px; color: #8c8c8c; margin-bottom: 4px; }
-    .sum-value { font-size: 24px; font-weight: 700; color: #1a1a2e; }
-    &.green .sum-value { color: #52c41a; }
-    &.red .sum-value { color: #ff4d4f; }
-    &.blue .sum-value { color: #1890ff; }
+    flex: 1; background: $bg-card; border-radius: $radius-md; padding: 16px 20px;
+    box-shadow: $shadow-md; text-align: center; border: 1px solid $border-color;
+    .sum-label { display: block; font-size: 12px; color: $text-secondary; margin-bottom: 4px; }
+    .sum-value { font-size: 24px; font-weight: 700; color: $text-primary; }
+    &.green .sum-value { color: $success-color; }
+    &.red .sum-value { color: $error-color; }
+    &.blue .sum-value { color: $primary-color; }
   }
 }
 
 .filter-bar {
-  background: #fff; padding: 12px 16px; border-radius: 10px;
-  box-shadow: 0 1px 6px rgba(0,0,0,0.05); margin-bottom: 16px;
+  background: $bg-card; padding: 12px 16px; border-radius: $radius-md;
+  box-shadow: $shadow-md; margin-bottom: 16px; border: 1px solid $border-color;
   .el-select, .el-input { width: 100%; }
 }
 
 .pager {
   display: flex; justify-content: flex-end; margin-top: 16px;
-  padding: 12px 16px; background: #fff; border-radius: 10px;
-  box-shadow: 0 1px 6px rgba(0,0,0,0.05);
+  padding: 12px 16px; background: $bg-card; border-radius: $radius-md;
+  box-shadow: $shadow-md; border: 1px solid $border-color;
 }
 </style>

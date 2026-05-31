@@ -18,6 +18,7 @@ from .projects import ns as projects_ns
 from .attachments import ns as attachments_ns
 from .export import ns as export_ns
 from .users import ns as users_ns
+from .maintenance import ns as maintenance_ns
 
 api.add_namespace(auth_ns, path='/auth')
 api.add_namespace(intersections_ns, path='/intersections')
@@ -26,3 +27,4 @@ api.add_namespace(projects_ns, path='/projects')
 api.add_namespace(attachments_ns, path='/attachments')
 api.add_namespace(export_ns, path='/export')
 api.add_namespace(users_ns, path='/users')
+api.add_namespace(maintenance_ns, path='/maintenance')

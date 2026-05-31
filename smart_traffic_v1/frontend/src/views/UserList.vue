@@ -216,6 +216,7 @@ fetchUsers()
 @import '@/styles/variables.scss';
 
 .user-list {
+  padding: $spacing-lg;
   animation: fadeIn 0.4s ease;
 }
 
@@ -229,30 +230,50 @@ fetchUsers()
   justify-content: space-between;
   align-items: center;
   margin-bottom: 20px;
-  .page-title { font-size: 22px; font-weight: 600; color: $text-primary; margin: 0; }
-  .page-subtitle { font-size: 14px; color: $text-secondary; margin: 4px 0 0; }
+  border-bottom: 1px solid $border-color;
+  padding-bottom: 16px;
+
+  .page-title {
+    font-size: 22px;
+    font-weight: 600;
+    color: $text-primary;
+    margin: 0;
+  }
+
+  .page-subtitle {
+    font-size: 14px;
+    color: $text-secondary;
+    margin: 4px 0 0;
+  }
 }
 
 .panel {
-  background: #fff;
-  border-radius: 12px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  background: $bg-card;
+  border-radius: $radius-lg;
+  box-shadow: $shadow-md;
+  border: 1px solid $border-color;
   padding: 20px;
+  overflow: hidden;
 }
 
 .panel-header {
-  display: flex; justify-content: space-between; align-items: center;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
   margin-bottom: 16px;
-  .panel-title { font-size: 15px; font-weight: 600; color: #1a1a2e; margin: 0; }
+  border-bottom: 1px solid $border-color;
+  padding-bottom: 16px;
+
+  .panel-title {
+    font-size: 16px;
+    font-weight: 600;
+    color: $text-primary;
+    margin: 0;
+  }
 }
 
 .table-container {
   overflow-x: auto;
-}
-
-.el-table {
-  --el-table-header-text-color: #8c8c8c;
-  --el-table-row-hover-bg-color: #fafafa;
 }
 
 .el-button {
