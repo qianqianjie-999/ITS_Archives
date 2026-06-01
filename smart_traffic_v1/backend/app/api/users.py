@@ -35,7 +35,6 @@ user_update_model = ns.model('UserUpdate', {
 @ns.route('/')
 class UserList(Resource):
     @ns.doc('list_users')
-    @ns.marshal_list_with(user_model)
     @admin_required
     def get(self):
         """获取所有用户列表"""
@@ -44,7 +43,6 @@ class UserList(Resource):
 
     @ns.doc('create_user')
     @ns.expect(user_create_model)
-    @ns.marshal_with(user_model)
     @admin_required
     def post(self):
         """创建新用户"""
@@ -61,7 +59,7 @@ class UserList(Resource):
         user.set_password(data['password'])
         db.session.add(user)
         db.session.commit()
-        return user.to_dict(), 201
+        return {'data': user.to_dict()}, 201
 
 
 @ns.route('/<int:user_id>')
@@ -69,16 +67,14 @@ class UserList(Resource):
 @ns.response(404, '用户不存在')
 class UserResource(Resource):
     @ns.doc('get_user')
-    @ns.marshal_with(user_model)
     @admin_required
     def get(self, user_id):
         """获取单个用户信息"""
         user = User.query.get_or_404(user_id)
-        return user.to_dict()
+        return {'data': user.to_dict()}
 
     @ns.doc('update_user')
     @ns.expect(user_update_model)
-    @ns.marshal_with(user_model)
     @admin_required
     def put(self, user_id):
         """更新用户信息"""
@@ -95,7 +91,7 @@ class UserResource(Resource):
             user.set_password(data['password'])
         
         db.session.commit()
-        return user.to_dict()
+        return {'data': user.to_dict()}
 
     @ns.doc('delete_user')
     @ns.response(204, '删除成功')
