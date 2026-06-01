@@ -94,7 +94,7 @@ class ParkingPointList(Resource):
             data = p.to_dict()
             data.update(p.warranty_status)
             result.append(data)
-        return result
+        return {'data': result}
 
     @token_required
     @role_required('admin', 'editor')
@@ -125,9 +125,11 @@ class ParkingPointDetail(Resource):
         ).all()
 
         return {
-            'point': {**point.to_dict(), **point.warranty_status},
-            'parking_enforcements': [pe.to_dict() for pe in devices],
-            'warranty_extensions': [ext.to_dict() for ext in extensions]
+            'data': {
+                'point': {**point.to_dict(), **point.warranty_status},
+                'parking_enforcements': [pe.to_dict() for pe in devices],
+                'warranty_extensions': [ext.to_dict() for ext in extensions]
+            }
         }
 
     @token_required
@@ -172,7 +174,7 @@ class CheckpointPointList(Resource):
             data = p.to_dict()
             data.update(p.warranty_status)
             result.append(data)
-        return result
+        return {'data': result}
 
     @token_required
     @role_required('admin', 'editor')
@@ -203,9 +205,11 @@ class CheckpointPointDetail(Resource):
         ).all()
 
         return {
-            'point': {**point.to_dict(), **point.warranty_status},
-            'checkpoints': [cp.to_dict() for cp in devices],
-            'warranty_extensions': [ext.to_dict() for ext in extensions]
+            'data': {
+                'point': {**point.to_dict(), **point.warranty_status},
+                'checkpoints': [cp.to_dict() for cp in devices],
+                'warranty_extensions': [ext.to_dict() for ext in extensions]
+            }
         }
 
     @token_required
@@ -252,7 +256,7 @@ class ParkingEnforcementListAll(Resource):
             if key not in grouped or pe.id > grouped[key].id:
                 grouped[key] = pe
         
-        return [pe.to_dict() for pe in grouped.values()]
+        return {'data': [pe.to_dict() for pe in grouped.values()]}
 
 @ns.route('/parking-points/<int:point_id>/devices')
 class ParkingEnforcementByPoint(Resource):
@@ -261,7 +265,7 @@ class ParkingEnforcementByPoint(Resource):
         if not point:
             return {'status': 'error', 'message': '违停点位不存在'}, 404
         pes = db.session.query(ParkingEnforcement).filter_by(point_id=point_id).all()
-        return [pe.to_dict() for pe in pes]
+        return {'data': [pe.to_dict() for pe in pes]}
 
     @token_required
     @role_required('admin', 'editor')
@@ -330,7 +334,7 @@ class CheckpointListAll(Resource):
             if key not in grouped or cp.id > grouped[key].id:
                 grouped[key] = cp
         
-        return [cp.to_dict() for cp in grouped.values()]
+        return {'data': [cp.to_dict() for cp in grouped.values()]}
 
 
 @ns.route('/checkpoint-points/<int:point_id>/devices')
@@ -340,7 +344,7 @@ class CheckpointByPoint(Resource):
         if not point:
             return {'status': 'error', 'message': '卡口点位不存在'}, 404
         checkpoints = db.session.query(Checkpoint).filter_by(point_id=point_id).all()
-        return [cp.to_dict() for cp in checkpoints]
+        return {'data': [cp.to_dict() for cp in checkpoints]}
 
     @token_required
     @role_required('admin', 'editor')
@@ -538,7 +542,7 @@ class BackendDeviceList(Resource):
             if not suffix_pattern.search(bd.name):
                 filtered_devices.append(bd)
         
-        return [bd.to_dict() for bd in filtered_devices]
+        return {'data': [bd.to_dict() for bd in filtered_devices]}
 
     @token_required
     @role_required('admin', 'editor')
@@ -680,4 +684,4 @@ class BackendDeviceHistory(Resource):
             BackendDevice.name.like(f"{base_name}%")
         ).order_by(BackendDevice.id.asc()).all()
         
-        return [hr.to_dict() for hr in history_records]
+        return {'data': [hr.to_dict() for hr in history_records]}

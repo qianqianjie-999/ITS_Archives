@@ -41,7 +41,7 @@ class AttachmentList(Resource):
         if related_entity_id:
             query = query.filter_by(related_entity_id=related_entity_id)
         
-        return [a.to_dict() for a in query.all()]
+        return {'data': [a.to_dict() for a in query.all()]}
 
 @ns.route('/upload')
 class AttachmentUpload(Resource):

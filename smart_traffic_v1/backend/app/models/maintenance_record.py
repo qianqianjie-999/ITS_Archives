@@ -29,7 +29,7 @@ class MaintenanceRecord(db.Model):
             'solution': self.solution,
             'record_time': self.record_time.isoformat() if self.record_time else None,
             'recorder_id': self.recorder_id,
-            'recorder_name': self.recorder.name if self.recorder else None
+            'recorder_name': self.recorder.display_name if self.recorder else None
         }
 
     def get_fault_level_text(self):

@@ -134,7 +134,8 @@ function formatDate(dateStr: string) {
 async function fetchUsers() {
   loading.value = true
   try {
-    users.value = await userApi.list()
+    const res = await userApi.list()
+    users.value = res.data
   } catch (error) {
     console.error('获取用户列表失败', error)
   } finally {

@@ -1,4 +1,4 @@
-from flask import request
+from flask import request, g
 from flask_restx import Namespace, Resource, fields
 from ..extensions import db
 from ..models.maintenance_record import MaintenanceRecord
@@ -32,23 +32,21 @@ maintenance_create_model = ns.model('MaintenanceRecordCreate', {
 @ns.route('/<facility_type>/<int:facility_id>')
 class MaintenanceRecordList(Resource):
     @token_required
-    @ns.marshal_list_with(maintenance_record_model)
     def get(self, facility_type, facility_id):
         records = MaintenanceRecord.query.filter_by(
             facility_type=facility_type,
             facility_id=facility_id
         ).order_by(MaintenanceRecord.record_time.desc()).all()
-        return [record.to_dict() for record in records]
+        return {'data': [record.to_dict() for record in records]}
 
 
 @ns.route('/')
 class MaintenanceRecordResource(Resource):
     @token_required
     @ns.expect(maintenance_create_model)
-    @ns.marshal_with(maintenance_record_model)
     def post(self):
         data = request.json
-        current_user = request.user
+        current_user = g.current_user
         
         record = MaintenanceRecord(
             facility_type=data['facility_type'],
@@ -62,7 +60,7 @@ class MaintenanceRecordResource(Resource):
         db.session.add(record)
         db.session.commit()
         
-        return record.to_dict(), 201
+        return {'data': record.to_dict()}, 201
 
     @token_required
     @role_required('admin')

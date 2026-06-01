@@ -40,7 +40,7 @@ class UserList(Resource):
     def get(self):
         """获取所有用户列表"""
         users = User.query.all()
-        return [user.to_dict() for user in users]
+        return {'data': [user.to_dict() for user in users]}
 
     @ns.doc('create_user')
     @ns.expect(user_create_model)

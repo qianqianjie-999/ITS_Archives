@@ -35,7 +35,7 @@ class ProjectList(Resource):
         else:
             projects = db.session.query(Project).order_by(Project.id.desc()).all()
 
-        return [p.to_dict() for p in projects]
+        return {'data': [p.to_dict() for p in projects]}
 
     @token_required
     @role_required('admin', 'editor')
@@ -170,7 +170,7 @@ class WarrantyExtensionList(Resource):
         else:
             extensions = db.session.query(WarrantyExtension).all()
 
-        return [ext.to_dict() for ext in extensions]
+        return {'data': [ext.to_dict() for ext in extensions]}
 
 @ns.route('/warranty-extensions/<int:extension_id>')
 class WarrantyExtensionDetail(Resource):

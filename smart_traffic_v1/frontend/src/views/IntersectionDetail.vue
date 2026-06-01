@@ -213,10 +213,10 @@
           </el-radio-group>
         </el-form-item>
         <el-form-item label="故障现象" required>
-          <el-textarea v-model="maintenanceForm.fault_description" rows="4" placeholder="请描述故障现象" />
+          <el-input v-model="maintenanceForm.fault_description" type="textarea" :rows="4" placeholder="请描述故障现象" />
         </el-form-item>
         <el-form-item label="解决办法">
-          <el-textarea v-model="maintenanceForm.solution" rows="4" placeholder="请描述解决办法" />
+          <el-input v-model="maintenanceForm.solution" type="textarea" :rows="4" placeholder="请描述解决办法" />
         </el-form-item>
       </el-form>
       <template #footer>
@@ -694,7 +694,7 @@ function formatFileSize(bytes: number): string {
 async function fetchAttachments() {
   try {
     const res = await attachmentApi.list('intersection', Number(route.params.id))
-    attachments.value = res as unknown as Attachment[]
+    attachments.value = res.data
   } catch (error) {
     console.error('获取附件失败', error)
   }
@@ -702,8 +702,8 @@ async function fetchAttachments() {
 
 async function fetchWarrantyRecords() {
   try {
-    const records = await projectApi.getWarrantyExtensions('intersection', Number(route.params.id)) as unknown as WarrantyRecord[]
-    warrantyRecords.value = records
+    const res = await projectApi.getWarrantyExtensions('intersection', Number(route.params.id))
+    warrantyRecords.value = res.data
   } catch (error) {
     console.error('获取质保延期记录失败', error)
   }
@@ -711,8 +711,8 @@ async function fetchWarrantyRecords() {
 
 async function fetchMaintenanceRecords() {
   try {
-    const records = await maintenanceApi.getMaintenanceRecords('intersection', Number(route.params.id)) as unknown as MaintenanceRecord[]
-    maintenanceRecords.value = records
+    const res = await maintenanceApi.getMaintenanceRecords('intersection', Number(route.params.id))
+    maintenanceRecords.value = res.data
   } catch (error) {
     console.error('获取维修记录失败', error)
   }
@@ -795,7 +795,8 @@ async function deleteMaintenanceRecord(id: number) {
 
 async function fetchProjects() {
   try {
-    const projects = await projectApi.list() as unknown as Project[]
+    const res = await projectApi.list()
+    const projects = res.data
     projectOptions.value = projects.map(p => ({
       id: p.id,
       name: p.name,
@@ -810,7 +811,8 @@ async function fetchData() {
   loading.value = true
   try {
     await fetchProjects()
-    const data = await intersectionApi.getById(Number(route.params.id)) as unknown as IntersectionDetail
+    const res = await intersectionApi.getById(Number(route.params.id))
+    const data = res.data
     intersection.value = data.intersection
     trafficLights.value = data.traffic_lights
     electronicPolices.value = data.electronic_polices

@@ -116,10 +116,10 @@
           </el-radio-group>
         </el-form-item>
         <el-form-item label="故障现象" required>
-          <el-textarea v-model="maintenanceForm.fault_description" rows="4" placeholder="请描述故障现象" />
+          <el-input v-model="maintenanceForm.fault_description" type="textarea" :rows="4" placeholder="请描述故障现象" />
         </el-form-item>
         <el-form-item label="解决办法">
-          <el-textarea v-model="maintenanceForm.solution" rows="4" placeholder="请描述解决办法" />
+          <el-input v-model="maintenanceForm.solution" type="textarea" :rows="4" placeholder="请描述解决办法" />
         </el-form-item>
       </el-form>
       <template #footer>
@@ -218,7 +218,8 @@ const editForm = ref<any>({
 async function fetchData() {
   loading.value = true
   try {
-    backendDevices.value = await backendDeviceApi.list() as any
+    const res = await backendDeviceApi.list()
+    backendDevices.value = res.data
   } catch (error) {
     ElMessage.error('获取后端设备列表失败')
   } finally {
@@ -228,7 +229,7 @@ async function fetchData() {
 
 async function fetchProjects() {
   try {
-    projects.value = await projectApi.list() as unknown as Project[]
+    projects.value = (await projectApi.list()).data
   } catch (error) {
     ElMessage.error('获取项目列表失败')
   }
@@ -236,7 +237,7 @@ async function fetchProjects() {
 
 async function fetchWarrantyRecords(deviceId: number) {
   try {
-    warrantyRecords.value = await backendDeviceApi.getHistory(deviceId) as any[]
+    warrantyRecords.value = (await backendDeviceApi.getHistory(deviceId)).data
   } catch (error) {
     warrantyRecords.value = []
   }
@@ -347,8 +348,8 @@ async function deleteBackendDevice(id: number) {
 
 async function fetchMaintenanceRecords(deviceId: number) {
   try {
-    const records = await maintenanceApi.getMaintenanceRecords('backend_device', deviceId) as unknown as MaintenanceRecord[]
-    maintenanceRecords.value = records
+    const res = await maintenanceApi.getMaintenanceRecords('backend_device', deviceId)
+    maintenanceRecords.value = res.data
   } catch (error) {
     console.error('获取维修记录失败', error)
     maintenanceRecords.value = []

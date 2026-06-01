@@ -141,11 +141,12 @@ async function handleLogout() {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  height: 64px;
-  padding: 0 $spacing-lg;
+  height: 48px;
+  padding: 0 $spacing-md;
+  width: 100%;
   background: linear-gradient(180deg, #111827 0%, #0f172a 100%);
   border-bottom: 1px solid $border-color;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.25);
   position: sticky;
   top: 0;
   z-index: 100;

@@ -71,7 +71,7 @@ class IntersectionList(Resource):
             data = i.to_dict()
             data.update(i.warranty_status)
             result.append(data)
-        return result
+        return {'data': result}
 
     @token_required
     @role_required('admin', 'editor')
@@ -99,9 +99,11 @@ class IntersectionDetail(Resource):
         electronic_polices = db.session.query(ElectronicPolice).filter_by(intersection_id=intersection_id).all()
 
         return {
-            'intersection': {**intersection.to_dict(), **intersection.warranty_status},
-            'traffic_lights': [tl.to_dict() for tl in traffic_lights],
-            'electronic_polices': [ep.to_dict() for ep in electronic_polices]
+            'data': {
+                'intersection': {**intersection.to_dict(), **intersection.warranty_status},
+                'traffic_lights': [tl.to_dict() for tl in traffic_lights],
+                'electronic_polices': [ep.to_dict() for ep in electronic_polices]
+            }
         }
 
     @token_required
@@ -147,7 +149,7 @@ class TrafficLightListAll(Resource):
             if key not in grouped or tl.id > grouped[key].id:
                 grouped[key] = tl
         
-        return [tl.to_dict() for tl in grouped.values()]
+        return {'data': [tl.to_dict() for tl in grouped.values()]}
 
 @ns.route('/electronic-polices')
 class ElectronicPoliceListAll(Resource):
@@ -160,7 +162,7 @@ class ElectronicPoliceListAll(Resource):
             if key not in grouped or ep.id > grouped[key].id:
                 grouped[key] = ep
         
-        return [ep.to_dict() for ep in grouped.values()]
+        return {'data': [ep.to_dict() for ep in grouped.values()]}
 
 @ns.route('/<int:intersection_id>/traffic-light')
 class TrafficLightCreate(Resource):

@@ -142,10 +142,10 @@
           </el-radio-group>
         </el-form-item>
         <el-form-item label="故障现象" required>
-          <el-textarea v-model="maintenanceForm.fault_description" rows="4" placeholder="请描述故障现象" />
+          <el-input v-model="maintenanceForm.fault_description" type="textarea" :rows="4" placeholder="请描述故障现象" />
         </el-form-item>
         <el-form-item label="解决办法">
-          <el-textarea v-model="maintenanceForm.solution" rows="4" placeholder="请描述解决办法" />
+          <el-input v-model="maintenanceForm.solution" type="textarea" :rows="4" placeholder="请描述解决办法" />
         </el-form-item>
       </el-form>
       <template #footer>
@@ -195,6 +195,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { checkpointPointApi } from '@/api/points'
 import { projectApi } from '@/api/projects'
+import { maintenanceApi } from '@/api/maintenance'
 import { useUserStore } from '@/stores/user'
 import type { CheckpointPoint, Checkpoint, Project, WarrantyExtension } from '@/types'
 
@@ -352,10 +353,10 @@ function loadData() {
     checkpointPointApi.get(pointId),
     projectApi.list()
   ]).then(([pointDetail, projectList]) => {
-    point.value = pointDetail.point
-    checkpoints.value = pointDetail.checkpoints || []
-    warrantyExtensions.value = pointDetail.warranty_extensions || []
-    projects.value = projectList
+    point.value = pointDetail.data.point
+    checkpoints.value = pointDetail.data.checkpoints || []
+    warrantyExtensions.value = pointDetail.data.warranty_extensions || []
+    projects.value = projectList.data
     loading.value = false
   }).catch(() => {
     loading.value = false
@@ -403,8 +404,8 @@ function deleteWarrantyExtension(id: number) {
 
 async function fetchMaintenanceRecords() {
   try {
-    const records = await maintenanceApi.getMaintenanceRecords('checkpoint', Number(route.params.id)) as unknown as MaintenanceRecord[]
-    maintenanceRecords.value = records
+    const res = await maintenanceApi.getMaintenanceRecords('checkpoint', Number(route.params.id))
+    maintenanceRecords.value = res.data
   } catch (error) {
     console.error('获取维修记录失败', error)
   }

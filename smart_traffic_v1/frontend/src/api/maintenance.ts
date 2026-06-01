@@ -10,8 +10,8 @@ export const maintenanceApi = {
     fault_level: string
     fault_description: string
     solution?: string
-  }) => apiClient.post('/maintenance', data),
+  }) => apiClient.post('/maintenance/', data),
 
   deleteMaintenanceRecord: (id: number) =>
-    apiClient.delete('/maintenance', { params: { id } })
+    apiClient.delete('/maintenance/', { params: { id } })
 }

@@ -1,15 +1,5 @@
 <template>
   <div class="home-page">
-    <div class="page-header">
-      <div class="header-content">
-        <div class="header-text">
-          <h1 class="page-title">智能交通建设档案系统</h1>
-          <p class="page-subtitle">{{ currentDate }} · 欢迎回来，{{ userStore.user?.display_name || userStore.user?.username }}</p>
-        </div>
-        <div class="header-decoration"></div>
-      </div>
-    </div>
-
     <div class="card-grid">
       <div class="stat-card" v-for="card in statCards" :key="card.key" :class="card.class">
         <div class="stat-icon-box" :style="{ background: card.gradient }">
@@ -378,15 +368,15 @@ async function fetchStats() {
       backendDeviceApi.list()
     ])
 
-    const tl = (trafficLights as any[]) || []
-    const ep = (electronicPolices as any[]) || []
-    const pe = (parkingEnforcements as any[]) || []
-    const cp = (checkpoints as any[]) || []
-    const bd = (backendDevices as any[]) || []
-    const pr = (projects as any[]) || []
+    const tl = trafficLights.data || []
+    const ep = electronicPolices.data || []
+    const pe = parkingEnforcements.data || []
+    const cp = checkpoints.data || []
+    const bd = backendDevices.data || []
+    const pr = projects.data || []
 
     stats.value = {
-      intersections: (intersections as any[])?.length || 0,
+      intersections: intersections.data?.length || 0,
       trafficLights: tl.length,
       electronicPolices: ep.length,
       parkingEnforcements: pe.length,
@@ -447,52 +437,6 @@ onMounted(fetchStats)
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(8px); }
   to { opacity: 1; transform: translateY(0); }
-}
-
-.page-header {
-  margin-bottom: 28px;
-
-  .header-content {
-    position: relative;
-    padding: $spacing-lg;
-    background: linear-gradient(135deg, rgba($primary-color, 0.1) 0%, rgba($primary-color, 0.02) 100%);
-    border: 1px solid rgba($primary-color, 0.15);
-    border-radius: $radius-lg;
-    overflow: hidden;
-
-    &::before {
-      content: '';
-      position: absolute;
-      top: -50%;
-      right: -10%;
-      width: 300px;
-      height: 300px;
-      background: radial-gradient(circle, rgba($primary-color, 0.1) 0%, transparent 70%);
-      pointer-events: none;
-    }
-  }
-
-  .header-text {
-    position: relative;
-    z-index: 1;
-  }
-
-  .page-title {
-    font-size: 26px;
-    font-weight: 700;
-    color: $text-primary;
-    margin: 0;
-    background: linear-gradient(90deg, $text-primary 0%, $primary-color 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-  }
-
-  .page-subtitle {
-    font-size: 14px;
-    color: $text-secondary;
-    margin: 6px 0 0;
-  }
 }
 
 .card-grid {

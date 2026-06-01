@@ -63,7 +63,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useRoute } from 'vue-router'
-import { useUserStore } from '@/stores/user'
 import { House, Folder, Location, DArrowLeft, DArrowRight, Camera, DataAnalysis, User, Monitor, Setting } from '@element-plus/icons-vue'
 
 defineProps<{
@@ -73,7 +72,6 @@ defineProps<{
 defineEmits(['toggle'])
 
 const route = useRoute()
-const userStore = useUserStore()
 
 const activeMenu = computed(() => {
   const path = route.path
@@ -95,7 +93,7 @@ const activeMenu = computed(() => {
   width: 220px;
   min-width: 220px;
   height: calc(100vh - 64px);
-  background: linear-gradient(180deg, #0f172a 0%, #111827 100%);
+  background: linear-gradient(180deg, #1c273d 0%, #1f2a40 100%);
   color: #fff;
   transition: all $transition-normal;
   position: relative;

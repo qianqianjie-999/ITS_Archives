@@ -131,7 +131,7 @@ async function fetchData() {
   loading.value = true
   try {
     const res = await projectApi.list()
-    projects.value = res as unknown as Project[]
+    projects.value = res.data
   } catch (error) {
     ElMessage.error('获取数据失败')
   } finally {

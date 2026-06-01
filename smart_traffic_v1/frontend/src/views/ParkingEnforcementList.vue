@@ -130,7 +130,7 @@ function deletePoint(id: number) {
 function loadPoints() {
   loading.value = true
   pointApi.list().then(data => {
-    points.value = data
+    points.value = data.data
     loading.value = false
   }).catch(() => {
     loading.value = false

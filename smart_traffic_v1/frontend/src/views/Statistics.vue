@@ -350,12 +350,12 @@ async function fetchData() {
       checkpointPointApi.getCheckpointsAll(),
       backendDeviceApi.list()
     ])
-    projects.value = (p as any[]) || []
-    trafficLights.value = (tl as any[]) || []
-    electronicPolices.value = (ep as any[]) || []
-    parkingEnforcements.value = (pe as any[]) || []
-    checkpoints.value = (cp as any[]) || []
-    backendDevices.value = (bd as any[]) || []
+    projects.value = p.data || []
+    trafficLights.value = tl.data || []
+    electronicPolices.value = ep.data || []
+    parkingEnforcements.value = pe.data || []
+    checkpoints.value = cp.data || []
+    backendDevices.value = bd.data || []
   } catch (error) {
     console.error('获取数据失败', error)
     ElMessage.error('获取数据失败')

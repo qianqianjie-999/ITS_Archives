@@ -125,7 +125,7 @@ async function fetchData() {
   loading.value = true
   try {
     const res = await intersectionApi.list()
-    intersections.value = res as unknown as Intersection[]
+    intersections.value = res.data
   } catch (error) {
     ElMessage.error('获取数据失败')
   } finally {

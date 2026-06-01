@@ -109,7 +109,7 @@ const rules: FormRules = {
   ]
 }
 
-function getParticleStyle(index: number) {
+function getParticleStyle(_index: number) {
   const size = Math.random() * 4 + 2
   const left = Math.random() * 100
   const delay = Math.random() * 5
@@ -165,7 +165,7 @@ async function handleLogin() {
   left: 0;
   right: 0;
   bottom: 0;
-  background: linear-gradient(135deg, #0a0e17 0%, #111827 50%, #0f172a 100%);
+  background: linear-gradient(135deg, #141d2d 0%, #1a2335 50%, #1c273d 100%);
 
   &::before {
     content: '';
@@ -303,7 +303,7 @@ async function handleLogin() {
 .logo-circle {
   width: 80px;
   height: 80px;
-  background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+  background: linear-gradient(135deg, #1c273d 0%, #222d42 100%);
   border: 2px solid rgba(0, 212, 255, 0.3);
   border-radius: 50%;
   display: flex;
@@ -358,8 +358,8 @@ async function handleLogin() {
 
 :deep(.dark-input) {
   .el-input__wrapper {
-    background-color: #0f172a !important;
-    border: 1px solid #1e293b !important;
+    background-color: #1a2335 !important;
+    border: 1px solid #334155 !important;
     padding-left: 40px !important;
     transition: all 0.3s ease;
 
