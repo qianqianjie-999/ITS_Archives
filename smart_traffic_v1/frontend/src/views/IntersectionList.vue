@@ -35,7 +35,12 @@
           <el-input v-model="editIntersectionForm.name" />
         </el-form-item>
         <el-form-item label="类型">
-          <el-input v-model="editIntersectionForm.type" />
+          <el-select v-model="editIntersectionForm.type" placeholder="请选择路口类型">
+            <el-option label="十字路口" value="十字路口" />
+            <el-option label="丁字路口" value="丁字路口" />
+            <el-option label="行人过街" value="行人过街" />
+            <el-option label="其他" value="其他" />
+          </el-select>
         </el-form-item>
         <el-form-item label="东西路">
           <el-input v-model="editIntersectionForm.east_west_road" />
