@@ -75,7 +75,7 @@
         <el-table-column prop="extension_date" label="延期日期" width="140" />
         <el-table-column label="质保状态" width="100">
           <template #default="{ row }">
-            <el-tag :type="getStatusType(row.warranty_expire_date)">
+            <el-tag :type="getStatusType(row.warranty_expire_date ? (new Date(row.warranty_expire_date) >= new Date() ? '在保' : '过保') : '无项目')">
               {{ row.warranty_expire_date ? (new Date(row.warranty_expire_date) >= new Date() ? '在保' : '过保') : '-' }}
             </el-tag>
           </template>

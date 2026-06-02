@@ -197,7 +197,7 @@ import { pointApi, checkpointPointApi, backendDeviceApi } from '@/api/points'
 import { projectApi } from '@/api/projects'
 import {
   Location, Camera, Folder, Monitor, Clock, Bell,
-  DocumentAdd, Plus, SuccessFilled, DataAnalysis
+  DocumentAdd, Plus, SuccessFilled, DataAnalysis, PieChart
 } from '@element-plus/icons-vue'
 
 const router = useRouter()
