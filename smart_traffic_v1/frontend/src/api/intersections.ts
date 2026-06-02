@@ -7,8 +7,18 @@ export interface IntersectionDetail {
   electronic_polices: ElectronicPolice[]
 }
 
+interface PaginatedResponse<T> {
+  data: T[]
+  page: number
+  per_page: number
+  total: number
+  pages: number
+}
+
 export const intersectionApi = {
-  list: () => apiClient.get<Intersection[]>('/intersections/'),
+  list(params?: { page?: number; per_page?: number }): Promise<PaginatedResponse<Intersection>> {
+    return apiClient.get('/intersections/', { params })
+  },
 
   create: (data: Partial<Intersection>) => apiClient.post('/intersections/', data),
 

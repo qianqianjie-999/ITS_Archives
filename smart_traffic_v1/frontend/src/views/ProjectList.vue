@@ -26,6 +26,17 @@
           </template>
         </el-table-column>
       </el-table>
+
+      <div style="display: flex; justify-content: center; margin-top: 16px">
+        <el-pagination
+          v-model:current-page="currentPage"
+          :page-size="perPage"
+          :total="total"
+          layout="total, prev, pager, next"
+          @current-change="fetchData"
+          class="dark-pagination"
+        />
+      </div>
     </el-card>
 
     <el-dialog v-model="showDialog" :title="editProjectForm.id ? '编辑项目' : '新增项目'" width="500px">
@@ -71,6 +82,9 @@ const userStore = useUserStore()
 const projects = ref<Project[]>([])
 const loading = ref(false)
 const showDialog = ref(false)
+const currentPage = ref(1)
+const perPage = ref(20)
+const total = ref(0)
 
 const editProjectForm = reactive<Partial<Project>>({
   id: undefined,
@@ -130,8 +144,9 @@ async function deleteProject(id: number) {
 async function fetchData() {
   loading.value = true
   try {
-    const res = await projectApi.list()
+    const res = await projectApi.list({ page: currentPage.value, per_page: perPage.value })
     projects.value = res.data
+    total.value = res.total
   } catch (error) {
     ElMessage.error('获取数据失败')
   } finally {

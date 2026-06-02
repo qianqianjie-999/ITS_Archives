@@ -208,6 +208,7 @@
         layout="total, sizes, prev, pager, next, jumper"
         @size-change="handleSizeChange"
         @current-change="handleCurrentChange"
+        class="dark-pagination"
       />
     </div>
   </div>
@@ -343,12 +344,12 @@ async function fetchData() {
     const [
       p, tl, ep, pe, cp, bd
     ] = await Promise.all([
-      projectApi.list(),
+      projectApi.list({ per_page: 0 }),
       intersectionApi.getTrafficLightsAll(),
       intersectionApi.getElectronicPolicesAll(),
       pointApi.getParkingEnforcementsAll(),
       checkpointPointApi.getCheckpointsAll(),
-      backendDeviceApi.list()
+      backendDeviceApi.list({ per_page: 0 })
     ])
     projects.value = p.data || []
     trafficLights.value = tl.data || []

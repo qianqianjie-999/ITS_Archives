@@ -192,7 +192,6 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { useUserStore } from '@/stores/user'
 import { intersectionApi } from '@/api/intersections'
 import { pointApi, checkpointPointApi, backendDeviceApi } from '@/api/points'
 import { projectApi } from '@/api/projects'
@@ -202,11 +201,6 @@ import {
 } from '@element-plus/icons-vue'
 
 const router = useRouter()
-const userStore = useUserStore()
-
-const currentDate = new Date().toLocaleDateString('zh-CN', {
-  year: 'numeric', month: 'long', day: 'numeric', weekday: 'long'
-})
 
 const stats = ref({
   intersections: 0,
@@ -359,13 +353,13 @@ async function fetchStats() {
       intersections, trafficLights, electronicPolices,
       parkingEnforcements, checkpoints, projects, backendDevices
     ] = await Promise.all([
-      intersectionApi.list(),
+      intersectionApi.list({ per_page: 0 }),
       intersectionApi.getTrafficLightsAll(),
       intersectionApi.getElectronicPolicesAll(),
       pointApi.getParkingEnforcementsAll(),
       checkpointPointApi.getCheckpointsAll(),
-      projectApi.list(),
-      backendDeviceApi.list()
+      projectApi.list({ per_page: 0 }),
+      backendDeviceApi.list({ per_page: 0 })
     ])
 
     const tl = trafficLights.data || []

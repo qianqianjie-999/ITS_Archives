@@ -32,10 +32,24 @@ class ProjectList(Resource):
             ).all()
             project_ids = [ext.project_id for ext in extensions]
             projects = db.session.query(Project).filter(Project.id.in_(project_ids)).all()
-        else:
-            projects = db.session.query(Project).order_by(Project.id.desc()).all()
+            return {'data': [p.to_dict() for p in projects]}
 
-        return {'data': [p.to_dict() for p in projects]}
+        page = request.args.get('page', 1, type=int)
+        per_page = request.args.get('per_page', 20, type=int)
+        if per_page == 0:
+            projects = db.session.query(Project).order_by(Project.id.desc()).all()
+            return {'data': [p.to_dict() for p in projects]}
+        per_page = min(per_page, 100)
+        paginated = db.session.query(Project).order_by(Project.id.desc()).paginate(
+            page=page, per_page=per_page, error_out=False
+        )
+        return {
+            'data': [p.to_dict() for p in paginated.items],
+            'page': paginated.page,
+            'per_page': paginated.per_page,
+            'total': paginated.total,
+            'pages': paginated.pages
+        }
 
     @token_required
     @role_required('admin', 'editor')

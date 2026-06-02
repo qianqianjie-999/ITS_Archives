@@ -26,6 +26,17 @@
           </template>
         </el-table-column>
       </el-table>
+
+      <div style="display: flex; justify-content: center; margin-top: 16px">
+        <el-pagination
+          v-model:current-page="currentPage"
+          :page-size="perPage"
+          :total="total"
+          layout="total, prev, pager, next"
+          @current-change="loadPoints"
+          class="dark-pagination"
+        />
+      </div>
     </el-card>
 
     <el-dialog v-model="showDialog" :title="editPointForm.id ? '编辑点位' : '新增点位'" width="400px">
@@ -66,6 +77,9 @@ const userStore = useUserStore()
 const points = ref<CheckpointPoint[]>([])
 const loading = ref(false)
 const showDialog = ref(false)
+const currentPage = ref(1)
+const perPage = ref(20)
+const total = ref(0)
 
 const editPointForm = reactive<Partial<CheckpointPoint>>({
   id: undefined,
@@ -134,8 +148,9 @@ function deletePoint(id: number) {
 
 function loadPoints() {
   loading.value = true
-  checkpointPointApi.list().then(data => {
-    points.value = data.data
+  checkpointPointApi.list({ page: currentPage.value, per_page: perPage.value }).then(res => {
+    points.value = res.data
+    total.value = res.total
     loading.value = false
   }).catch(() => {
     loading.value = false

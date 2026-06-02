@@ -27,6 +27,17 @@
           </template>
         </el-table-column>
       </el-table>
+
+      <div style="display: flex; justify-content: center; margin-top: 16px">
+        <el-pagination
+          v-model:current-page="currentPage"
+          :page-size="perPage"
+          :total="total"
+          layout="total, prev, pager, next"
+          @current-change="fetchData"
+          class="dark-pagination"
+        />
+      </div>
     </el-card>
 
     <el-dialog v-model="showDialog" :title="editIntersectionForm.id ? '编辑路口' : '新增路口'" width="400px">
@@ -70,6 +81,9 @@ const userStore = useUserStore()
 const intersections = ref<Intersection[]>([])
 const loading = ref(false)
 const showDialog = ref(false)
+const currentPage = ref(1)
+const perPage = ref(20)
+const total = ref(0)
 
 const editIntersectionForm = reactive<Partial<Intersection>>({
   id: undefined,
@@ -129,8 +143,9 @@ async function deleteIntersection(id: number) {
 async function fetchData() {
   loading.value = true
   try {
-    const res = await intersectionApi.list()
+    const res = await intersectionApi.list({ page: currentPage.value, per_page: perPage.value })
     intersections.value = res.data
+    total.value = res.total
   } catch (error) {
     ElMessage.error('获取数据失败')
   } finally {

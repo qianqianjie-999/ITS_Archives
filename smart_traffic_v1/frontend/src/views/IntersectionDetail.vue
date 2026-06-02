@@ -111,6 +111,7 @@
         <el-tab-pane label="附件" name="attachments">
           <div class="tab-header">
             <span>附件列表</span>
+            <span v-if="userStore.isEditor" class="upload-tip">（仅支持 PDF、JPG、JPEG、PNG 格式）</span>
             <el-button v-if="userStore.isEditor" type="primary" size="small" @click="triggerFileInput()">上传附件</el-button>
           </div>
           <input
@@ -126,13 +127,29 @@
               <template #default="{ row }">{{ formatFileSize(row.file_size) }}</template>
             </el-table-column>
             <el-table-column prop="upload_time" label="上传时间" width="150" />
-            <el-table-column label="操作" width="150">
+            <el-table-column label="操作" width="200">
               <template #default="{ row }">
-                <el-button type="primary" size="small" @click="downloadAttachment(row.id)">下载</el-button>
+                <el-button type="primary" size="small" @click="previewAttachment(row)">预览</el-button>
+                <el-button type="success" size="small" @click="downloadAttachment(row.id)">下载</el-button>
                 <el-button v-if="userStore.isEditor" type="danger" size="small" @click="deleteAttachment(row.id)">删除</el-button>
               </template>
             </el-table-column>
           </el-table>
+
+          <el-dialog v-model="previewVisible" title="附件预览" width="800px" append-to-body>
+            <div v-if="previewType === 'image'" class="preview-image-container">
+              <img :src="previewUrl" :alt="previewFilename" class="preview-image" />
+            </div>
+            <div v-else-if="previewType === 'pdf'" class="preview-pdf-container">
+              <iframe :src="previewUrl" class="preview-pdf" frameborder="0"></iframe>
+            </div>
+            <div v-else class="preview-unsupported">
+              <el-icon size="64" class="preview-icon">
+                <Files />
+              </el-icon>
+              <p>该文件类型不支持预览，请下载查看</p>
+            </div>
+          </el-dialog>
         </el-tab-pane>
 
         <el-tab-pane label="质保延期" name="warranty">
@@ -373,12 +390,13 @@
 import { ref, onMounted, reactive } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import { Files } from '@element-plus/icons-vue'
 import { intersectionApi, type IntersectionDetail } from '@/api/intersections'
 import { attachmentApi, type Attachment } from '@/api/attachments'
 import { projectApi } from '@/api/projects'
 import { maintenanceApi } from '@/api/maintenance'
 import { useUserStore } from '@/stores/user'
-import type { TrafficLight, ElectronicPolice, Project } from '@/types'
+import type { TrafficLight, ElectronicPolice } from '@/types'
 
 const route = useRoute()
 const router = useRouter()
@@ -391,6 +409,11 @@ const electronicPolices = ref<ElectronicPolice[]>([])
 const attachments = ref<Attachment[]>([])
 const warrantyRecords = ref<WarrantyRecord[]>([])
 const maintenanceRecords = ref<MaintenanceRecord[]>([])
+
+const previewVisible = ref(false)
+const previewUrl = ref('')
+const previewType = ref<'image' | 'pdf' | 'other'>('other')
+const previewFilename = ref('')
 const activeTab = ref('trafficLights')
 
 const showTrafficLightDialog = ref(false)
@@ -684,6 +707,28 @@ async function downloadAttachment(id: number) {
   }
 }
 
+async function previewAttachment(attachment: Attachment) {
+  const filename = attachment.original_filename.toLowerCase()
+  previewFilename.value = attachment.original_filename
+  
+  if (filename.endsWith('.jpg') || filename.endsWith('.jpeg') || filename.endsWith('.png')) {
+    previewType.value = 'image'
+    try {
+      const response = await attachmentApi.download(attachment.id) as unknown as Blob
+      previewUrl.value = window.URL.createObjectURL(response)
+    } catch (error) {
+      ElMessage.error('预览失败')
+      return
+    }
+  } else if (filename.endsWith('.pdf')) {
+    previewType.value = 'pdf'
+    previewUrl.value = `http://localhost:5000/api/attachments/${attachment.id}?preview=true`
+  } else {
+    previewType.value = 'other'
+  }
+  
+  previewVisible.value = true
+}
 
 function formatFileSize(bytes: number): string {
   if (bytes < 1024) return bytes + ' B'
@@ -703,7 +748,7 @@ async function fetchAttachments() {
 async function fetchWarrantyRecords() {
   try {
     const res = await projectApi.getWarrantyExtensions('intersection', Number(route.params.id))
-    warrantyRecords.value = res.data
+    warrantyRecords.value = res.data as any
   } catch (error) {
     console.error('获取质保延期记录失败', error)
   }
@@ -795,7 +840,7 @@ async function deleteMaintenanceRecord(id: number) {
 
 async function fetchProjects() {
   try {
-    const res = await projectApi.list()
+    const res = await projectApi.list({ per_page: 0 })
     const projects = res.data
     projectOptions.value = projects.map(p => ({
       id: p.id,

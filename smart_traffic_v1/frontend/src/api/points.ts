@@ -19,8 +19,18 @@ export interface ExtendWarrantyData {
   warranty_expire_date: string
 }
 
+interface PaginatedResponse<T> {
+  data: T[]
+  page: number
+  per_page: number
+  total: number
+  pages: number
+}
+
 export const pointApi = {
-  list: () => apiClient.get<ParkingEnforcementPoint[]>('/points/parking-points'),
+  list(params?: { page?: number; per_page?: number }): Promise<PaginatedResponse<ParkingEnforcementPoint>> {
+    return apiClient.get('/points/parking-points', { params }) as any
+  },
 
   create: (data: Partial<ParkingEnforcementPoint>) => apiClient.post('/points/parking-points', data),
 
@@ -49,7 +59,9 @@ export const pointApi = {
 }
 
 export const checkpointPointApi = {
-  list: () => apiClient.get<CheckpointPoint[]>('/points/checkpoint-points'),
+  list(params?: { page?: number; per_page?: number }): Promise<PaginatedResponse<CheckpointPoint>> {
+    return apiClient.get('/points/checkpoint-points', { params }) as any
+  },
 
   create: (data: Partial<CheckpointPoint>) => apiClient.post('/points/checkpoint-points', data),
 
@@ -78,7 +90,9 @@ export const checkpointPointApi = {
 }
 
 export const backendDeviceApi = {
-  list: () => apiClient.get<BackendDevice[]>('/points/backend-devices'),
+  list(params?: { page?: number; per_page?: number }): Promise<PaginatedResponse<BackendDevice>> {
+    return apiClient.get('/points/backend-devices', { params }) as any
+  },
 
   create: (data: Partial<BackendDevice>) => apiClient.post('/points/backend-devices', data),
 

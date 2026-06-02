@@ -37,9 +37,21 @@ class UserList(Resource):
     @ns.doc('list_users')
     @admin_required
     def get(self):
-        """获取所有用户列表"""
-        users = User.query.all()
-        return {'data': [user.to_dict() for user in users]}
+        """获取用户列表（分页）"""
+        page = request.args.get('page', 1, type=int)
+        per_page = request.args.get('per_page', 20, type=int)
+        if per_page == 0:
+            users = User.query.all()
+            return {'data': [user.to_dict() for user in users]}
+        per_page = min(per_page, 100)
+        paginated = User.query.paginate(page=page, per_page=per_page, error_out=False)
+        return {
+            'data': [user.to_dict() for user in paginated.items],
+            'page': paginated.page,
+            'per_page': paginated.per_page,
+            'total': paginated.total,
+            'pages': paginated.pages
+        }
 
     @ns.doc('create_user')
     @ns.expect(user_create_model)

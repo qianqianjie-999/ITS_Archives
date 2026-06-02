@@ -52,6 +52,17 @@
             </template>
           </el-table-column>
         </el-table>
+
+        <div style="display: flex; justify-content: center; margin-top: 16px">
+          <el-pagination
+            v-model:current-page="currentPage"
+            :page-size="perPage"
+            :total="total"
+            layout="total, prev, pager, next"
+            @current-change="fetchUsers"
+            class="dark-pagination"
+          />
+        </div>
       </div>
     </div>
 
@@ -98,6 +109,9 @@ const loading = ref(false)
 const dialogVisible = ref(false)
 const editing = ref(false)
 const showPassword = ref(false)
+const currentPage = ref(1)
+const perPage = ref(20)
+const total = ref(0)
 
 const form = reactive({
   id: 0,
@@ -134,8 +148,9 @@ function formatDate(dateStr: string) {
 async function fetchUsers() {
   loading.value = true
   try {
-    const res = await userApi.list()
+    const res = await userApi.list({ page: currentPage.value, per_page: perPage.value })
     users.value = res.data
+    total.value = res.total
   } catch (error) {
     console.error('获取用户列表失败', error)
   } finally {

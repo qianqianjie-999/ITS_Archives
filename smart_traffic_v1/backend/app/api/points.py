@@ -88,13 +88,30 @@ extend_warranty_model = ns.model('ExtendWarranty', {
 @ns.route('/parking-points')
 class ParkingPointList(Resource):
     def get(self):
-        points = db.session.query(ParkingEnforcementPoint).all()
+        page = request.args.get('page', 1, type=int)
+        per_page = request.args.get('per_page', 20, type=int)
+        if per_page == 0:
+            points = db.session.query(ParkingEnforcementPoint).all()
+            result = []
+            for p in points:
+                data = p.to_dict()
+                data.update(p.warranty_status)
+                result.append(data)
+            return {'data': result}
+        per_page = min(per_page, 100)
+        paginated = db.session.query(ParkingEnforcementPoint).paginate(page=page, per_page=per_page, error_out=False)
         result = []
-        for p in points:
+        for p in paginated.items:
             data = p.to_dict()
             data.update(p.warranty_status)
             result.append(data)
-        return {'data': result}
+        return {
+            'data': result,
+            'page': paginated.page,
+            'per_page': paginated.per_page,
+            'total': paginated.total,
+            'pages': paginated.pages
+        }
 
     @token_required
     @role_required('admin', 'editor')
@@ -168,13 +185,30 @@ class ParkingPointDetail(Resource):
 @ns.route('/checkpoint-points')
 class CheckpointPointList(Resource):
     def get(self):
-        points = db.session.query(CheckpointPoint).all()
+        page = request.args.get('page', 1, type=int)
+        per_page = request.args.get('per_page', 20, type=int)
+        if per_page == 0:
+            points = db.session.query(CheckpointPoint).all()
+            result = []
+            for p in points:
+                data = p.to_dict()
+                data.update(p.warranty_status)
+                result.append(data)
+            return {'data': result}
+        per_page = min(per_page, 100)
+        paginated = db.session.query(CheckpointPoint).paginate(page=page, per_page=per_page, error_out=False)
         result = []
-        for p in points:
+        for p in paginated.items:
             data = p.to_dict()
             data.update(p.warranty_status)
             result.append(data)
-        return {'data': result}
+        return {
+            'data': result,
+            'page': paginated.page,
+            'per_page': paginated.per_page,
+            'total': paginated.total,
+            'pages': paginated.pages
+        }
 
     @token_required
     @role_required('admin', 'editor')
@@ -531,18 +565,38 @@ class CheckpointPointExtendWarranty(Resource):
 @ns.route('/backend-devices')
 class BackendDeviceList(Resource):
     def get(self):
-        backend_devices = db.session.query(BackendDevice).all()
-        
-        # 过滤出不带 "(数字)" 后缀的记录（原始名称记录，即最新记录）
-        filtered_devices = []
+        page = request.args.get('page', 1, type=int)
+        per_page = request.args.get('per_page', 20, type=int)
+
+        backend_devices = db.session.query(BackendDevice).order_by(BackendDevice.id).all()
         import re
         suffix_pattern = re.compile(r' \(\d+\)$')
-        
-        for bd in backend_devices:
-            if not suffix_pattern.search(bd.name):
-                filtered_devices.append(bd)
-        
-        return {'data': [bd.to_dict() for bd in filtered_devices]}
+
+        filtered_devices = [bd for bd in backend_devices if not suffix_pattern.search(bd.name)]
+        total = len(filtered_devices)
+
+        if per_page == 0:
+            return {
+                'data': [bd.to_dict() for bd in filtered_devices],
+                'page': 1,
+                'per_page': total,
+                'total': total,
+                'pages': 1
+            }
+
+        per_page = min(per_page, 100)
+        pages = (total + per_page - 1) // per_page
+        start = (page - 1) * per_page
+        end = start + per_page
+        page_items = filtered_devices[start:end]
+
+        return {
+            'data': [bd.to_dict() for bd in page_items],
+            'page': page,
+            'per_page': per_page,
+            'total': total,
+            'pages': pages
+        }
 
     @token_required
     @role_required('admin', 'editor')

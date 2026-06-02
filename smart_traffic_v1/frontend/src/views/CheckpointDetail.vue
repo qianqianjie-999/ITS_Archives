@@ -115,6 +115,52 @@
       </el-table>
     </el-card>
 
+    <el-card class="attachment-section" style="margin-top: 16px">
+      <template #header>
+        <div class="card-header">
+          <span>附件列表</span>
+          <span v-if="userStore.isEditor" class="upload-tip">（仅支持 PDF、JPG、JPEG、PNG 格式）</span>
+          <el-button v-if="userStore.isEditor" type="primary" size="small" @click="triggerFileInput()">上传附件</el-button>
+        </div>
+      </template>
+      <input
+        ref="fileInputRef"
+        type="file"
+        style="display: none"
+        @change="handleFileUpload"
+        accept=".pdf,.jpg,.jpeg,.png"
+      />
+      <el-table :data="attachments" stripe>
+        <el-table-column prop="original_filename" label="文件名" />
+        <el-table-column prop="file_size" label="大小" width="100">
+          <template #default="{ row }">{{ formatFileSize(row.file_size) }}</template>
+        </el-table-column>
+        <el-table-column prop="upload_time" label="上传时间" width="150" />
+        <el-table-column label="操作" width="200">
+          <template #default="{ row }">
+            <el-button type="primary" size="small" @click="previewAttachment(row)">预览</el-button>
+            <el-button type="success" size="small" @click="downloadAttachment(row.id)">下载</el-button>
+            <el-button v-if="userStore.isEditor" type="danger" size="small" @click="deleteAttachment(row.id)">删除</el-button>
+          </template>
+        </el-table-column>
+      </el-table>
+    </el-card>
+
+    <el-dialog v-model="previewVisible" title="附件预览" width="800px" append-to-body>
+      <div v-if="previewType === 'image'" class="preview-image-container">
+        <img :src="previewUrl" :alt="previewFilename" class="preview-image" />
+      </div>
+      <div v-else-if="previewType === 'pdf'" class="preview-pdf-container">
+        <iframe :src="previewUrl" class="preview-pdf" frameborder="0"></iframe>
+      </div>
+      <div v-else class="preview-unsupported">
+        <el-icon size="64" class="preview-icon">
+          <Files />
+        </el-icon>
+        <p>该文件类型不支持预览，请下载查看</p>
+      </div>
+    </el-dialog>
+
     <el-dialog v-model="showExtendWarrantyDialog" title="申请质保延期" width="500px">
       <el-form :model="extendWarrantyForm" label-width="100px">
         <el-form-item label="归属项目" required>
@@ -193,9 +239,11 @@
 import { ref, reactive, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import { Files } from '@element-plus/icons-vue'
 import { checkpointPointApi } from '@/api/points'
 import { projectApi } from '@/api/projects'
 import { maintenanceApi } from '@/api/maintenance'
+import { attachmentApi, type Attachment } from '@/api/attachments'
 import { useUserStore } from '@/stores/user'
 import type { CheckpointPoint, Checkpoint, Project, WarrantyExtension } from '@/types'
 
@@ -208,10 +256,16 @@ const checkpoints = ref<Checkpoint[]>([])
 const projects = ref<Project[]>([])
 const warrantyExtensions = ref<WarrantyExtension[]>([])
 const maintenanceRecords = ref<MaintenanceRecord[]>([])
+const attachments = ref<Attachment[]>([])
 const loading = ref(false)
 const showAddDialog = ref(false)
 const showExtendWarrantyDialog = ref(false)
 const showMaintenanceDialog = ref(false)
+const fileInputRef = ref<HTMLInputElement | null>(null)
+const previewVisible = ref(false)
+const previewUrl = ref('')
+const previewType = ref<'image' | 'pdf' | 'other'>('other')
+const previewFilename = ref('')
 
 const extendWarrantyForm = reactive({
   project_id: undefined as number | undefined,
@@ -351,7 +405,7 @@ function loadData() {
   
   Promise.all([
     checkpointPointApi.get(pointId),
-    projectApi.list()
+    projectApi.list({ per_page: 0 })
   ]).then(([pointDetail, projectList]) => {
     point.value = pointDetail.data.point
     checkpoints.value = pointDetail.data.checkpoints || []
@@ -448,8 +502,89 @@ async function deleteMaintenanceRecord(id: number) {
   }
 }
 
+function formatFileSize(bytes: number): string {
+  if (bytes < 1024) return bytes + ' B'
+  if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(2) + ' KB'
+  return (bytes / (1024 * 1024)).toFixed(2) + ' MB'
+}
+
+function triggerFileInput() {
+  fileInputRef.value?.click()
+}
+
+async function handleFileUpload(event: Event) {
+  const target = event.target as HTMLInputElement
+  const file = target.files?.[0]
+  if (!file) return
+
+  try {
+    await attachmentApi.upload(file, 'checkpoint', Number(route.params.id))
+    ElMessage.success('上传成功')
+    await fetchAttachments()
+    target.value = ''
+  } catch (error) {
+    ElMessage.error('上传失败')
+  }
+}
+
+async function fetchAttachments() {
+  try {
+    const res = await attachmentApi.list('checkpoint', Number(route.params.id))
+    attachments.value = res.data
+  } catch (error) {
+    console.error('获取附件失败', error)
+  }
+}
+
+async function deleteAttachment(id: number) {
+  try {
+    await ElMessageBox.confirm('确定要删除该附件吗？', '警告', { type: 'warning' })
+    await attachmentApi.delete(id)
+    ElMessage.success('删除成功')
+    await fetchAttachments()
+  } catch (error: any) {
+    if (error !== 'cancel') {
+      ElMessage.error(error?.response?.data?.message || '删除失败')
+    }
+  }
+}
+
+async function downloadAttachment(id: number) {
+  try {
+    const response = await attachmentApi.download(id) as unknown as Blob
+    const url = window.URL.createObjectURL(response)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `attachment_${id}`
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    window.URL.revokeObjectURL(url)
+  } catch (error) {
+    ElMessage.error('下载失败')
+  }
+}
+
+async function previewAttachment(attachment: Attachment) {
+  const filename = attachment.original_filename.toLowerCase()
+  previewFilename.value = attachment.original_filename
+
+  if (filename.endsWith('.jpg') || filename.endsWith('.jpeg') || filename.endsWith('.png')) {
+    previewType.value = 'image'
+    const response = await attachmentApi.download(attachment.id) as unknown as Blob
+    previewUrl.value = window.URL.createObjectURL(response)
+  } else if (filename.endsWith('.pdf')) {
+    previewType.value = 'pdf'
+    previewUrl.value = `http://localhost:5000/api/attachments/${attachment.id}?preview=true`
+  } else {
+    previewType.value = 'other'
+  }
+  previewVisible.value = true
+}
+
 onMounted(() => {
   loadData()
   fetchMaintenanceRecords()
+  fetchAttachments()
 })
 </script>

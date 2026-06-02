@@ -24,9 +24,17 @@ export interface UserUpdate {
   password?: string
 }
 
+export interface PaginatedResponse<T> {
+  data: T[]
+  page: number
+  per_page: number
+  total: number
+  pages: number
+}
+
 export const userApi = {
-  list(): Promise<User[]> {
-    return apiClient.get('/users/')
+  list(params?: { page?: number; per_page?: number }): Promise<PaginatedResponse<User>> {
+    return apiClient.get('/users/', { params })
   },
 
   get(id: number): Promise<User> {

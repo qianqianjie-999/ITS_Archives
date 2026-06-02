@@ -12,8 +12,18 @@ interface WarrantyRecord {
   project_id?: number
 }
 
+interface PaginatedResponse<T> {
+  data: T[]
+  page: number
+  per_page: number
+  total: number
+  pages: number
+}
+
 export const projectApi = {
-  list: () => apiClient.get<Project[]>('/projects/'),
+  list(params?: { page?: number; per_page?: number }): Promise<PaginatedResponse<Project>> {
+    return apiClient.get('/projects/', { params })
+  },
 
   getById: (id: number) => apiClient.get<Project>(`/projects/${id}`),
 

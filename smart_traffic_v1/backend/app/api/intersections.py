@@ -65,13 +65,30 @@ electronic_police_model = ns.model('ElectronicPolice', {
 @ns.route('/')
 class IntersectionList(Resource):
     def get(self):
-        intersections = db.session.query(Intersection).all()
+        page = request.args.get('page', 1, type=int)
+        per_page = request.args.get('per_page', 20, type=int)
+        if per_page == 0:
+            intersections = db.session.query(Intersection).all()
+            result = []
+            for i in intersections:
+                data = i.to_dict()
+                data.update(i.warranty_status)
+                result.append(data)
+            return {'data': result}
+        per_page = min(per_page, 100)
+        paginated = db.session.query(Intersection).paginate(page=page, per_page=per_page, error_out=False)
         result = []
-        for i in intersections:
+        for i in paginated.items:
             data = i.to_dict()
             data.update(i.warranty_status)
             result.append(data)
-        return {'data': result}
+        return {
+            'data': result,
+            'page': paginated.page,
+            'per_page': paginated.per_page,
+            'total': paginated.total,
+            'pages': paginated.pages
+        }
 
     @token_required
     @role_required('admin', 'editor')
