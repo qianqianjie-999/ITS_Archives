@@ -43,7 +43,7 @@ CREATE TABLE IF NOT EXISTS project (
   warranty_period VARCHAR(50),
   warranty_expire_date DATE NOT NULL,
   builder VARCHAR(100),
-  construction_unit VARCHAR(100),
+  constructor VARCHAR(100),
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
@@ -233,18 +233,6 @@ CREATE TABLE IF NOT EXISTS warranty_extension (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- 附件表
-CREATE TABLE IF NOT EXISTS attachment (
-  id INT AUTO_INCREMENT PRIMARY KEY,
-  related_entity_type VARCHAR(50) NOT NULL,
-  related_entity_id INT NOT NULL,
-  file_name VARCHAR(255) NOT NULL,
-  file_path VARCHAR(500) NOT NULL,
-  original_filename VARCHAR(255) NOT NULL,
-  file_size BIGINT NOT NULL,
-  upload_time TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
--- 附件表（备用）
 CREATE TABLE IF NOT EXISTS attachments (
   id INT AUTO_INCREMENT PRIMARY KEY,
   related_entity_type VARCHAR(50) NOT NULL,
@@ -253,6 +241,9 @@ CREATE TABLE IF NOT EXISTS attachments (
   file_path VARCHAR(500) NOT NULL,
   original_filename VARCHAR(255) NOT NULL,
   file_size BIGINT NOT NULL,
+  mime_type VARCHAR(100),
+  uploaded_by VARCHAR(100),
+  description TEXT,
   upload_time TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
@@ -287,7 +278,7 @@ CREATE INDEX IF NOT EXISTS idx_backend_device_project_id ON backend_device(proje
 CREATE INDEX IF NOT EXISTS idx_backend_device_point_id ON backend_device(point_id);
 CREATE INDEX IF NOT EXISTS idx_warranty_extension_facility ON warranty_extension(facility_type, facility_id);
 CREATE INDEX IF NOT EXISTS idx_warranty_extension_project_id ON warranty_extension(project_id);
-CREATE INDEX IF NOT EXISTS idx_attachment_entity ON attachment(related_entity_type, related_entity_id);
+CREATE INDEX IF NOT EXISTS idx_attachment_entity ON attachments(related_entity_type, related_entity_id);
 CREATE INDEX IF NOT EXISTS idx_maintenance_record_facility ON maintenance_record(facility_type, facility_id);
 CREATE INDEX IF NOT EXISTS idx_maintenance_record_recorder_id ON maintenance_record(recorder_id);
 
