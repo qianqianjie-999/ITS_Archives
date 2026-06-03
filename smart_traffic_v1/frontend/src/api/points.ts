@@ -1,5 +1,5 @@
 import apiClient from './index'
-import type { ParkingEnforcementPoint, CheckpointPoint, ParkingEnforcement, Checkpoint, BackendDevice, WarrantyExtension } from '@/types'
+import type { ParkingEnforcementPoint, CheckpointPoint, ParkingEnforcement, Checkpoint, BackendDevice, WarrantyExtension, SkyNetPoint, SkyNet } from '@/types'
 
 export interface ParkingPointDetail {
   point: ParkingEnforcementPoint
@@ -10,6 +10,12 @@ export interface ParkingPointDetail {
 export interface CheckpointPointDetail {
   point: CheckpointPoint
   checkpoints: Checkpoint[]
+  warranty_extensions: WarrantyExtension[]
+}
+
+export interface SkyNetPointDetail {
+  point: SkyNetPoint
+  sky_nets: SkyNet[]
   warranty_extensions: WarrantyExtension[]
 }
 
@@ -56,6 +62,37 @@ export const pointApi = {
 
   extendWarranty: (pointId: number, data: ExtendWarrantyData) =>
     apiClient.post(`/points/parking-points/${pointId}/extend-warranty`, data),
+}
+
+export const skyNetApi = {
+  listPoints(params?: { page?: number; per_page?: number }): Promise<PaginatedResponse<SkyNetPoint>> {
+    return apiClient.get('/points/sky-net-points', { params }) as any
+  },
+
+  createPoint: (data: Partial<SkyNetPoint>) => apiClient.post('/points/sky-net-points', data),
+
+  getPoint: (id: number) => apiClient.get<SkyNetPointDetail>(`/points/sky-net-points/${id}`),
+
+  updatePoint: (id: number, data: Partial<SkyNetPoint>) => apiClient.put(`/points/sky-net-points/${id}`, data),
+
+  deletePoint: (id: number) => apiClient.delete(`/points/sky-net-points/${id}`),
+
+  createSkyNet: (pointId: number, data: Partial<SkyNet>) =>
+    apiClient.post(`/points/sky-net-points/${pointId}/devices`, data),
+
+  getSkyNets: (pointId: number) =>
+    apiClient.get<SkyNet[]>(`/points/sky-net-points/${pointId}/devices`),
+
+  updateSkyNet: (pointId: number, snId: number, data: Partial<SkyNet>) =>
+    apiClient.put(`/points/sky-net-points/${pointId}/devices/${snId}`, data),
+
+  deleteSkyNet: (pointId: number, snId: number) =>
+    apiClient.delete(`/points/sky-net-points/${pointId}/devices/${snId}`),
+
+  getSkyNetsAll: () => apiClient.get<SkyNet[]>('/points/sky-net'),
+
+  extendWarranty: (pointId: number, data: ExtendWarrantyData) =>
+    apiClient.post(`/points/sky-net-points/${pointId}/extend-warranty`, data),
 }
 
 export const checkpointPointApi = {

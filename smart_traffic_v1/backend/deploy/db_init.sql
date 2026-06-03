@@ -7,16 +7,16 @@
 CREATE USER IF NOT EXISTS 'smart_traffic'@'localhost' IDENTIFIED BY 'your_password';
 
 -- 2. 创建数据库
-CREATE DATABASE IF NOT EXISTS traffic_db 
+CREATE DATABASE IF NOT EXISTS smart_traffic 
   CHARACTER SET utf8mb4 
   COLLATE utf8mb4_unicode_ci;
 
 -- 3. 授予用户权限
-GRANT ALL PRIVILEGES ON traffic_db.* TO 'smart_traffic'@'localhost';
+GRANT ALL PRIVILEGES ON smart_traffic.* TO 'smart_traffic'@'localhost';
 FLUSH PRIVILEGES;
 
 -- 4. 使用数据库
-USE traffic_db;
+USE smart_traffic;
 
 -- ==============================================
 -- 3. 创建表结构
@@ -43,7 +43,9 @@ CREATE TABLE IF NOT EXISTS project (
   warranty_period VARCHAR(50),
   warranty_expire_date DATE NOT NULL,
   builder VARCHAR(100),
-  constructor VARCHAR(100)
+  construction_unit VARCHAR(100),
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- 路口表
@@ -52,7 +54,11 @@ CREATE TABLE IF NOT EXISTS intersection (
   name VARCHAR(100) NOT NULL UNIQUE,
   type ENUM('十字路口', '丁字路口', '行人过街', '其他'),
   east_west_road VARCHAR(100),
-  north_south_road VARCHAR(100)
+  north_south_road VARCHAR(100),
+  latitude DECIMAL(10,6),
+  longitude DECIMAL(10,6),
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- 信号灯表
@@ -68,10 +74,13 @@ CREATE TABLE IF NOT EXISTS traffic_light (
   full_screen_count INT NOT NULL DEFAULT 0,
   non_motor_count INT NOT NULL DEFAULT 0,
   pedestrian_count INT NOT NULL DEFAULT 0,
+  countdown_timer_count INT NOT NULL DEFAULT 0 COMMENT '倒计时器数量',
   radar_count INT NOT NULL DEFAULT 0,
   guide_screen_count INT NOT NULL DEFAULT 0,
   power_source TEXT,
   extended_warranty_expire_date DATE NULL,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   FOREIGN KEY (intersection_id) REFERENCES intersection(id) ON DELETE CASCADE,
   FOREIGN KEY (project_id) REFERENCES project(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
@@ -91,6 +100,8 @@ CREATE TABLE IF NOT EXISTS electronic_police (
   signal_detector_count INT NOT NULL DEFAULT 0,
   network_source TEXT,
   extended_warranty_expire_date DATE NULL,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   FOREIGN KEY (intersection_id) REFERENCES intersection(id) ON DELETE CASCADE,
   FOREIGN KEY (project_id) REFERENCES project(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
@@ -100,7 +111,11 @@ CREATE TABLE IF NOT EXISTS parking_enforcement_point (
   id INT AUTO_INCREMENT PRIMARY KEY,
   name VARCHAR(100) NOT NULL UNIQUE,
   area VARCHAR(100),
-  type VARCHAR(50)
+  type VARCHAR(50),
+  latitude DECIMAL(10,6),
+  longitude DECIMAL(10,6),
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- 违停抓拍设备表
@@ -115,6 +130,8 @@ CREATE TABLE IF NOT EXISTS parking_enforcement (
   power_source TEXT,
   network_source TEXT,
   extended_warranty_expire_date DATE NULL,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   FOREIGN KEY (point_id) REFERENCES parking_enforcement_point(id) ON DELETE CASCADE,
   FOREIGN KEY (project_id) REFERENCES project(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
@@ -124,7 +141,11 @@ CREATE TABLE IF NOT EXISTS checkpoint_point (
   id INT AUTO_INCREMENT PRIMARY KEY,
   name VARCHAR(100) NOT NULL UNIQUE,
   area VARCHAR(100),
-  type VARCHAR(50)
+  type VARCHAR(50),
+  latitude DECIMAL(10,6),
+  longitude DECIMAL(10,6),
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- 卡口设备表
@@ -140,7 +161,38 @@ CREATE TABLE IF NOT EXISTS checkpoint (
   power_source TEXT,
   network_source TEXT,
   extended_warranty_expire_date DATE NULL,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   FOREIGN KEY (point_id) REFERENCES checkpoint_point(id) ON DELETE CASCADE,
+  FOREIGN KEY (project_id) REFERENCES project(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- 结构化相机点位表
+CREATE TABLE IF NOT EXISTS sky_net_point (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  name VARCHAR(100) NOT NULL UNIQUE,
+  monitor_area VARCHAR(200),
+  location VARCHAR(100),
+  latitude DECIMAL(10,6),
+  longitude DECIMAL(10,6)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- 结构化相机设备表
+CREATE TABLE IF NOT EXISTS sky_net (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  point_id INT NOT NULL,
+  project_id INT NOT NULL,
+  camera_area VARCHAR(200),
+  camera_count INT DEFAULT 0,
+  bracket_count INT DEFAULT 0,
+  pole_count INT DEFAULT 0,
+  box_count INT DEFAULT 0,
+  fill_light_count INT DEFAULT 0,
+  speaker_count INT DEFAULT 0,
+  power_source TEXT,
+  network_source TEXT,
+  extended_warranty_expire_date DATE NULL,
+  FOREIGN KEY (point_id) REFERENCES sky_net_point(id) ON DELETE CASCADE,
   FOREIGN KEY (project_id) REFERENCES project(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
@@ -165,6 +217,8 @@ CREATE TABLE IF NOT EXISTS backend_device (
   location VARCHAR(200),
   power_source TEXT,
   network_source TEXT,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   FOREIGN KEY (project_id) REFERENCES project(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
@@ -185,11 +239,21 @@ CREATE TABLE IF NOT EXISTS attachment (
   related_entity_id INT NOT NULL,
   file_name VARCHAR(255) NOT NULL,
   file_path VARCHAR(500) NOT NULL,
-  file_size INT,
-  mime_type VARCHAR(100),
-  upload_time TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  uploaded_by VARCHAR(100),
-  description TEXT
+  original_filename VARCHAR(255) NOT NULL,
+  file_size BIGINT NOT NULL,
+  upload_time TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- 附件表（备用）
+CREATE TABLE IF NOT EXISTS attachments (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  related_entity_type VARCHAR(50) NOT NULL,
+  related_entity_id INT NOT NULL,
+  file_name VARCHAR(255) NOT NULL,
+  file_path VARCHAR(500) NOT NULL,
+  original_filename VARCHAR(255) NOT NULL,
+  file_size BIGINT NOT NULL,
+  upload_time TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- 维修记录表
@@ -199,6 +263,7 @@ CREATE TABLE IF NOT EXISTS maintenance_record (
   facility_id INT NOT NULL,
   fault_level VARCHAR(20) NOT NULL,
   fault_description TEXT NOT NULL,
+  fault_time DATETIME NULL,
   solution TEXT,
   record_time DATETIME NOT NULL,
   recorder_id INT NOT NULL,
@@ -216,6 +281,8 @@ CREATE INDEX IF NOT EXISTS idx_parking_enforcement_point_id ON parking_enforceme
 CREATE INDEX IF NOT EXISTS idx_parking_enforcement_project_id ON parking_enforcement(project_id);
 CREATE INDEX IF NOT EXISTS idx_checkpoint_point_id ON checkpoint(point_id);
 CREATE INDEX IF NOT EXISTS idx_checkpoint_project_id ON checkpoint(project_id);
+CREATE INDEX IF NOT EXISTS idx_sky_net_point_id ON sky_net(point_id);
+CREATE INDEX IF NOT EXISTS idx_sky_net_project_id ON sky_net(project_id);
 CREATE INDEX IF NOT EXISTS idx_backend_device_project_id ON backend_device(project_id);
 CREATE INDEX IF NOT EXISTS idx_backend_device_point_id ON backend_device(point_id);
 CREATE INDEX IF NOT EXISTS idx_warranty_extension_facility ON warranty_extension(facility_type, facility_id);

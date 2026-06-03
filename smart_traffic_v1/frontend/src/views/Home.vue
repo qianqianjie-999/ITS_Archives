@@ -70,7 +70,7 @@
               <span class="legend-count">{{ warrantyTotal.noProject }}</span>
             </div>
             <div class="legend-row total-row">
-              <span class="legend-label">设备总计</span>
+              <span class="legend-label">点位总计</span>
               <span class="legend-count">{{ warrantyTotal.total }}</span>
             </div>
           </div>
@@ -100,7 +100,7 @@
         <div class="panel-header">
           <div class="panel-title-box">
             <el-icon :size="18" class="panel-icon"><DataAnalysis /></el-icon>
-            <h3 class="panel-title">各类型设备统计</h3>
+            <h3 class="panel-title">各类型点位统计</h3>
           </div>
         </div>
         <div class="device-bars">
@@ -142,7 +142,7 @@
         <div class="panel-header">
           <div class="panel-title-box">
             <el-icon :size="18" class="panel-icon"><DataAnalysis /></el-icon>
-            <h3 class="panel-title">设备服役期限排名</h3>
+            <h3 class="panel-title">点位设备服役期限排名</h3>
           </div>
         </div>
         <div class="ranking-list" v-if="serviceRanking.length">
@@ -193,7 +193,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { intersectionApi } from '@/api/intersections'
-import { pointApi, checkpointPointApi, backendDeviceApi } from '@/api/points'
+import { pointApi, checkpointPointApi, backendDeviceApi, skyNetApi } from '@/api/points'
 import { projectApi } from '@/api/projects'
 import {
   Location, Camera, Folder, Monitor, Clock, Bell,
@@ -208,6 +208,7 @@ const stats = ref({
   electronicPolices: 0,
   parkingEnforcements: 0,
   checkpoints: 0,
+  skyNetPoints: 0,
   projects: 0,
   backendDevices: 0
 })
@@ -221,11 +222,12 @@ const statCards = computed(() => {
   const s = stats.value
   return [
     { key: 'intersections', label: '路口总数', value: s.intersections, icon: Location, gradient: 'linear-gradient(135deg, rgba(0, 212, 255, 0.2), rgba(0, 212, 255, 0.05))', class: '', badge: '信号灯+电警', badgeColor: '#00d4ff' },
-    { key: 'trafficLights', label: '信号灯设备', value: s.trafficLights, icon: Clock, gradient: 'linear-gradient(135deg, rgba(82, 196, 26, 0.2), rgba(82, 196, 26, 0.05))', class: '', badge: '在路口中', badgeColor: '#52c41a' },
-    { key: 'electronicPolices', label: '电子警察设备', value: s.electronicPolices, icon: Camera, gradient: 'linear-gradient(135deg, rgba(114, 46, 209, 0.2), rgba(114, 46, 209, 0.05))', class: '', badge: '在路口中', badgeColor: '#722ed1' },
-    { key: 'parkingEnforcements', label: '违停球设备', value: s.parkingEnforcements, icon: Bell, gradient: 'linear-gradient(135deg, rgba(250, 140, 22, 0.2), rgba(250, 140, 22, 0.05))', class: '', badge: '违停点位', badgeColor: '#fa8c16' },
-    { key: 'checkpoints', label: '卡口设备', value: s.checkpoints, icon: Folder, gradient: 'linear-gradient(135deg, rgba(19, 194, 194, 0.2), rgba(19, 194, 194, 0.05))', class: '', badge: '卡口点位', badgeColor: '#13c2c2' },
-    { key: 'projects', label: '项目总数', value: s.projects, icon: DocumentAdd, gradient: 'linear-gradient(135deg, rgba(235, 45, 150, 0.2), rgba(235, 45, 150, 0.05))', class: '', badge: '已录入', badgeColor: '#eb2f96' },
+    { key: 'trafficLights', label: '信号灯点位', value: s.trafficLights, icon: Clock, gradient: 'linear-gradient(135deg, rgba(82, 196, 26, 0.2), rgba(82, 196, 26, 0.05))', class: '', badge: '在路口中', badgeColor: '#52c41a' },
+    { key: 'electronicPolices', label: '电子警察点位', value: s.electronicPolices, icon: Camera, gradient: 'linear-gradient(135deg, rgba(114, 46, 209, 0.2), rgba(114, 46, 209, 0.05))', class: '', badge: '在路口中', badgeColor: '#722ed1' },
+    { key: 'parkingEnforcements', label: '违停球点位', value: s.parkingEnforcements, icon: Bell, gradient: 'linear-gradient(135deg, rgba(250, 140, 22, 0.2), rgba(250, 140, 22, 0.05))', class: '', badge: '违停点位', badgeColor: '#fa8c16' },
+    { key: 'checkpoints', label: '卡口点位', value: s.checkpoints, icon: Folder, gradient: 'linear-gradient(135deg, rgba(19, 194, 194, 0.2), rgba(19, 194, 194, 0.05))', class: '', badge: '卡口点位', badgeColor: '#13c2c2' },
+    { key: 'skyNetPoints', label: '结构化相机', value: s.skyNetPoints, icon: Camera, gradient: 'linear-gradient(135deg, rgba(235, 45, 150, 0.2), rgba(235, 45, 150, 0.05))', class: '', badge: '劝导相机', badgeColor: '#eb2f96' },
+    { key: 'projects', label: '项目总数', value: s.projects, icon: DocumentAdd, gradient: 'linear-gradient(135deg, rgba(114, 46, 209, 0.2), rgba(114, 46, 209, 0.05))', class: '', badge: '已录入', badgeColor: '#722ed1' },
     { key: 'backendDevices', label: '后端设备', value: s.backendDevices, icon: Monitor, gradient: 'linear-gradient(135deg, rgba(47, 84, 235, 0.2), rgba(47, 84, 235, 0.05))', class: '', badge: '机房设备', badgeColor: '#2f54eb' }
   ]
 })
@@ -236,6 +238,7 @@ const deviceBars = computed(() => {
     stats.value.electronicPolices,
     stats.value.parkingEnforcements,
     stats.value.checkpoints,
+    stats.value.skyNetPoints,
     stats.value.backendDevices,
     1
   )
@@ -244,6 +247,7 @@ const deviceBars = computed(() => {
     { label: '电子警察', value: stats.value.electronicPolices, color: '#722ed1', percent: (stats.value.electronicPolices / max) * 100 },
     { label: '违停球', value: stats.value.parkingEnforcements, color: '#fa8c16', percent: (stats.value.parkingEnforcements / max) * 100 },
     { label: '卡口', value: stats.value.checkpoints, color: '#13c2c2', percent: (stats.value.checkpoints / max) * 100 },
+    { label: '结构化相机', value: stats.value.skyNetPoints, color: '#eb2f96', percent: (stats.value.skyNetPoints / max) * 100 },
     { label: '后端设备', value: stats.value.backendDevices, color: '#2f54eb', percent: (stats.value.backendDevices / max) * 100 }
   ]
 })
@@ -351,13 +355,14 @@ async function fetchStats() {
   try {
     const [
       intersections, trafficLights, electronicPolices,
-      parkingEnforcements, checkpoints, projects, backendDevices
+      parkingEnforcements, checkpoints, skyNetPoints, projects, backendDevices
     ] = await Promise.all([
       intersectionApi.list({ per_page: 0 }),
       intersectionApi.getTrafficLightsAll(),
       intersectionApi.getElectronicPolicesAll(),
       pointApi.getParkingEnforcementsAll(),
       checkpointPointApi.getCheckpointsAll(),
+      skyNetApi.getSkyNetsAll(),
       projectApi.list({ per_page: 0 }),
       backendDeviceApi.list({ per_page: 0 })
     ])
@@ -366,6 +371,7 @@ async function fetchStats() {
     const ep = electronicPolices.data || []
     const pe = parkingEnforcements.data || []
     const cp = checkpoints.data || []
+    const sn = skyNetPoints.data || []
     const bd = backendDevices.data || []
     const pr = projects.data || []
 
@@ -375,6 +381,7 @@ async function fetchStats() {
       electronicPolices: ep.length,
       parkingEnforcements: pe.length,
       checkpoints: cp.length,
+      skyNetPoints: sn.length,
       projects: pr.length,
       backendDevices: bd.length
     }
@@ -383,13 +390,14 @@ async function fetchStats() {
     const t2 = countWarranty(ep)
     const t3 = countWarranty(pe)
     const t4 = countWarranty(cp)
-    const t5 = countWarranty(bd)
+    const t5 = countWarranty(sn)
+    const t6 = countWarranty(bd)
 
     warrantyTotal.value = {
-      inCoverage: t1.inCoverage + t2.inCoverage + t3.inCoverage + t4.inCoverage + t5.inCoverage,
-      expired: t1.expired + t2.expired + t3.expired + t4.expired + t5.expired,
-      noProject: t1.noProject + t2.noProject + t3.noProject + t4.noProject + t5.noProject,
-      total: tl.length + ep.length + pe.length + cp.length + bd.length
+      inCoverage: t1.inCoverage + t2.inCoverage + t3.inCoverage + t4.inCoverage + t5.inCoverage + t6.inCoverage,
+      expired: t1.expired + t2.expired + t3.expired + t4.expired + t5.expired + t6.expired,
+      noProject: t1.noProject + t2.noProject + t3.noProject + t4.noProject + t5.noProject + t6.noProject,
+      total: tl.length + ep.length + pe.length + cp.length + sn.length + bd.length
     }
 
     expiringDevices.value = []
@@ -397,6 +405,7 @@ async function fetchStats() {
     collectExpiring(ep, 'intersection_name', '电子警察')
     collectExpiring(pe, 'point_name', '违停球')
     collectExpiring(cp, 'point_name', '卡口')
+    collectExpiring(sn, 'point_name', '结构化相机')
     collectExpiring(bd, 'name', '后端设备')
     expiringDevices.value.sort((a, b) => (a.expire > b.expire ? 1 : -1))
 
@@ -405,6 +414,7 @@ async function fetchStats() {
     collectServiceDuration(ep, 'intersection_name', '电子警察')
     collectServiceDuration(pe, 'point_name', '违停球')
     collectServiceDuration(cp, 'point_name', '卡口')
+    collectServiceDuration(sn, 'point_name', '结构化相机')
     collectServiceDuration(bd, 'name', '后端设备')
     serviceRanking.value.sort((a, b) => (parseFloat(b.duration) - parseFloat(a.duration)))
 

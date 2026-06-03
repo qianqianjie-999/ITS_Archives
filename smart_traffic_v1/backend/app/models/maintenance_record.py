@@ -12,6 +12,7 @@ class MaintenanceRecord(db.Model):
     facility_id: Mapped[int] = mapped_column(Integer, nullable=False)
     fault_level: Mapped[str] = mapped_column(String(20), nullable=False)
     fault_description: Mapped[str] = mapped_column(Text, nullable=False)
+    fault_time: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
     solution: Mapped[Optional[str]] = mapped_column(Text)
     record_time: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=datetime.now)
     recorder_id: Mapped[int] = mapped_column(ForeignKey('user.id'), nullable=False)
@@ -26,6 +27,7 @@ class MaintenanceRecord(db.Model):
             'fault_level': self.fault_level,
             'fault_level_text': self.get_fault_level_text(),
             'fault_description': self.fault_description,
+            'fault_time': self.fault_time.isoformat() if self.fault_time else None,
             'solution': self.solution,
             'record_time': self.record_time.isoformat() if self.record_time else None,
             'recorder_id': self.recorder_id,

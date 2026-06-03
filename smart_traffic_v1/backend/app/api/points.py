@@ -1,7 +1,7 @@
 from flask import request
 from flask_restx import Namespace, Resource, fields
 from ..extensions import db
-from ..models.point import ParkingEnforcementPoint, CheckpointPoint, ParkingEnforcement, Checkpoint
+from ..models.point import ParkingEnforcementPoint, CheckpointPoint, ParkingEnforcement, Checkpoint, SkyNetPoint, SkyNet
 from ..models.project import Project
 from ..models.backend_device import BackendDevice
 from ..models.warranty_extension import WarrantyExtension
@@ -14,14 +14,27 @@ parking_point_model = ns.model('ParkingEnforcementPoint', {
     'id': fields.Integer(readonly=True),
     'name': fields.String(required=True),
     'area': fields.String(),
-    'type': fields.String()
+    'type': fields.String(),
+    'latitude': fields.Float(),
+    'longitude': fields.Float()
+})
+
+sky_net_point_model = ns.model('SkyNetPoint', {
+    'id': fields.Integer(readonly=True),
+    'name': fields.String(required=True),
+    'monitor_area': fields.String(),
+    'location': fields.String(),
+    'latitude': fields.Float(),
+    'longitude': fields.Float()
 })
 
 checkpoint_point_model = ns.model('CheckpointPoint', {
     'id': fields.Integer(readonly=True),
     'name': fields.String(required=True),
     'area': fields.String(),
-    'type': fields.String()
+    'type': fields.String(),
+    'latitude': fields.Float(),
+    'longitude': fields.Float()
 })
 
 parking_enforcement_model = ns.model('ParkingEnforcement', {
@@ -33,6 +46,22 @@ parking_enforcement_model = ns.model('ParkingEnforcement', {
     'camera_count': fields.Integer(),
     'parking_sign_count': fields.Integer(),
     'monitor_sign_count': fields.Integer(),
+    'power_source': fields.String(),
+    'network_source': fields.String()
+})
+
+sky_net_model = ns.model('SkyNet', {
+    'id': fields.Integer(readonly=True),
+    'point_id': fields.Integer(),
+    'project_id': fields.Integer(),
+    'project_name': fields.String(readonly=True),
+    'warranty_expire_date': fields.String(readonly=True),
+    'camera_count': fields.Integer(),
+    'bracket_count': fields.Integer(),
+    'pole_count': fields.Integer(),
+    'box_count': fields.Integer(),
+    'fill_light_count': fields.Integer(),
+    'speaker_count': fields.Integer(),
     'power_source': fields.String(),
     'network_source': fields.String()
 })
@@ -178,6 +207,252 @@ class ParkingPointDetail(Resource):
         db.session.delete(point)
         db.session.commit()
         return {'status': 'success', 'message': '删除成功'}
+
+
+# ==================== SkyNet Points ====================
+
+@ns.route('/sky-net-points')
+class SkyNetPointList(Resource):
+    def get(self):
+        page = request.args.get('page', 1, type=int)
+        per_page = request.args.get('per_page', 20, type=int)
+        if per_page == 0:
+            points = db.session.query(SkyNetPoint).all()
+            result = []
+            for p in points:
+                data = p.to_dict()
+                data.update(p.warranty_status)
+                result.append(data)
+            return {'data': result}
+        per_page = min(per_page, 100)
+        paginated = db.session.query(SkyNetPoint).paginate(page=page, per_page=per_page, error_out=False)
+        result = []
+        for p in paginated.items:
+            data = p.to_dict()
+            data.update(p.warranty_status)
+            result.append(data)
+        return {
+            'data': result,
+            'page': paginated.page,
+            'per_page': paginated.per_page,
+            'total': paginated.total,
+            'pages': paginated.pages
+        }
+
+    @token_required
+    @role_required('admin', 'editor')
+    @ns.expect(sky_net_point_model)
+    def post(self):
+        data = request.json
+        point = SkyNetPoint(
+            name=data['name'],
+            monitor_area=data.get('monitor_area', ''),
+            location=data.get('location', '')
+        )
+        db.session.add(point)
+        db.session.commit()
+        return {'status': 'success', 'data': point.to_dict()}, 201
+
+
+@ns.route('/sky-net-points/<int:point_id>')
+class SkyNetPointDetail(Resource):
+    def get(self, point_id):
+        point = db.session.query(SkyNetPoint).get(point_id)
+        if not point:
+            return {'status': 'error', 'message': '天网点位不存在'}, 404
+
+        devices = db.session.query(SkyNet).filter_by(point_id=point_id).all()
+
+        extensions = db.session.query(WarrantyExtension).filter_by(
+            facility_type='point', facility_id=point_id
+        ).all()
+
+        return {
+            'data': {
+                'point': {**point.to_dict(), **point.warranty_status},
+                'sky_nets': [sn.to_dict() for sn in devices],
+                'warranty_extensions': [ext.to_dict() for ext in extensions]
+            }
+        }
+
+    @token_required
+    @role_required('admin', 'editor')
+    @ns.expect(sky_net_point_model)
+    def put(self, point_id):
+        point = db.session.query(SkyNetPoint).get(point_id)
+        if not point:
+            return {'status': 'error', 'message': '天网点位不存在'}, 404
+
+        data = request.json
+        if 'name' in data:
+            point.name = data['name']
+        if 'monitor_area' in data:
+            point.monitor_area = data['monitor_area']
+        if 'location' in data:
+            point.location = data['location']
+
+        db.session.commit()
+        return {'status': 'success', 'data': point.to_dict()}
+
+    @token_required
+    @role_required('admin')
+    def delete(self, point_id):
+        point = db.session.query(SkyNetPoint).get(point_id)
+        if not point:
+            return {'status': 'error', 'message': '天网点位不存在'}, 404
+
+        db.session.delete(point)
+        db.session.commit()
+        return {'status': 'success', 'message': '删除成功'}
+
+
+# ==================== SkyNet Devices ====================
+
+@ns.route('/sky-net')
+class SkyNetListAll(Resource):
+    def get(self):
+        sns = db.session.query(SkyNet).all()
+        
+        grouped = {}
+        for sn in sns:
+            key = sn.point_id
+            if key not in grouped or sn.id > grouped[key].id:
+                grouped[key] = sn
+        
+        return {'data': [sn.to_dict() for sn in grouped.values()]}
+
+
+@ns.route('/sky-net-points/<int:point_id>/devices')
+class SkyNetByPoint(Resource):
+    def get(self, point_id):
+        point = db.session.query(SkyNetPoint).get(point_id)
+        if not point:
+            return {'status': 'error', 'message': '天网点位不存在'}, 404
+        sns = db.session.query(SkyNet).filter_by(point_id=point_id).all()
+        return {'data': [sn.to_dict() for sn in sns]}
+
+    @token_required
+    @role_required('admin', 'editor')
+    @ns.expect(sky_net_model)
+    def post(self, point_id):
+        point = db.session.query(SkyNetPoint).get(point_id)
+        if not point:
+            return {'status': 'error', 'message': '天网点位不存在'}, 404
+
+        data = request.json
+        sn = SkyNet(
+            point_id=point_id,
+            project_id=data.get('project_id'),
+            camera_area=data.get('camera_area', ''),
+            camera_count=data.get('camera_count', 0),
+            bracket_count=data.get('bracket_count', 0),
+            pole_count=data.get('pole_count', 0),
+            box_count=data.get('box_count', 0),
+            fill_light_count=data.get('fill_light_count', 0),
+            speaker_count=data.get('speaker_count', 0),
+            power_source=data.get('power_source', ''),
+            network_source=data.get('network_source', '')
+        )
+        db.session.add(sn)
+        db.session.commit()
+        return {'status': 'success', 'data': sn.to_dict()}
+
+
+@ns.route('/sky-net-points/<int:point_id>/devices/<int:sn_id>')
+class SkyNetUpdate(Resource):
+    @token_required
+    @role_required('admin', 'editor')
+    @ns.expect(sky_net_model)
+    def put(self, point_id, sn_id):
+        sn = db.session.query(SkyNet).filter_by(id=sn_id, point_id=point_id).first()
+        if not sn:
+            return {'status': 'error', 'message': '天网相机设备不存在'}, 404
+
+        data = request.json
+        for key in ['project_id', 'camera_area', 'camera_count', 'bracket_count',
+                    'pole_count', 'box_count', 'fill_light_count', 'speaker_count',
+                    'power_source', 'network_source']:
+            if key in data:
+                setattr(sn, key, data[key])
+
+        db.session.commit()
+        return {'status': 'success', 'data': sn.to_dict()}
+
+    @token_required
+    @role_required('admin')
+    def delete(self, point_id, sn_id):
+        sn = db.session.query(SkyNet).filter_by(id=sn_id, point_id=point_id).first()
+        if not sn:
+            return {'status': 'error', 'message': '天网相机设备不存在'}, 404
+        db.session.delete(sn)
+        db.session.commit()
+        return {'status': 'success', 'message': '删除成功'}
+
+
+# ==================== SkyNet Warranty Extension ====================
+
+@ns.route('/sky-net-points/<int:point_id>/extend-warranty')
+class SkyNetPointExtendWarranty(Resource):
+    @token_required
+    @role_required('admin', 'editor')
+    @ns.expect(extend_warranty_model)
+    def post(self, point_id):
+        point = db.session.query(SkyNetPoint).get(point_id)
+        if not point:
+            return {'status': 'error', 'message': '天网点位不存在'}, 404
+
+        data = request.json
+        project_id = data.get('project_id')
+        warranty_expire_date = date.fromisoformat(data['warranty_expire_date'])
+
+        if project_id:
+            project = db.session.query(Project).get(project_id)
+            if not project:
+                return {'status': 'error', 'message': '项目不存在'}, 404
+        else:
+            project_name = data.get('project_name', f'质保延期项目_{point.name}')
+            project = Project(
+                name=project_name,
+                acceptance_date=date.today(),
+                warranty_expire_date=warranty_expire_date
+            )
+            db.session.add(project)
+            db.session.flush()
+
+        created_count = 0
+
+        devices = db.session.query(SkyNet).filter_by(point_id=point_id).all()
+        for d in devices:
+            new_sn = SkyNet(
+                point_id=point_id,
+                project_id=project.id,
+                camera_area=d.camera_area,
+                camera_count=d.camera_count,
+                bracket_count=d.bracket_count,
+                pole_count=d.pole_count,
+                box_count=d.box_count,
+                fill_light_count=d.fill_light_count,
+                speaker_count=d.speaker_count,
+                power_source=d.power_source,
+                network_source=d.network_source
+            )
+            db.session.add(new_sn)
+            created_count += 1
+
+        if created_count == 0:
+            db.session.rollback()
+            return {'status': 'error', 'message': '没有可延期的设备'}, 400
+
+        extension = WarrantyExtension(
+            facility_type='point',
+            facility_id=point_id,
+            project_id=project.id,
+            extension_date=date.today()
+        )
+        db.session.add(extension)
+
+        db.session.commit()
+        return {'status': 'success', 'project_id': project.id, 'message': f'已为{created_count}个设备创建质保延期记录'}
 
 
 # ==================== Checkpoint Points ====================

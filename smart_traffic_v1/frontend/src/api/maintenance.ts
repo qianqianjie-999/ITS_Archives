@@ -9,6 +9,7 @@ export const maintenanceApi = {
     facility_id: number
     fault_level: string
     fault_description: string
+    fault_time?: string | null
     solution?: string
   }) => apiClient.post('/maintenance/', data),
 

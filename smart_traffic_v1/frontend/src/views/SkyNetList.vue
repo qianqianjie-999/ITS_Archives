@@ -1,17 +1,17 @@
 <template>
-  <div class="parking-enforcement-list">
+  <div class="sky-net-list">
     <el-card>
       <template #header>
         <div class="card-header">
-          <span>违停点位列表</span>
+          <span>结构化相机点位列表</span>
           <el-button v-if="userStore.isEditor" type="primary" @click="openAddDialog">新增点位</el-button>
         </div>
       </template>
       <el-table :data="points" stripe v-loading="loading">
         <el-table-column type="index" label="序号" width="60" />
         <el-table-column prop="name" label="点位名称" />
-        <el-table-column prop="area" label="抓拍区域" />
-        <el-table-column prop="type" label="安装位置" width="120" />
+        <el-table-column prop="monitor_area" label="监控区域" />
+        <el-table-column prop="location" label="安装位置" width="120" />
         <el-table-column prop="latitude" label="纬度" width="120" />
         <el-table-column prop="longitude" label="经度" width="120" />
         <el-table-column label="操作" width="240">
@@ -46,11 +46,11 @@
         <el-form-item label="点位名称" required>
           <el-input v-model="editPointForm.name" />
         </el-form-item>
-        <el-form-item label="抓拍区域">
-          <el-input v-model="editPointForm.area" />
+        <el-form-item label="监控区域">
+          <el-input v-model="editPointForm.monitor_area" />
         </el-form-item>
         <el-form-item label="安装位置">
-          <el-input v-model="editPointForm.type" />
+          <el-input v-model="editPointForm.location" />
         </el-form-item>
         <el-form-item label="纬度">
           <el-input v-model.number="editPointForm.latitude" placeholder="例如：31.2304" />
@@ -71,45 +71,45 @@
 import { ref, onMounted, reactive } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { pointApi } from '@/api/points'
+import { skyNetApi } from '@/api/points'
 import { useUserStore } from '@/stores/user'
-import type { ParkingEnforcementPoint } from '@/types'
+import type { SkyNetPoint } from '@/types'
 
 const router = useRouter()
 const userStore = useUserStore()
-const points = ref<ParkingEnforcementPoint[]>([])
+const points = ref<SkyNetPoint[]>([])
 const loading = ref(false)
 const showDialog = ref(false)
 const currentPage = ref(1)
 const perPage = ref(20)
 const total = ref(0)
 
-const editPointForm = reactive<Partial<ParkingEnforcementPoint>>({
+const editPointForm = reactive<Partial<SkyNetPoint>>({
   id: undefined,
   name: '',
-  area: '',
-  type: '',
+  monitor_area: '',
+  location: '',
   latitude: undefined,
   longitude: undefined
 })
 
 function goToDetail(id: number) {
-  router.push(`/parking-enforcements/${id}`)
+  router.push(`/sky-net/${id}`)
 }
 
 function openAddDialog() {
   editPointForm.id = undefined
   editPointForm.name = ''
-  editPointForm.area = ''
-  editPointForm.type = ''
+  editPointForm.monitor_area = ''
+  editPointForm.location = ''
   showDialog.value = true
 }
 
-function editPoint(point: ParkingEnforcementPoint) {
+function editPoint(point: SkyNetPoint) {
   editPointForm.id = point.id
   editPointForm.name = point.name
-  editPointForm.area = point.area || ''
-  editPointForm.type = point.type || ''
+  editPointForm.monitor_area = point.monitor_area || ''
+  editPointForm.location = point.location || ''
   showDialog.value = true
 }
 
@@ -121,12 +121,12 @@ function submitPoint() {
   
   const data = {
     name: editPointForm.name,
-    area: editPointForm.area,
-    type: editPointForm.type
+    monitor_area: editPointForm.monitor_area,
+    location: editPointForm.location
   }
 
   if (editPointForm.id) {
-    pointApi.update(editPointForm.id, data).then(() => {
+    skyNetApi.updatePoint(editPointForm.id, data).then(() => {
       ElMessage.success('编辑成功')
       showDialog.value = false
       loadPoints()
@@ -134,7 +134,7 @@ function submitPoint() {
       ElMessage.error(err.response?.data?.message || '编辑失败')
     })
   } else {
-    pointApi.create(data).then(() => {
+    skyNetApi.createPoint(data).then(() => {
       ElMessage.success('新增成功')
       showDialog.value = false
       loadPoints()
@@ -150,7 +150,7 @@ function deletePoint(id: number) {
     cancelButtonText: '取消',
     type: 'warning'
   }).then(() => {
-    pointApi.delete(id).then(() => {
+    skyNetApi.deletePoint(id).then(() => {
       ElMessage.success('删除成功')
       loadPoints()
     }).catch((err) => {
@@ -161,7 +161,7 @@ function deletePoint(id: number) {
 
 function loadPoints() {
   loading.value = true
-  pointApi.list({ page: currentPage.value, per_page: perPage.value }).then(res => {
+  skyNetApi.listPoints({ page: currentPage.value, per_page: perPage.value }).then(res => {
     points.value = res.data
     total.value = res.total
     loading.value = false

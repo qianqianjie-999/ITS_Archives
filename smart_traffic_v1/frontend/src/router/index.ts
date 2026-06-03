@@ -51,6 +51,16 @@ const routes: RouteRecordRaw[] = [
         component: () => import('@/views/ParkingEnforcementDetail.vue')
       },
       {
+        path: 'sky-net',
+        name: 'SkyNetList',
+        component: () => import('@/views/SkyNetList.vue')
+      },
+      {
+        path: 'sky-net/:id',
+        name: 'SkyNetDetail',
+        component: () => import('@/views/SkyNetDetail.vue')
+      },
+      {
         path: 'checkpoints',
         name: 'CheckpointList',
         component: () => import('@/views/CheckpointList.vue')

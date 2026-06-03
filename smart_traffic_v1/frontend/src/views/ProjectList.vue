@@ -4,7 +4,7 @@
       <template #header>
         <div class="card-header">
           <span>项目列表</span>
-          <el-button v-if="userStore.isEditor" type="primary" @click="showDialog = true">新增项目</el-button>
+          <el-button v-if="userStore.isEditor" type="primary" @click="openAddDialog">新增项目</el-button>
         </div>
       </template>
       <el-table :data="projects" stripe v-loading="loading">
@@ -16,6 +16,11 @@
           </template>
         </el-table-column>
         <el-table-column prop="acceptance_date" label="验收日期" width="120" />
+        <el-table-column prop="warranty_period" label="质保期" width="120">
+          <template #default="{ row }">
+            {{ row.warranty_period ? `${row.warranty_period}年` : '-' }}
+          </template>
+        </el-table-column>
         <el-table-column prop="warranty_expire_date" label="质保到期" width="120" />
         <el-table-column prop="builder" label="建设单位" />
         <el-table-column prop="construction_unit" label="施工单位" />
@@ -45,13 +50,19 @@
           <el-input v-model="editProjectForm.name" />
         </el-form-item>
         <el-form-item label="合同金额">
-          <el-input-number v-model="editProjectForm.contract_amount" :precision="2" :step="1000" /><span style="margin-left:8px">万元</span>
+          <div style="display: flex; align-items: center;">
+            <el-input-number v-model="editProjectForm.contract_amount" :precision="2" :step="1000" style="width: 180px;" />
+            <span style="margin-left: 8px;">万元</span>
+          </div>
         </el-form-item>
         <el-form-item label="验收日期">
           <el-date-picker v-model="editProjectForm.acceptance_date" type="date" value-format="YYYY-MM-DD" />
         </el-form-item>
         <el-form-item label="质保期">
-          <el-input v-model="editProjectForm.warranty_period" />
+          <div style="display: flex; align-items: center;">
+            <el-input v-model="editProjectForm.warranty_period" style="width: 180px;" />
+            <span style="margin-left: 8px;">年</span>
+          </div>
         </el-form-item>
         <el-form-item label="质保到期" required>
           <el-date-picker v-model="editProjectForm.warranty_expire_date" type="date" value-format="YYYY-MM-DD" />
@@ -96,6 +107,18 @@ const editProjectForm = reactive<Partial<Project>>({
   builder: '',
   construction_unit: ''
 })
+
+function openAddDialog() {
+  editProjectForm.id = undefined
+  editProjectForm.name = ''
+  editProjectForm.contract_amount = undefined
+  editProjectForm.acceptance_date = ''
+  editProjectForm.warranty_period = ''
+  editProjectForm.warranty_expire_date = ''
+  editProjectForm.builder = ''
+  editProjectForm.construction_unit = ''
+  showDialog.value = true
+}
 
 function editProject(project: Project) {
   Object.assign(editProjectForm, {

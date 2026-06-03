@@ -29,6 +29,11 @@
           <span>违停管理</span>
         </el-menu-item>
 
+        <el-menu-item index="/sky-net">
+          <el-icon><Odometer /></el-icon>
+          <span>结构化相机</span>
+        </el-menu-item>
+
         <el-menu-item index="/checkpoints">
           <el-icon><Monitor /></el-icon>
           <span>卡口</span>
@@ -63,7 +68,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useRoute } from 'vue-router'
-import { House, Folder, Location, DArrowLeft, DArrowRight, Camera, DataAnalysis, User, Monitor, Setting } from '@element-plus/icons-vue'
+import { House, Folder, Location, DArrowLeft, DArrowRight, Camera, DataAnalysis, User, Monitor, Setting, Odometer } from '@element-plus/icons-vue'
 
 defineProps<{
   isCollapsed: boolean
@@ -77,6 +82,7 @@ const activeMenu = computed(() => {
   const path = route.path
   if (path.startsWith('/intersections')) return '/intersections'
   if (path.startsWith('/parking-enforcements')) return '/parking-enforcements'
+  if (path.startsWith('/sky-net')) return '/sky-net'
   if (path.startsWith('/checkpoints')) return '/checkpoints'
   if (path.startsWith('/backend-devices')) return '/backend-devices'
   if (path.startsWith('/projects')) return '/projects'

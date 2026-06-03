@@ -1,17 +1,17 @@
 <template>
-  <div class="checkpoint-detail">
+  <div class="sky-net-detail">
     <el-card v-loading="loading">
       <template #header>
         <div class="card-header">
-          <span>卡口点位详情 - {{ point?.name }}</span>
+          <span>结构化相机点位详情 - {{ point?.name }}</span>
           <el-button @click="goBack">返回</el-button>
         </div>
       </template>
 
       <el-descriptions :column="2" border v-if="point">
         <el-descriptions-item label="点位名称">{{ point.name }}</el-descriptions-item>
-        <el-descriptions-item label="安装位置">{{ point.type || '-' }}</el-descriptions-item>
-        <el-descriptions-item label="卡口类型">{{ point.area || '-' }}</el-descriptions-item>
+        <el-descriptions-item label="监控区域">{{ point.monitor_area || '-' }}</el-descriptions-item>
+        <el-descriptions-item label="安装位置">{{ point.location || '-' }}</el-descriptions-item>
         <el-descriptions-item label="质保状态">
           <el-tag :type="getStatusType(point.status)">
             {{ point.status || '-' }}
@@ -24,11 +24,11 @@
       <el-card class="device-section">
         <template #header>
           <div class="card-header">
-            <span>卡口点位</span>
-            <el-button v-if="userStore.isEditor" type="primary" @click="showAddDialog = true">添加卡口详情信息</el-button>
+            <span>结构化相机</span>
+            <el-button v-if="userStore.isEditor" type="primary" @click="showAddDialog = true">添加详情信息</el-button>
           </div>
         </template>
-      <el-table :data="checkpoints" stripe v-loading="loading">
+      <el-table :data="skyNets" stripe v-loading="loading">
         <el-table-column prop="project_name" label="归属项目" />
         <el-table-column prop="acceptance_date" label="项目验收日期" width="140" />
         <el-table-column prop="warranty_period" label="项目质保期" width="120">
@@ -46,10 +46,12 @@
         </el-table-column>
         <el-table-column prop="construction_unit" label="建设单位" />
         <el-table-column prop="construction_company" label="施工单位" />
-        <el-table-column prop="camera_count" label="抓拍机数量" width="120" />
-        <el-table-column prop="strobe_light_count" label="爆闪灯数量" width="120" />
-        <el-table-column prop="radar_count" label="测速雷达数量" width="120" />
-        <el-table-column prop="sign_count" label="标牌数量" width="120" />
+        <el-table-column prop="camera_count" label="相机数量" width="100" />
+        <el-table-column prop="bracket_count" label="支架数量" width="100" />
+        <el-table-column prop="pole_count" label="立杆数量" width="100" />
+        <el-table-column prop="box_count" label="挂箱数量" width="100" />
+        <el-table-column prop="fill_light_count" label="补光灯数量" width="100" />
+        <el-table-column prop="speaker_count" label="音箱数量" width="100" />
         <el-table-column prop="power_source" label="取电说明" />
         <el-table-column prop="network_source" label="取网说明" />
         <el-table-column label="操作" width="200">
@@ -209,24 +211,30 @@
       </template>
     </el-dialog>
 
-    <el-dialog v-model="showAddDialog" :title="editForm.id ? '编辑详情信息' : '添加卡口详情信息'" width="500px">
+    <el-dialog v-model="showAddDialog" :title="editForm.id ? '编辑详情信息' : '添加详情信息'" width="500px">
       <el-form :model="editForm" label-width="100px">
         <el-form-item label="归属项目" required>
           <el-select v-model="editForm.project_id" placeholder="请选择项目">
             <el-option v-for="project in projects" :key="project.id" :label="project.name" :value="project.id" />
           </el-select>
         </el-form-item>
-        <el-form-item label="抓拍机数量">
+        <el-form-item label="相机数量">
           <el-input-number v-model="editForm.camera_count" :min="0" />
         </el-form-item>
-        <el-form-item label="爆闪灯数量">
-          <el-input-number v-model="editForm.strobe_light_count" :min="0" />
+        <el-form-item label="支架数量">
+          <el-input-number v-model="editForm.bracket_count" :min="0" />
         </el-form-item>
-        <el-form-item label="测速雷达数量">
-          <el-input-number v-model="editForm.radar_count" :min="0" />
+        <el-form-item label="立杆数量">
+          <el-input-number v-model="editForm.pole_count" :min="0" />
         </el-form-item>
-        <el-form-item label="标牌数量">
-          <el-input-number v-model="editForm.sign_count" :min="0" />
+        <el-form-item label="挂箱数量">
+          <el-input-number v-model="editForm.box_count" :min="0" />
+        </el-form-item>
+        <el-form-item label="补光灯数量">
+          <el-input-number v-model="editForm.fill_light_count" :min="0" />
+        </el-form-item>
+        <el-form-item label="音箱数量">
+          <el-input-number v-model="editForm.speaker_count" :min="0" />
         </el-form-item>
         <el-form-item label="取电说明">
           <el-input v-model="editForm.power_source" />
@@ -249,19 +257,19 @@ import { ref, reactive, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Files } from '@element-plus/icons-vue'
-import { checkpointPointApi } from '@/api/points'
+import { skyNetApi } from '@/api/points'
 import { projectApi } from '@/api/projects'
 import { maintenanceApi } from '@/api/maintenance'
 import { attachmentApi, type Attachment } from '@/api/attachments'
 import { useUserStore } from '@/stores/user'
-import type { CheckpointPoint, Checkpoint, Project, WarrantyExtension } from '@/types'
+import type { SkyNetPoint, SkyNet, Project, WarrantyExtension } from '@/types'
 
 const route = useRoute()
 const router = useRouter()
 const userStore = useUserStore()
 
-const point = ref<CheckpointPoint | null>(null)
-const checkpoints = ref<Checkpoint[]>([])
+const point = ref<SkyNetPoint | null>(null)
+const skyNets = ref<SkyNet[]>([])
 const projects = ref<Project[]>([])
 const warrantyExtensions = ref<WarrantyExtension[]>([])
 const maintenanceRecords = ref<MaintenanceRecord[]>([])
@@ -275,18 +283,6 @@ const previewVisible = ref(false)
 const previewUrl = ref('')
 const previewType = ref<'image' | 'pdf' | 'other'>('other')
 const previewFilename = ref('')
-
-const extendWarrantyForm = reactive({
-  project_id: undefined as number | undefined,
-  warranty_expire_date: ''
-})
-
-const maintenanceForm = reactive({
-  fault_level: 'medium',
-  fault_description: '',
-  fault_time: '',
-  solution: ''
-})
 
 interface MaintenanceRecord {
   id: number
@@ -302,6 +298,18 @@ interface MaintenanceRecord {
   recorder_name: string
 }
 
+const extendWarrantyForm = reactive({
+  project_id: undefined as number | undefined,
+  warranty_expire_date: ''
+})
+
+const maintenanceForm = reactive({
+  fault_level: 'medium',
+  fault_description: '',
+  fault_time: '',
+  solution: ''
+})
+
 function onProjectChange(projectId: number) {
   const project = projects.value.find(p => p.id === projectId)
   if (project && project.warranty_expire_date) {
@@ -309,13 +317,15 @@ function onProjectChange(projectId: number) {
   }
 }
 
-const editForm = reactive<Partial<Checkpoint>>({
+const editForm = reactive<Partial<SkyNet>>({
   id: undefined,
-  checkpoint_type: '',
+  camera_area: '',
   camera_count: 0,
-  strobe_light_count: 0,
-  radar_count: 0,
-  sign_count: 0,
+  bracket_count: 0,
+  pole_count: 0,
+  box_count: 0,
+  fill_light_count: 0,
+  speaker_count: 0,
   power_source: '',
   network_source: '',
   project_id: undefined
@@ -340,16 +350,18 @@ function getFaultLevelType(level?: string) {
 }
 
 function goBack() {
-  router.push('/checkpoints')
+  router.push('/sky-net')
 }
 
-function editDevice(device: Checkpoint) {
+function editDevice(device: SkyNet) {
   editForm.id = device.id
-  editForm.checkpoint_type = device.checkpoint_type || ''
+  editForm.camera_area = device.camera_area || ''
   editForm.camera_count = device.camera_count || 0
-  editForm.strobe_light_count = device.strobe_light_count || 0
-  editForm.radar_count = device.radar_count || 0
-  editForm.sign_count = device.sign_count || 0
+  editForm.bracket_count = device.bracket_count || 0
+  editForm.pole_count = device.pole_count || 0
+  editForm.box_count = device.box_count || 0
+  editForm.fill_light_count = device.fill_light_count || 0
+  editForm.speaker_count = device.speaker_count || 0
   editForm.power_source = device.power_source || ''
   editForm.network_source = device.network_source || ''
   editForm.project_id = device.project_id
@@ -363,11 +375,13 @@ function submitDevice() {
   }
 
   const data = {
-    checkpoint_type: editForm.checkpoint_type || '',
+    camera_area: editForm.camera_area || '',
     camera_count: editForm.camera_count || 0,
-    strobe_light_count: editForm.strobe_light_count || 0,
-    radar_count: editForm.radar_count || 0,
-    sign_count: editForm.sign_count || 0,
+    bracket_count: editForm.bracket_count || 0,
+    pole_count: editForm.pole_count || 0,
+    box_count: editForm.box_count || 0,
+    fill_light_count: editForm.fill_light_count || 0,
+    speaker_count: editForm.speaker_count || 0,
     power_source: editForm.power_source || '',
     network_source: editForm.network_source || '',
     project_id: editForm.project_id
@@ -376,7 +390,7 @@ function submitDevice() {
   const pointId = Number(route.params.id)
   
   if (editForm.id) {
-    checkpointPointApi.updateCheckpoint(pointId, editForm.id, data).then(() => {
+    skyNetApi.updateSkyNet(pointId, editForm.id, data).then(() => {
       ElMessage.success('编辑成功')
       showAddDialog.value = false
       loadData()
@@ -384,7 +398,7 @@ function submitDevice() {
       ElMessage.error(err.response?.data?.message || '编辑失败')
     })
   } else {
-    checkpointPointApi.createCheckpoint(pointId, data).then(() => {
+    skyNetApi.createSkyNet(pointId, data).then(() => {
       ElMessage.success('新增成功')
       showAddDialog.value = false
       loadData()
@@ -401,7 +415,7 @@ function deleteDevice(id: number) {
     cancelButtonText: '取消',
     type: 'warning'
   }).then(() => {
-    checkpointPointApi.deleteCheckpoint(pointId, id).then(() => {
+    skyNetApi.deleteSkyNet(pointId, id).then(() => {
       ElMessage.success('删除成功')
       loadData()
     }).catch((err) => {
@@ -415,11 +429,11 @@ function loadData() {
   const pointId = Number(route.params.id)
   
   Promise.all([
-    checkpointPointApi.get(pointId),
+    skyNetApi.getPoint(pointId),
     projectApi.list({ per_page: 0 })
   ]).then(([pointDetail, projectList]) => {
     point.value = pointDetail.data.point
-    checkpoints.value = pointDetail.data.checkpoints || []
+    skyNets.value = pointDetail.data.sky_nets || []
     warrantyExtensions.value = pointDetail.data.warranty_extensions || []
     projects.value = projectList.data
     loading.value = false
@@ -438,7 +452,7 @@ function submitExtendWarranty() {
     return
   }
   const pointId = Number(route.params.id)
-  checkpointPointApi.extendWarranty(pointId, {
+  skyNetApi.extendWarranty(pointId, {
     project_id: extendWarrantyForm.project_id,
     warranty_expire_date: extendWarrantyForm.warranty_expire_date
   }).then(() => {
@@ -469,7 +483,7 @@ function deleteWarrantyExtension(id: number) {
 
 async function fetchMaintenanceRecords() {
   try {
-    const res = await maintenanceApi.getMaintenanceRecords('checkpoint', Number(route.params.id))
+    const res = await maintenanceApi.getMaintenanceRecords('sky_net', Number(route.params.id))
     maintenanceRecords.value = res.data
   } catch (error) {
     console.error('获取维修记录失败', error)
@@ -483,7 +497,7 @@ async function submitMaintenance() {
       return
     }
     await maintenanceApi.createMaintenanceRecord({
-      facility_type: 'checkpoint',
+      facility_type: 'sky_net',
       facility_id: Number(route.params.id),
       fault_level: maintenanceForm.fault_level,
       fault_description: maintenanceForm.fault_description,
@@ -531,7 +545,7 @@ async function handleFileUpload(event: Event) {
   if (!file) return
 
   try {
-    await attachmentApi.upload(file, 'checkpoint', Number(route.params.id))
+    await attachmentApi.upload(file, 'sky_net', Number(route.params.id))
     ElMessage.success('上传成功')
     await fetchAttachments()
     target.value = ''
@@ -542,7 +556,7 @@ async function handleFileUpload(event: Event) {
 
 async function fetchAttachments() {
   try {
-    const res = await attachmentApi.list('checkpoint', Number(route.params.id))
+    const res = await attachmentApi.list('sky_net', Number(route.params.id))
     attachments.value = res.data
   } catch (error) {
     console.error('获取附件失败', error)

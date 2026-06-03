@@ -12,6 +12,8 @@ class ParkingEnforcementPoint(db.Model):
     name: Mapped[str] = mapped_column(String(100), nullable=False, unique=True)
     area: Mapped[Optional[str]] = mapped_column(String(100))
     type: Mapped[Optional[str]] = mapped_column(String(50))
+    latitude: Mapped[Optional[float]] = mapped_column(nullable=True)
+    longitude: Mapped[Optional[float]] = mapped_column(nullable=True)
 
     parking_enforcements: Mapped[List["ParkingEnforcement"]] = relationship(back_populates="point", cascade="all, delete-orphan")
 
@@ -20,7 +22,9 @@ class ParkingEnforcementPoint(db.Model):
             'id': self.id,
             'name': self.name,
             'area': self.area,
-            'type': self.type
+            'type': self.type,
+            'latitude': self.latitude,
+            'longitude': self.longitude
         }
 
     @property
@@ -53,6 +57,8 @@ class CheckpointPoint(db.Model):
     name: Mapped[str] = mapped_column(String(100), nullable=False, unique=True)
     area: Mapped[Optional[str]] = mapped_column(String(100))
     type: Mapped[Optional[str]] = mapped_column(String(50))
+    latitude: Mapped[Optional[float]] = mapped_column(nullable=True)
+    longitude: Mapped[Optional[float]] = mapped_column(nullable=True)
 
     checkpoints: Mapped[List["Checkpoint"]] = relationship(back_populates="point", cascade="all, delete-orphan")
 
@@ -61,7 +67,9 @@ class CheckpointPoint(db.Model):
             'id': self.id,
             'name': self.name,
             'area': self.area,
-            'type': self.type
+            'type': self.type,
+            'latitude': self.latitude,
+            'longitude': self.longitude
         }
 
     @property
@@ -137,6 +145,114 @@ class ParkingEnforcement(db.Model):
             'camera_count': self.camera_count,
             'parking_sign_count': self.parking_sign_count,
             'monitor_sign_count': self.monitor_sign_count,
+            'power_source': self.power_source,
+            'network_source': self.network_source,
+            'construction_unit': self.project.builder if self.project else None,
+            'construction_company': self.project.construction_unit if self.project else None
+        }
+
+
+class SkyNetPoint(db.Model):
+    __tablename__ = 'sky_net_point'
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    name: Mapped[str] = mapped_column(String(100), nullable=False, unique=True)
+    monitor_area: Mapped[Optional[str]] = mapped_column(String(200))
+    location: Mapped[Optional[str]] = mapped_column(String(100))
+    latitude: Mapped[Optional[float]] = mapped_column(nullable=True)
+    longitude: Mapped[Optional[float]] = mapped_column(nullable=True)
+
+    sky_nets: Mapped[List["SkyNet"]] = relationship(back_populates="point", cascade="all, delete-orphan")
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'name': self.name,
+            'monitor_area': self.monitor_area,
+            'location': self.location,
+            'latitude': self.latitude,
+            'longitude': self.longitude
+        }
+
+    @property
+    def warranty_status(self) -> dict:
+        if not self.sky_nets:
+            return {'status': '无项目', 'latest_expire_date': None}
+        
+        latest_sn = max(self.sky_nets, key=lambda sn: sn.id)
+        expire_date = latest_sn.effective_warranty_expire_date
+
+        if not expire_date:
+            return {'status': '无项目', 'latest_expire_date': None}
+
+        today = date.today()
+        if expire_date >= today:
+            status = '在保'
+        else:
+            status = '过保'
+
+        return {
+            'status': status,
+            'latest_expire_date': expire_date.isoformat()
+        }
+
+
+class SkyNet(db.Model):
+    __tablename__ = 'sky_net'
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    point_id: Mapped[int] = mapped_column(ForeignKey('sky_net_point.id'), nullable=False)
+    project_id: Mapped[int] = mapped_column(ForeignKey('project.id'), nullable=False)
+    camera_area: Mapped[Optional[str]] = mapped_column(String(200))
+    camera_count: Mapped[int] = mapped_column(Integer, default=0)
+    bracket_count: Mapped[int] = mapped_column(Integer, default=0)
+    pole_count: Mapped[int] = mapped_column(Integer, default=0)
+    box_count: Mapped[int] = mapped_column(Integer, default=0)
+    fill_light_count: Mapped[int] = mapped_column(Integer, default=0)
+    speaker_count: Mapped[int] = mapped_column(Integer, default=0)
+    power_source: Mapped[Optional[str]] = mapped_column(Text)
+    network_source: Mapped[Optional[str]] = mapped_column(Text)
+    extended_warranty_expire_date: Mapped[Optional[date]] = mapped_column(Date, nullable=True)
+
+    point: Mapped["SkyNetPoint"] = relationship(back_populates="sky_nets")
+    project: Mapped["Project"] = relationship(back_populates="sky_nets")
+
+    @property
+    def effective_warranty_expire_date(self):
+        if self.extended_warranty_expire_date:
+            return self.extended_warranty_expire_date
+        if self.project and self.project.warranty_expire_date:
+            return self.project.warranty_expire_date
+        return None
+
+    @property
+    def warranty_status(self) -> str:
+        expire_date = self.effective_warranty_expire_date
+        if expire_date:
+            if expire_date >= date.today():
+                return '在保'
+            else:
+                return '过保'
+        return '无项目'
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'point_id': self.point_id,
+            'point_name': self.point.name if self.point else None,
+            'project_id': self.project_id,
+            'project_name': self.project.name if self.project else None,
+            'acceptance_date': self.project.acceptance_date.isoformat() if self.project and self.project.acceptance_date else None,
+            'warranty_period': self.project.warranty_period if self.project else None,
+            'warranty_expire_date': self.effective_warranty_expire_date.isoformat() if self.effective_warranty_expire_date else None,
+            'warranty_status': self.warranty_status,
+            'camera_area': self.camera_area,
+            'camera_count': self.camera_count,
+            'bracket_count': self.bracket_count,
+            'pole_count': self.pole_count,
+            'box_count': self.box_count,
+            'fill_light_count': self.fill_light_count,
+            'speaker_count': self.speaker_count,
             'power_source': self.power_source,
             'network_source': self.network_source,
             'construction_unit': self.project.builder if self.project else None,

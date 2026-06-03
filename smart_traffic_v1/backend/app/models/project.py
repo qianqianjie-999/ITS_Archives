@@ -19,6 +19,7 @@ class Project(db.Model):
     traffic_lights: Mapped[List["TrafficLight"]] = relationship(back_populates="project", lazy='dynamic')
     electronic_polices: Mapped[List["ElectronicPolice"]] = relationship(back_populates="project", lazy='dynamic')
     parking_enforcements: Mapped[List["ParkingEnforcement"]] = relationship(back_populates="project", lazy='dynamic')
+    sky_nets: Mapped[List["SkyNet"]] = relationship(back_populates="project", lazy='dynamic')
     checkpoints: Mapped[List["Checkpoint"]] = relationship(back_populates="project", lazy='dynamic')
     backend_devices: Mapped[List["BackendDevice"]] = relationship(back_populates="project", lazy='dynamic')
     warranty_extensions: Mapped[List["WarrantyExtension"]] = relationship(back_populates="project")

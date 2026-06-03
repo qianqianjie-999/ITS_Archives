@@ -4,6 +4,7 @@ from ..extensions import db
 from ..models.maintenance_record import MaintenanceRecord
 from ..models.user import User
 from ..utils.decorators import token_required, role_required
+from datetime import datetime
 
 ns = Namespace('maintenance', description='维修记录管理')
 
@@ -14,6 +15,7 @@ maintenance_record_model = ns.model('MaintenanceRecord', {
     'fault_level': fields.String(required=True),
     'fault_level_text': fields.String(readonly=True),
     'fault_description': fields.String(required=True),
+    'fault_time': fields.String(readonly=True),
     'solution': fields.String(),
     'record_time': fields.String(readonly=True),
     'recorder_id': fields.Integer(required=True),
@@ -25,6 +27,7 @@ maintenance_create_model = ns.model('MaintenanceRecordCreate', {
     'facility_id': fields.Integer(required=True),
     'fault_level': fields.String(required=True),
     'fault_description': fields.String(required=True),
+    'fault_time': fields.String(),
     'solution': fields.String()
 })
 
@@ -48,11 +51,19 @@ class MaintenanceRecordResource(Resource):
         data = request.json
         current_user = g.current_user
         
+        fault_time = None
+        if data.get('fault_time'):
+            try:
+                fault_time = datetime.fromisoformat(data['fault_time'].replace('Z', '+00:00'))
+            except:
+                fault_time = None
+        
         record = MaintenanceRecord(
             facility_type=data['facility_type'],
             facility_id=data['facility_id'],
             fault_level=data['fault_level'],
             fault_description=data['fault_description'],
+            fault_time=fault_time,
             solution=data.get('solution'),
             recorder_id=current_user.id
         )

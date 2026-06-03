@@ -13,6 +13,8 @@
         <el-table-column prop="type" label="类型" width="120" />
         <el-table-column prop="east_west_road" label="东西路" />
         <el-table-column prop="north_south_road" label="南北路" />
+        <el-table-column prop="latitude" label="纬度" width="120" />
+        <el-table-column prop="longitude" label="经度" width="120" />
         <el-table-column label="操作" width="240">
           <template #default="{ row }">
             <el-button type="primary" size="small" @click="goToDetail(row.id)">
@@ -59,6 +61,12 @@
         <el-form-item label="南北路">
           <el-input v-model="editIntersectionForm.north_south_road" />
         </el-form-item>
+        <el-form-item label="纬度">
+          <el-input v-model.number="editIntersectionForm.latitude" placeholder="例如：31.2304" />
+        </el-form-item>
+        <el-form-item label="经度">
+          <el-input v-model.number="editIntersectionForm.longitude" placeholder="例如：121.4737" />
+        </el-form-item>
       </el-form>
       <template #footer>
         <el-button @click="showDialog = false">取消</el-button>
@@ -90,7 +98,9 @@ const editIntersectionForm = reactive<Partial<Intersection>>({
   name: '',
   type: '',
   east_west_road: '',
-  north_south_road: ''
+  north_south_road: '',
+  latitude: undefined,
+  longitude: undefined
 })
 
 function goToDetail(id: number) {

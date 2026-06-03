@@ -13,7 +13,9 @@ intersection_model = ns.model('Intersection', {
     'name': fields.String(required=True),
     'type': fields.String(),
     'east_west_road': fields.String(),
-    'north_south_road': fields.String()
+    'north_south_road': fields.String(),
+    'latitude': fields.Float(),
+    'longitude': fields.Float()
 })
 
 intersection_detail_model = ns.model('IntersectionDetail', {
@@ -22,6 +24,8 @@ intersection_detail_model = ns.model('IntersectionDetail', {
     'type': fields.String(),
     'east_west_road': fields.String(),
     'north_south_road': fields.String(),
+    'latitude': fields.Float(),
+    'longitude': fields.Float(),
     'warranty_status': fields.String(),
     'latest_expire_date': fields.String()
 })

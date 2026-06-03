@@ -12,6 +12,8 @@ class Intersection(db.Model):
     type: Mapped[Optional[str]] = mapped_column(Enum('十字路口', '丁字路口', '行人过街', '其他', name='intersection_type'))
     east_west_road: Mapped[Optional[str]] = mapped_column(String(100))
     north_south_road: Mapped[Optional[str]] = mapped_column(String(100))
+    latitude: Mapped[Optional[float]] = mapped_column(nullable=True)
+    longitude: Mapped[Optional[float]] = mapped_column(nullable=True)
 
     traffic_lights: Mapped[List["TrafficLight"]] = relationship(back_populates="intersection", cascade="all, delete-orphan")
     electronic_polices: Mapped[List["ElectronicPolice"]] = relationship(back_populates="intersection", cascade="all, delete-orphan")
@@ -22,7 +24,9 @@ class Intersection(db.Model):
             'name': self.name,
             'type': self.type,
             'east_west_road': self.east_west_road,
-            'north_south_road': self.north_south_road
+            'north_south_road': self.north_south_road,
+            'latitude': self.latitude,
+            'longitude': self.longitude
         }
 
     def _get_device_warranty(self, devices):
@@ -73,6 +77,7 @@ class TrafficLight(db.Model):
     full_screen_count: Mapped[int] = mapped_column(Integer, default=0)
     non_motor_count: Mapped[int] = mapped_column(Integer, default=0)
     pedestrian_count: Mapped[int] = mapped_column(Integer, default=0)
+    countdown_timer_count: Mapped[int] = mapped_column(Integer, default=0)
     radar_count: Mapped[int] = mapped_column(Integer, default=0)
     guide_screen_count: Mapped[int] = mapped_column(Integer, default=0)
     power_source: Mapped[Optional[str]] = mapped_column(Text)
@@ -119,6 +124,7 @@ class TrafficLight(db.Model):
             'full_screen_count': self.full_screen_count,
             'non_motor_count': self.non_motor_count,
             'pedestrian_count': self.pedestrian_count,
+            'countdown_timer_count': self.countdown_timer_count,
             'radar_count': self.radar_count,
             'guide_screen_count': self.guide_screen_count,
             'power_source': self.power_source,

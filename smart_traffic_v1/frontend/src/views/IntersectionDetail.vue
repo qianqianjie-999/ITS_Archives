@@ -40,7 +40,9 @@
           <el-table :data="trafficLights" stripe>
             <el-table-column prop="project_name" label="归属项目" />
             <el-table-column prop="acceptance_date" label="项目验收日期" width="140" />
-            <el-table-column prop="warranty_period" label="项目质保期" width="120" />
+            <el-table-column prop="warranty_period" label="项目质保期" width="120">
+              <template #default="{ row }">{{ row.warranty_period ? `${row.warranty_period}年` : '-' }}</template>
+            </el-table-column>
             <el-table-column prop="warranty_expire_date" label="项目质保到期时间" width="160" />
             <el-table-column prop="warranty_status" label="质保状态" width="100">
               <template #default="{ row }">
@@ -59,6 +61,7 @@
             <el-table-column prop="full_screen_count" label="满屏灯数量" width="120" />
             <el-table-column prop="non_motor_count" label="非机动灯数量" width="120" />
             <el-table-column prop="pedestrian_count" label="人行灯数量" width="120" />
+            <el-table-column prop="countdown_timer_count" label="倒计时器数量" width="140" />
             <el-table-column prop="radar_count" label="车流量雷达数量" width="140" />
             <el-table-column prop="guide_screen_count" label="诱导屏数量" width="120" />
             <el-table-column prop="power_source" label="取电说明" />
@@ -79,7 +82,9 @@
           <el-table :data="electronicPolices" stripe>
             <el-table-column prop="project_name" label="归属项目" />
             <el-table-column prop="acceptance_date" label="项目验收日期" width="140" />
-            <el-table-column prop="warranty_period" label="项目质保期" width="120" />
+            <el-table-column prop="warranty_period" label="项目质保期" width="120">
+              <template #default="{ row }">{{ row.warranty_period ? `${row.warranty_period}年` : '-' }}</template>
+            </el-table-column>
             <el-table-column prop="warranty_expire_date" label="项目质保到期时间" width="160" />
             <el-table-column prop="warranty_status" label="质保状态" width="100">
               <template #default="{ row }">
@@ -175,7 +180,8 @@
             <el-button v-if="userStore.isEditor" type="primary" size="small" @click="showMaintenanceDialog = true">添加维修记录</el-button>
           </div>
           <el-table :data="maintenanceRecords" stripe>
-            <el-table-column prop="fault_level_text" label="故障等级" width="100">
+        <el-table-column type="index" label="序号" width="60" />
+        <el-table-column prop="fault_level_text" label="故障等级" width="100">
               <template #default="{ row }">
                 <el-tag :type="getFaultLevelType(row.fault_level)">
                   {{ row.fault_level_text }}
@@ -183,6 +189,7 @@
               </template>
             </el-table-column>
             <el-table-column prop="fault_description" label="故障现象" />
+            <el-table-column prop="fault_time" label="故障发现时间" width="180" />
             <el-table-column prop="solution" label="解决办法" />
             <el-table-column prop="record_time" label="记录时间" width="180" />
             <el-table-column prop="recorder_name" label="记录人" width="120" />
@@ -231,6 +238,9 @@
         </el-form-item>
         <el-form-item label="故障现象" required>
           <el-input v-model="maintenanceForm.fault_description" type="textarea" :rows="4" placeholder="请描述故障现象" />
+        </el-form-item>
+        <el-form-item label="故障发现时间">
+          <el-date-picker v-model="maintenanceForm.fault_time" type="datetime" value-format="YYYY-MM-DDTHH:mm:ss" placeholder="选择故障发现时间" style="width: 100%" />
         </el-form-item>
         <el-form-item label="解决办法">
           <el-input v-model="maintenanceForm.solution" type="textarea" :rows="4" placeholder="请描述解决办法" />
@@ -298,8 +308,8 @@
             </el-form-item>
           </el-col>
           <el-col :span="12">
-            <el-form-item label="车流量雷达数量">
-              <el-input-number v-model="trafficLightForm.radar_count" :min="0" />
+            <el-form-item label="倒计时器数量">
+              <el-input-number v-model="trafficLightForm.countdown_timer_count" :min="0" />
             </el-form-item>
           </el-col>
         </el-row>
@@ -476,6 +486,7 @@ const trafficLightForm = reactive<Partial<TrafficLight>>({
   full_screen_count: 0,
   non_motor_count: 0,
   pedestrian_count: 0,
+  countdown_timer_count: 0,
   radar_count: 0,
   guide_screen_count: 0,
   power_source: ''
@@ -499,6 +510,7 @@ const electronicPoliceForm = reactive<Partial<ElectronicPolice>>({
 const maintenanceForm = reactive({
   fault_level: 'medium',
   fault_description: '',
+  fault_time: '',
   solution: ''
 })
 
@@ -533,6 +545,7 @@ function editTrafficLight(row: TrafficLight) {
     full_screen_count: row.full_screen_count || 0,
     non_motor_count: row.non_motor_count || 0,
     pedestrian_count: row.pedestrian_count || 0,
+    countdown_timer_count: (row as any).countdown_timer_count || 0,
     radar_count: row.radar_count || 0,
     guide_screen_count: row.guide_screen_count || 0,
     power_source: row.power_source
@@ -586,6 +599,7 @@ function resetTrafficLightForm() {
   trafficLightForm.full_screen_count = 0
   trafficLightForm.non_motor_count = 0
   trafficLightForm.pedestrian_count = 0
+  trafficLightForm.countdown_timer_count = 0
   trafficLightForm.radar_count = 0
   trafficLightForm.guide_screen_count = 0
   trafficLightForm.power_source = ''
@@ -812,12 +826,14 @@ async function submitMaintenance() {
       facility_id: Number(route.params.id),
       fault_level: maintenanceForm.fault_level,
       fault_description: maintenanceForm.fault_description,
+      fault_time: maintenanceForm.fault_time || null,
       solution: maintenanceForm.solution
     })
     ElMessage.success('添加成功')
     showMaintenanceDialog.value = false
     maintenanceForm.fault_level = 'medium'
     maintenanceForm.fault_description = ''
+    maintenanceForm.fault_time = ''
     maintenanceForm.solution = ''
     await fetchMaintenanceRecords()
   } catch (error) {

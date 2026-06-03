@@ -24,6 +24,8 @@ export interface Intersection {
   type: string
   east_west_road?: string
   north_south_road?: string
+  latitude?: number
+  longitude?: number
   traffic_light_warranty_status?: string
   traffic_light_warranty_expire?: string
   electronic_police_warranty_status?: string
@@ -49,6 +51,7 @@ export interface TrafficLight {
     pedestrian_count?: number
     radar_count?: number
     guide_screen_count?: number
+    countdown_timer_count?: number
     power_source?: string
     construction_unit?: string
     construction_company?: string
@@ -81,6 +84,8 @@ export interface ParkingEnforcementPoint {
     name: string
     area?: string
     type?: string
+    latitude?: number
+    longitude?: number
     status?: string
     latest_expire_date?: string
 }
@@ -90,8 +95,43 @@ export interface CheckpointPoint {
     name: string
     area?: string
     type?: string
+    latitude?: number
+    longitude?: number
     status?: string
     latest_expire_date?: string
+}
+
+export interface SkyNetPoint {
+    id: number
+    name: string
+    monitor_area?: string
+    location?: string
+    latitude?: number
+    longitude?: number
+    status?: string
+    latest_expire_date?: string
+}
+
+export interface SkyNet {
+    id: number
+    point_id: number
+    project_id: number
+    project_name?: string
+    acceptance_date?: string
+    warranty_period?: string
+    warranty_expire_date?: string
+    warranty_status?: string
+    camera_area?: string
+    camera_count?: number
+    bracket_count?: number
+    pole_count?: number
+    box_count?: number
+    fill_light_count?: number
+    speaker_count?: number
+    power_source?: string
+    network_source?: string
+    construction_unit?: string
+    construction_company?: string
 }
 
 export interface Point {
@@ -99,6 +139,8 @@ export interface Point {
     name: string
     area?: string
     type?: string
+    latitude?: number
+    longitude?: number
     status?: string
     latest_expire_date?: string
 }

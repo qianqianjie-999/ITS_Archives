@@ -24,14 +24,18 @@
       <el-card class="device-section">
         <template #header>
           <div class="card-header">
-            <span>违停球设备</span>
+            <span>违停球点位</span>
             <el-button v-if="userStore.isEditor" type="primary" @click="showAddDialog = true">添加详情信息</el-button>
           </div>
         </template>
       <el-table :data="parkingEnforcements" stripe v-loading="loading">
         <el-table-column prop="project_name" label="归属项目" />
         <el-table-column prop="acceptance_date" label="项目验收日期" width="140" />
-        <el-table-column prop="warranty_period" label="项目质保期" width="120" />
+        <el-table-column prop="warranty_period" label="项目质保期" width="120">
+          <template #default="{ row }">
+            {{ row.warranty_period ? `${row.warranty_period}年` : '-' }}
+          </template>
+        </el-table-column>
         <el-table-column prop="warranty_expire_date" label="项目质保到期时间" width="160" />
         <el-table-column prop="warranty_status" label="质保状态" width="100">
           <template #default="{ row }">
@@ -95,6 +99,7 @@
         </div>
       </template>
       <el-table :data="maintenanceRecords" stripe>
+        <el-table-column type="index" label="序号" width="60" />
         <el-table-column prop="fault_level_text" label="故障等级" width="100">
           <template #default="{ row }">
             <el-tag :type="getFaultLevelType(row.fault_level)">
@@ -103,6 +108,7 @@
           </template>
         </el-table-column>
         <el-table-column prop="fault_description" label="故障现象" />
+        <el-table-column prop="fault_time" label="故障发现时间" width="180" />
         <el-table-column prop="solution" label="解决办法" />
         <el-table-column prop="record_time" label="记录时间" width="180" />
         <el-table-column prop="recorder_name" label="记录人" width="120" />
@@ -189,6 +195,9 @@
         <el-form-item label="故障现象" required>
           <el-input v-model="maintenanceForm.fault_description" type="textarea" :rows="4" placeholder="请描述故障现象" />
         </el-form-item>
+        <el-form-item label="故障发现时间">
+          <el-date-picker v-model="maintenanceForm.fault_time" type="datetime" value-format="YYYY-MM-DDTHH:mm:ss" placeholder="选择故障发现时间" style="width: 100%" />
+        </el-form-item>
         <el-form-item label="解决办法">
           <el-input v-model="maintenanceForm.solution" type="textarea" :rows="4" placeholder="请描述解决办法" />
         </el-form-item>
@@ -270,6 +279,7 @@ interface MaintenanceRecord {
   fault_level: string
   fault_level_text: string
   fault_description: string
+  fault_time: string
   solution: string
   record_time: string
   recorder_id: number
@@ -284,6 +294,7 @@ const extendWarrantyForm = reactive({
 const maintenanceForm = reactive({
   fault_level: 'medium',
   fault_description: '',
+  fault_time: '',
   solution: ''
 })
 
@@ -469,12 +480,14 @@ async function submitMaintenance() {
       facility_id: Number(route.params.id),
       fault_level: maintenanceForm.fault_level,
       fault_description: maintenanceForm.fault_description,
+      fault_time: maintenanceForm.fault_time || null,
       solution: maintenanceForm.solution
     })
     ElMessage.success('添加成功')
     showMaintenanceDialog.value = false
     maintenanceForm.fault_level = 'medium'
     maintenanceForm.fault_description = ''
+    maintenanceForm.fault_time = ''
     maintenanceForm.solution = ''
     await fetchMaintenanceRecords()
   } catch (error) {

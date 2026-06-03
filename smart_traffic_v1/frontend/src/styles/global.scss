@@ -492,6 +492,7 @@ a {
 
   .el-picker-panel__header {
     color: $text-primary;
+    background-color: $bg-card !important;
   }
 
   .el-picker-panel__content {
@@ -512,6 +513,35 @@ a {
 
   .el-picker-panel__footer {
     border-top-color: $border-color;
+  }
+
+  .el-picker-panel__icon-btn {
+    color: $text-primary !important;
+
+    &:hover {
+      color: $primary-color !important;
+      background-color: $bg-hover !important;
+    }
+  }
+
+  .el-date-editor .el-input__inner {
+    color: $text-primary !important;
+  }
+}
+
+.el-calendar {
+  background-color: $bg-card !important;
+
+  .el-calendar__header {
+    color: $text-primary;
+  }
+
+  .el-calendar-table th {
+    color: $text-secondary;
+  }
+
+  .el-calendar-table td {
+    color: $text-primary;
   }
 }
 

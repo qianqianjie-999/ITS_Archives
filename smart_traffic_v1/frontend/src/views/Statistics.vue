@@ -15,15 +15,15 @@
 
     <div class="summary-bar">
       <div class="summary-item">
-        <span class="sum-label">设备总计</span>
+        <span class="sum-label">点位总计</span>
         <span class="sum-value">{{ totalCount }}</span>
       </div>
       <div class="summary-item green">
-        <span class="sum-label">在保设备</span>
+        <span class="sum-label">在保点位</span>
         <span class="sum-value">{{ inWarrantyCount }}</span>
       </div>
       <div class="summary-item red">
-        <span class="sum-label">过保设备</span>
+        <span class="sum-label">过保点位</span>
         <span class="sum-value">{{ expiredCount }}</span>
       </div>
       <div class="summary-item blue">
@@ -82,6 +82,7 @@
           <el-table-column prop="full_screen_count" label="满屏灯" width="80" align="center" />
           <el-table-column prop="non_motor_count" label="非机动灯" width="90" align="center" />
           <el-table-column prop="pedestrian_count" label="人行灯" width="80" align="center" />
+          <el-table-column prop="countdown_timer_count" label="倒计时器" width="90" align="center" />
           <el-table-column prop="radar_count" label="车流量雷达" width="100" align="center" />
           <el-table-column prop="guide_screen_count" label="诱导屏" width="80" align="center" />
           <el-table-column prop="power_source" label="取电说明" min-width="120" show-overflow-tooltip />
@@ -172,6 +173,35 @@
         </el-table>
       </el-tab-pane>
 
+      <el-tab-pane label="结构化相机" name="sky_net">
+        <el-table :data="pagedData.sky_net" stripe v-loading="loading" border size="small">
+          <el-table-column prop="point_name" label="点位名称" min-width="130" fixed />
+          <el-table-column prop="camera_area" label="监控区域" min-width="120" />
+          <el-table-column prop="project_name" label="归属项目" min-width="130" />
+          <el-table-column prop="acceptance_date" label="项目验收日期" width="120" />
+          <el-table-column prop="warranty_period" label="项目质保期" width="100">
+            <template #default="{ row }">{{ row.warranty_period ? row.warranty_period + '年' : '-' }}</template>
+          </el-table-column>
+          <el-table-column prop="warranty_expire_date" label="质保到期" width="120" />
+          <el-table-column prop="warranty_status" label="质保状态" width="90">
+            <template #default="{ row }">
+              <el-tag :type="tagType(row.warranty_status)" size="small">{{ row.warranty_status }}</el-tag>
+            </template>
+          </el-table-column>
+          <el-table-column prop="construction_unit" label="建设单位" min-width="110" />
+          <el-table-column prop="construction_company" label="施工单位" min-width="110" />
+          <el-table-column prop="camera_count" label="相机数量" width="90" align="center" />
+          <el-table-column prop="bracket_count" label="支架数量" width="90" align="center" />
+          <el-table-column prop="pole_count" label="立杆数量" width="90" align="center" />
+          <el-table-column prop="box_count" label="挂箱数量" width="90" align="center" />
+          <el-table-column prop="fill_light_count" label="补光灯数量" width="100" align="center" />
+          <el-table-column prop="speaker_count" label="音箱数量" width="90" align="center" />
+          <el-table-column prop="power_source" label="取电说明" min-width="120" show-overflow-tooltip />
+          <el-table-column prop="network_source" label="取网说明" min-width="120" show-overflow-tooltip />
+          <el-table-column prop="usage_days" label="使用时长（天）" width="120" align="center" />
+        </el-table>
+      </el-tab-pane>
+
       <el-tab-pane label="后端设备" name="backend_device">
         <el-table :data="pagedData.backend_device" stripe v-loading="loading" border size="small">
           <el-table-column prop="name" label="设备名称" min-width="140" fixed />
@@ -219,7 +249,7 @@ import { ref, computed, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import { Download, Search } from '@element-plus/icons-vue'
 import { intersectionApi } from '@/api/intersections'
-import { pointApi, checkpointPointApi, backendDeviceApi } from '@/api/points'
+import { pointApi, checkpointPointApi, backendDeviceApi, skyNetApi } from '@/api/points'
 import { projectApi } from '@/api/projects'
 import apiClient from '@/api'
 
@@ -237,6 +267,7 @@ const trafficLights = ref<any[]>([])
 const electronicPolices = ref<any[]>([])
 const parkingEnforcements = ref<any[]>([])
 const checkpoints = ref<any[]>([])
+const skyNetPoints = ref<any[]>([])
 const backendDevices = ref<any[]>([])
 
 function tagType(status: string) {
@@ -286,6 +317,10 @@ const filteredData = computed(() => {
       ...item,
       usage_days: calculateUsageDays(item.acceptance_date)
     })),
+    sky_net: applyFilter(skyNetPoints.value).map(item => ({
+      ...item,
+      usage_days: calculateUsageDays(item.acceptance_date)
+    })),
     backend_device: applyFilter(backendDevices.value).map(item => ({
       ...item,
       usage_days: calculateUsageDays(item.acceptance_date)
@@ -310,25 +345,25 @@ const currentTabTotal = computed(() => {
 
 const totalCount = computed(() => {
   return trafficLights.value.length + electronicPolices.value.length +
-    parkingEnforcements.value.length + checkpoints.value.length + backendDevices.value.length
+    parkingEnforcements.value.length + checkpoints.value.length + skyNetPoints.value.length + backendDevices.value.length
 })
 
 const inWarrantyCount = computed(() => {
   return [...trafficLights.value, ...electronicPolices.value, ...parkingEnforcements.value,
-    ...checkpoints.value, ...backendDevices.value]
+    ...checkpoints.value, ...skyNetPoints.value, ...backendDevices.value]
     .filter(i => i.warranty_status === '在保').length
 })
 
 const expiredCount = computed(() => {
   return [...trafficLights.value, ...electronicPolices.value, ...parkingEnforcements.value,
-    ...checkpoints.value, ...backendDevices.value]
+    ...checkpoints.value, ...skyNetPoints.value, ...backendDevices.value]
     .filter(i => i.warranty_status === '过保').length
 })
 
 const projectCount = computed(() => {
   const ids = new Set<number>()
   ;[...trafficLights.value, ...electronicPolices.value, ...parkingEnforcements.value,
-    ...checkpoints.value, ...backendDevices.value]
+    ...checkpoints.value, ...skyNetPoints.value, ...backendDevices.value]
     .forEach(i => { if (i.project_id) ids.add(i.project_id) })
   return ids.size
 })
@@ -342,13 +377,14 @@ async function fetchData() {
   loading.value = true
   try {
     const [
-      p, tl, ep, pe, cp, bd
+      p, tl, ep, pe, cp, sn, bd
     ] = await Promise.all([
       projectApi.list({ per_page: 0 }),
       intersectionApi.getTrafficLightsAll(),
       intersectionApi.getElectronicPolicesAll(),
       pointApi.getParkingEnforcementsAll(),
       checkpointPointApi.getCheckpointsAll(),
+      skyNetApi.getSkyNetsAll(),
       backendDeviceApi.list({ per_page: 0 })
     ])
     projects.value = p.data || []
@@ -356,6 +392,7 @@ async function fetchData() {
     electronicPolices.value = ep.data || []
     parkingEnforcements.value = pe.data || []
     checkpoints.value = cp.data || []
+    skyNetPoints.value = sn.data || []
     backendDevices.value = bd.data || []
   } catch (error) {
     console.error('获取数据失败', error)

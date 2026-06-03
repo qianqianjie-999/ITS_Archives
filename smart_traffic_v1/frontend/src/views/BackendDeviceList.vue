@@ -13,7 +13,11 @@
         <el-table-column prop="type" label="设备类型" width="140" />
         <el-table-column prop="project_name" label="归属项目" />
         <el-table-column prop="acceptance_date" label="项目验收日期" width="140" />
-        <el-table-column prop="warranty_period" label="项目质保期" width="120" />
+        <el-table-column prop="warranty_period" label="项目质保期" width="120">
+          <template #default="{ row }">
+            {{ row.warranty_period ? `${row.warranty_period}年` : '-' }}
+          </template>
+        </el-table-column>
         <el-table-column prop="warranty_expire_date" label="项目质保到期时间" width="160" />
         <el-table-column prop="warranty_status" label="质保状态" width="100">
           <template #default="{ row }">

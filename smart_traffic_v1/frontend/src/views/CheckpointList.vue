@@ -4,7 +4,7 @@
       <template #header>
         <div class="card-header">
           <span>卡口点位列表</span>
-          <el-button v-if="userStore.isEditor" type="primary" @click="showDialog = true">新增点位</el-button>
+          <el-button v-if="userStore.isEditor" type="primary" @click="openAddDialog">新增点位</el-button>
         </div>
       </template>
       <el-table :data="points" stripe v-loading="loading">
@@ -12,6 +12,8 @@
         <el-table-column prop="name" label="点位名称" />
         <el-table-column prop="area" label="卡口类型" />
         <el-table-column prop="type" label="安装位置" width="120" />
+        <el-table-column prop="latitude" label="纬度" width="120" />
+        <el-table-column prop="longitude" label="经度" width="120" />
         <el-table-column label="操作" width="240">
           <template #default="{ row }">
             <el-button type="primary" size="small" @click="goToDetail(row.id)">
@@ -55,6 +57,12 @@
         <el-form-item label="安装位置">
           <el-input v-model="editPointForm.type" />
         </el-form-item>
+        <el-form-item label="纬度">
+          <el-input v-model.number="editPointForm.latitude" placeholder="例如：31.2304" />
+        </el-form-item>
+        <el-form-item label="经度">
+          <el-input v-model.number="editPointForm.longitude" placeholder="例如：121.4737" />
+        </el-form-item>
       </el-form>
       <template #footer>
         <el-button @click="showDialog = false">取消</el-button>
@@ -85,11 +93,21 @@ const editPointForm = reactive<Partial<CheckpointPoint>>({
   id: undefined,
   name: '',
   area: '',
-  type: ''
+  type: '',
+  latitude: undefined,
+  longitude: undefined
 })
 
 function goToDetail(id: number) {
   router.push(`/checkpoints/${id}`)
+}
+
+function openAddDialog() {
+  editPointForm.id = undefined
+  editPointForm.name = ''
+  editPointForm.area = ''
+  editPointForm.type = ''
+  showDialog.value = true
 }
 
 function editPoint(point: CheckpointPoint) {
