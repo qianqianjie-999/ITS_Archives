@@ -169,11 +169,11 @@ class ExcelExportService:
     def _create_backend_device_template(wb):
         ws = wb.create_sheet('后端设备')
         headers = [
-            '设备名称', '设备类型', '归属项目', '项目验收日期', '项目质保期',
+            '设备名称', '品牌型号', '设备类型', '设备数量', '归属项目', '项目验收日期', '项目质保期',
             '项目质保到期时间', '质保状态', '建设单位', '施工单位'
         ]
         ws.append(headers)
-        ws.append(['', '', '', '', '', '', '', '', ''])
+        ws.append(['', '', '', '', '', '', '', '', '', '', ''])
         ExcelExportService._auto_adjust_column_width(ws)
 
     @staticmethod
@@ -428,7 +428,7 @@ class ExcelExportService:
     def _create_backend_device_sheet(wb):
         ws = wb.create_sheet('后端设备')
         headers = [
-            '设备名称', '设备类型', '归属项目', '项目验收日期', '项目质保期',
+            '设备名称', '品牌型号', '设备类型', '设备数量', '归属项目', '项目验收日期', '项目质保期',
             '项目质保到期时间', '质保状态', '建设单位', '施工单位', '设备服役时长（年）'
         ]
         ws.append(headers)
@@ -444,7 +444,7 @@ class ExcelExportService:
             if key not in grouped or d.id > grouped[key].id:
                 grouped[key] = d
         
-        device_types = ['网络交换设备', '网络安全设备', '服务器', '存储设备', '显示设备', '操作设备', '消防设备', '用电设备', '空调设备']
+        device_types = ['网络交换设备', '网络安全设备', '服务器', '存储设备', '显示设备', '操作设备', '消防设备', '用电设备', '空调设备', '软件平台']
 
         for device_type in device_types:
             type_devices = [d for d in grouped.values()
@@ -464,7 +464,9 @@ class ExcelExportService:
 
                 row = [
                     d.name or '',
+                    d.model or '',
                     device_type,
+                    d.quantity or 1,
                     project_info['name'],
                     project_info['acceptance_date'],
                     project_info['warranty_period'],

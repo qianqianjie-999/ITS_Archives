@@ -89,7 +89,9 @@ backend_device_model = ns.model('BackendDevice', {
     'warranty_expire_date': fields.String(readonly=True),
     'warranty_status': fields.String(readonly=True),
     'name': fields.String(required=True),
+    'model': fields.String(),
     'type': fields.String(),
+    'quantity': fields.Integer(),
     'server_count': fields.Integer(),
     'storage_count': fields.Integer(),
     'switch_count': fields.Integer(),
@@ -882,7 +884,9 @@ class BackendDeviceList(Resource):
             point_id=data.get('point_id'),
             project_id=data.get('project_id'),
             name=data.get('name', ''),
-            type=data.get('type', '')
+            model=data.get('model', ''),
+            type=data.get('type', ''),
+            quantity=data.get('quantity', 1)
         )
         db.session.add(bd)
         db.session.commit()
@@ -900,7 +904,7 @@ class BackendDeviceUpdate(Resource):
             return {'status': 'error', 'message': '后端设备不存在'}, 404
 
         data = request.json
-        for key in ['name', 'type', 'project_id', 'server_count', 'storage_count',
+        for key in ['name', 'model', 'type', 'quantity', 'project_id', 'server_count', 'storage_count',
                     'switch_count', 'firewall_count', 'fiber_converter_count',
                     'power_supply_count', 'cabinet_count', 'other_device_count',
                     'ip_address', 'port', 'location', 'power_source', 'network_source']:

@@ -7,10 +7,31 @@
           <el-button v-if="userStore.isEditor" type="primary" @click="openDialog()">新增后端设备</el-button>
         </div>
       </template>
-      <el-table :data="backendDevices" stripe v-loading="loading" @row-click="selectDevice">
-        <el-table-column type="index" label="序号" width="60" />
+
+      <div class="filter-bar">
+        <el-row :gutter="12">
+          <el-col :span="10">
+            <el-select v-model="filterWarranty" placeholder="质保状态" clearable>
+              <el-option label="全部" value="" />
+              <el-option label="在保" value="在保" />
+              <el-option label="过保" value="过保" />
+              <el-option label="无项目" value="无项目" />
+            </el-select>
+          </el-col>
+          <el-col :span="14">
+            <el-input v-model="searchKeyword" placeholder="搜索设备名称、设备类型..." clearable>
+              <template #prefix><el-icon><Search /></el-icon></template>
+            </el-input>
+          </el-col>
+        </el-row>
+      </div>
+
+      <el-table :data="pagedBackendDevices" stripe v-loading="loading" @row-click="selectDevice">
+        <el-table-column :index="indexMethod" label="序号" width="60" />
         <el-table-column prop="name" label="设备名称" />
+        <el-table-column prop="model" label="品牌型号" width="140" />
         <el-table-column prop="type" label="设备类型" width="140" />
+        <el-table-column prop="quantity" label="设备数量" width="90" align="center" />
         <el-table-column prop="project_name" label="归属项目" />
         <el-table-column prop="acceptance_date" label="项目验收日期" width="140" />
         <el-table-column prop="warranty_period" label="项目质保期" width="120">
@@ -40,9 +61,8 @@
         <el-pagination
           v-model:current-page="currentPage"
           :page-size="perPage"
-          :total="total"
+          :total="filteredBackendDevices.length"
           layout="total, prev, pager, next"
-          @current-change="fetchData"
           class="dark-pagination"
         />
       </div>
@@ -56,6 +76,7 @@
         </div>
       </template>
       <el-table :data="warrantyRecords" stripe>
+        <el-table-column type="index" label="序号" width="60" />
         <el-table-column prop="project_name" label="归属项目" />
         <el-table-column prop="acceptance_date" label="验收日期" width="140" />
         <el-table-column prop="warranty_expire_date" label="质保到期时间" width="160" />
@@ -82,6 +103,7 @@
         </div>
       </template>
       <el-table :data="maintenanceRecords" stripe>
+        <el-table-column type="index" label="序号" width="60" />
         <el-table-column prop="fault_level_text" label="故障等级" width="100">
           <template #default="{ row }">
             <el-tag :type="getFaultLevelType(row.fault_level)">
@@ -117,6 +139,7 @@
         accept=".pdf,.jpg,.jpeg,.png"
       />
       <el-table :data="attachments" stripe>
+        <el-table-column type="index" label="序号" width="60" />
         <el-table-column prop="original_filename" label="文件名" />
         <el-table-column prop="file_size" label="大小" width="100">
           <template #default="{ row }">{{ formatFileSize(row.file_size) }}</template>
@@ -194,10 +217,16 @@
         <el-form-item label="设备名称" required>
           <el-input v-model="editForm.name" />
         </el-form-item>
+        <el-form-item label="设备品牌型号" required>
+          <el-input v-model="editForm.model" placeholder="请输入品牌型号" />
+        </el-form-item>
         <el-form-item label="设备类型">
           <el-select v-model="editForm.type" placeholder="请选择设备类型" style="width: 100%">
             <el-option v-for="t in deviceTypes" :key="t" :label="t" :value="t" />
           </el-select>
+        </el-form-item>
+        <el-form-item label="设备数量">
+          <el-input-number v-model="editForm.quantity" :min="1" style="width: 100%" />
         </el-form-item>
         <el-form-item label="归属项目">
           <el-select v-model="editForm.project_id" placeholder="请选择项目" style="width: 100%">
@@ -214,9 +243,9 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed, watch } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Files } from '@element-plus/icons-vue'
+import { Files, Search } from '@element-plus/icons-vue'
 import { useUserStore } from '@/stores/user'
 import { backendDeviceApi } from '@/api/points'
 import { projectApi } from '@/api/projects'
@@ -242,7 +271,33 @@ const warrantyRecords = ref<any[]>([])
 const maintenanceRecords = ref<MaintenanceRecord[]>([])
 const currentPage = ref(1)
 const perPage = ref(20)
-const total = ref(0)
+const searchKeyword = ref('')
+const filterWarranty = ref('')
+
+const indexMethod = (index: number) => (currentPage.value - 1) * perPage.value + index + 1
+
+const filteredBackendDevices = computed(() => {
+  return backendDevices.value.filter(d => {
+    if (searchKeyword.value) {
+      const kw = searchKeyword.value.toLowerCase()
+      const haystack = [d.name, d.type, d.project_name].filter(Boolean).join(' ').toLowerCase()
+      if (!haystack.includes(kw)) return false
+    }
+    if (filterWarranty.value) {
+      if ((d as any).warranty_status !== filterWarranty.value) return false
+    }
+    return true
+  })
+})
+
+const pagedBackendDevices = computed(() => {
+  const start = (currentPage.value - 1) * perPage.value
+  return filteredBackendDevices.value.slice(start, start + perPage.value)
+})
+
+watch([searchKeyword, filterWarranty], () => {
+  currentPage.value = 1
+})
 
 interface MaintenanceRecord {
   id: number
@@ -277,22 +332,24 @@ const deviceTypes = [
   '操作设备',
   '消防设备',
   '用电设备',
-  '空调设备'
+  '空调设备',
+  '软件平台'
 ]
 
 const editForm = ref<any>({
   id: undefined,
   project_id: undefined,
   name: '',
-  type: ''
+  model: '',
+  type: '',
+  quantity: 1
 })
 
 async function fetchData() {
   loading.value = true
   try {
-    const res = await backendDeviceApi.list({ page: currentPage.value, per_page: perPage.value })
+    const res = await backendDeviceApi.list({ per_page: 0 })
     backendDevices.value = res.data
-    total.value = res.total
   } catch (error) {
     ElMessage.error('获取后端设备列表失败')
   } finally {
@@ -329,14 +386,18 @@ function openDialog(row?: BackendDevice) {
       id: row.id,
       project_id: row.project_id,
       name: row.name,
-      type: row.type
+      model: row.model || '',
+      type: row.type,
+      quantity: (row as any).quantity || 1
     }
   } else {
     editForm.value = {
       id: undefined,
       project_id: undefined,
       name: '',
-      type: ''
+      model: '',
+      type: '',
+      quantity: 1
     }
   }
   showDialog.value = true
@@ -380,9 +441,15 @@ async function submitBackendDevice() {
       ElMessage.warning('请填写设备名称')
       return
     }
+    if (!editForm.value.model) {
+      ElMessage.warning('请填写设备品牌型号')
+      return
+    }
     const data = {
       name: editForm.value.name,
+      model: editForm.value.model,
       type: editForm.value.type,
+      quantity: editForm.value.quantity,
       project_id: editForm.value.project_id
     }
 
@@ -580,6 +647,10 @@ onMounted(() => {
     display: flex;
     justify-content: space-between;
     align-items: center;
+  }
+
+  .filter-bar {
+    margin-bottom: 16px;
   }
 }
 </style>

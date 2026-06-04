@@ -7,8 +7,27 @@
           <el-button v-if="userStore.isEditor" type="primary" @click="openAddDialog">新增点位</el-button>
         </div>
       </template>
-      <el-table :data="points" stripe v-loading="loading">
-        <el-table-column type="index" label="序号" width="60" />
+
+      <div class="filter-bar">
+        <el-row :gutter="12">
+          <el-col :span="10">
+            <el-select v-model="filterWarranty" placeholder="质保状态" clearable>
+              <el-option label="全部" value="" />
+              <el-option label="在保" value="在保" />
+              <el-option label="过保" value="过保" />
+              <el-option label="无项目" value="无项目" />
+            </el-select>
+          </el-col>
+          <el-col :span="14">
+            <el-input v-model="searchKeyword" placeholder="搜索点位名称、监控区域..." clearable>
+              <template #prefix><el-icon><Search /></el-icon></template>
+            </el-input>
+          </el-col>
+        </el-row>
+      </div>
+
+      <el-table :data="pagedPoints" stripe v-loading="loading">
+        <el-table-column :index="indexMethod" label="序号" width="60" />
         <el-table-column prop="name" label="点位名称" />
         <el-table-column prop="monitor_area" label="监控区域" />
         <el-table-column prop="location" label="安装位置" width="120" />
@@ -33,9 +52,8 @@
         <el-pagination
           v-model:current-page="currentPage"
           :page-size="perPage"
-          :total="total"
+          :total="filteredPoints.length"
           layout="total, prev, pager, next"
-          @current-change="loadPoints"
           class="dark-pagination"
         />
       </div>
@@ -68,21 +86,48 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, reactive } from 'vue'
+import { ref, onMounted, reactive, computed, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import { Search } from '@element-plus/icons-vue'
 import { skyNetApi } from '@/api/points'
 import { useUserStore } from '@/stores/user'
 import type { SkyNetPoint } from '@/types'
 
 const router = useRouter()
 const userStore = useUserStore()
-const points = ref<SkyNetPoint[]>([])
+const allPoints = ref<SkyNetPoint[]>([])
 const loading = ref(false)
 const showDialog = ref(false)
 const currentPage = ref(1)
 const perPage = ref(20)
-const total = ref(0)
+const searchKeyword = ref('')
+const filterWarranty = ref('')
+
+const filteredPoints = computed(() => {
+  return allPoints.value.filter(p => {
+    if (searchKeyword.value) {
+      const kw = searchKeyword.value.toLowerCase()
+      const haystack = [p.name, p.monitor_area, p.location].filter(Boolean).join(' ').toLowerCase()
+      if (!haystack.includes(kw)) return false
+    }
+    if (filterWarranty.value) {
+      if ((p as any).status !== filterWarranty.value) return false
+    }
+    return true
+  })
+})
+
+const pagedPoints = computed(() => {
+  const start = (currentPage.value - 1) * perPage.value
+  return filteredPoints.value.slice(start, start + perPage.value)
+})
+
+const indexMethod = (index: number) => (currentPage.value - 1) * perPage.value + index + 1
+
+watch([searchKeyword, filterWarranty], () => {
+  currentPage.value = 1
+})
 
 const editPointForm = reactive<Partial<SkyNetPoint>>({
   id: undefined,
@@ -161,9 +206,8 @@ function deletePoint(id: number) {
 
 function loadPoints() {
   loading.value = true
-  skyNetApi.listPoints({ page: currentPage.value, per_page: perPage.value }).then(res => {
-    points.value = res.data
-    total.value = res.total
+  skyNetApi.listPoints({ per_page: 0 }).then(res => {
+    allPoints.value = res.data
     loading.value = false
   }).catch(() => {
     loading.value = false
@@ -174,3 +218,15 @@ onMounted(() => {
   loadPoints()
 })
 </script>
+
+<style scoped>
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.filter-bar {
+  margin-bottom: 16px;
+}
+</style>

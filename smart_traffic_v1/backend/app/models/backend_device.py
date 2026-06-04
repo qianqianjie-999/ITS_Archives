@@ -11,7 +11,9 @@ class BackendDevice(db.Model):
     point_id: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
     project_id: Mapped[int] = mapped_column(ForeignKey('project.id'))
     name: Mapped[str] = mapped_column(String(100), nullable=False, unique=True)
+    model: Mapped[Optional[str]] = mapped_column(String(100))
     type: Mapped[Optional[str]] = mapped_column(String(50))
+    quantity: Mapped[int] = mapped_column(Integer, default=1)
     server_count: Mapped[int] = mapped_column(Integer, default=0)
     storage_count: Mapped[int] = mapped_column(Integer, default=0)
     switch_count: Mapped[int] = mapped_column(Integer, default=0)
@@ -58,7 +60,9 @@ class BackendDevice(db.Model):
             'warranty_expire_date': self.effective_warranty_expire_date.isoformat() if self.effective_warranty_expire_date else None,
             'warranty_status': self.warranty_status,
             'name': self.name,
+            'model': self.model,
             'type': self.type,
+            'quantity': self.quantity,
             'server_count': self.server_count,
             'storage_count': self.storage_count,
             'switch_count': self.switch_count,

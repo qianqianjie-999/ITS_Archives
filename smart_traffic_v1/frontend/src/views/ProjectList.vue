@@ -7,8 +7,26 @@
           <el-button v-if="userStore.isEditor" type="primary" @click="openAddDialog">新增项目</el-button>
         </div>
       </template>
-      <el-table :data="projects" stripe v-loading="loading">
-        <el-table-column type="index" label="序号" width="60" />
+
+      <div class="filter-bar">
+        <el-row :gutter="12">
+          <el-col :span="10">
+            <el-select v-model="filterWarranty" placeholder="质保状态" clearable>
+              <el-option label="全部" value="" />
+              <el-option label="在保" value="在保" />
+              <el-option label="过保" value="过保" />
+            </el-select>
+          </el-col>
+          <el-col :span="14">
+            <el-input v-model="searchKeyword" placeholder="搜索项目名称、建设单位..." clearable>
+              <template #prefix><el-icon><Search /></el-icon></template>
+            </el-input>
+          </el-col>
+        </el-row>
+      </div>
+
+      <el-table :data="pagedProjects" stripe v-loading="loading">
+        <el-table-column :index="indexMethod" label="序号" width="60" />
         <el-table-column prop="name" label="项目名称" />
         <el-table-column prop="contract_amount" label="合同金额(万元)" width="140">
           <template #default="{ row }">
@@ -22,6 +40,13 @@
           </template>
         </el-table-column>
         <el-table-column prop="warranty_expire_date" label="质保到期" width="120" />
+        <el-table-column label="质保状态" width="100">
+          <template #default="{ row }">
+            <el-tag :type="row.warranty_expire_date && new Date(row.warranty_expire_date) >= new Date() ? 'success' : 'danger'">
+              {{ row.warranty_expire_date ? (new Date(row.warranty_expire_date) >= new Date() ? '在保' : '过保') : '-' }}
+            </el-tag>
+          </template>
+        </el-table-column>
         <el-table-column prop="builder" label="建设单位" />
         <el-table-column prop="construction_unit" label="施工单位" />
         <el-table-column v-if="userStore.isEditor" label="操作" width="150">
@@ -36,9 +61,8 @@
         <el-pagination
           v-model:current-page="currentPage"
           :page-size="perPage"
-          :total="total"
+          :total="filteredProjects.length"
           layout="total, prev, pager, next"
-          @current-change="fetchData"
           class="dark-pagination"
         />
       </div>
@@ -83,19 +107,48 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, reactive } from 'vue'
+import { ref, onMounted, reactive, computed, watch } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import { Search } from '@element-plus/icons-vue'
 import { projectApi } from '@/api/projects'
 import { useUserStore } from '@/stores/user'
 import type { Project } from '@/types'
 
 const userStore = useUserStore()
-const projects = ref<Project[]>([])
+const allProjects = ref<Project[]>([])
 const loading = ref(false)
 const showDialog = ref(false)
 const currentPage = ref(1)
 const perPage = ref(20)
-const total = ref(0)
+const searchKeyword = ref('')
+const filterWarranty = ref('')
+
+const filteredProjects = computed(() => {
+  return allProjects.value.filter(p => {
+    if (searchKeyword.value) {
+      const kw = searchKeyword.value.toLowerCase()
+      const haystack = [p.name, p.builder, p.construction_unit].filter(Boolean).join(' ').toLowerCase()
+      if (!haystack.includes(kw)) return false
+    }
+    if (filterWarranty.value) {
+      const isExpired = p.warranty_expire_date && new Date(p.warranty_expire_date) < new Date()
+      if (filterWarranty.value === '在保' && isExpired) return false
+      if (filterWarranty.value === '过保' && !isExpired) return false
+    }
+    return true
+  })
+})
+
+const pagedProjects = computed(() => {
+  const start = (currentPage.value - 1) * perPage.value
+  return filteredProjects.value.slice(start, start + perPage.value)
+})
+
+const indexMethod = (index: number) => (currentPage.value - 1) * perPage.value + index + 1
+
+watch([searchKeyword, filterWarranty], () => {
+  currentPage.value = 1
+})
 
 const editProjectForm = reactive<Partial<Project>>({
   id: undefined,
@@ -167,9 +220,8 @@ async function deleteProject(id: number) {
 async function fetchData() {
   loading.value = true
   try {
-    const res = await projectApi.list({ page: currentPage.value, per_page: perPage.value })
-    projects.value = res.data
-    total.value = res.total
+    const res = await projectApi.list({ per_page: 0 })
+    allProjects.value = res.data
   } catch (error) {
     ElMessage.error('获取数据失败')
   } finally {
@@ -185,5 +237,9 @@ onMounted(fetchData)
   display: flex;
   justify-content: space-between;
   align-items: center;
+}
+
+.filter-bar {
+  margin-bottom: 16px;
 }
 </style>

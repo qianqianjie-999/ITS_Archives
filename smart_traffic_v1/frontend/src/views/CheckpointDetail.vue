@@ -28,7 +28,8 @@
             <el-button v-if="userStore.isEditor" type="primary" @click="showAddDialog = true">添加卡口详情信息</el-button>
           </div>
         </template>
-      <el-table :data="checkpoints" stripe v-loading="loading">
+      <el-table :data="pagedCheckpoints" stripe v-loading="loading">
+        <el-table-column :index="indexMethod" label="序号" width="60" />
         <el-table-column prop="project_name" label="归属项目" />
         <el-table-column prop="acceptance_date" label="项目验收日期" width="140" />
         <el-table-column prop="warranty_period" label="项目质保期" width="120">
@@ -63,6 +64,15 @@
           </template>
         </el-table-column>
       </el-table>
+      <div style="display: flex; justify-content: center; margin-top: 16px">
+        <el-pagination
+          v-model:current-page="currentPage"
+          :page-size="perPage"
+          :total="checkpoints.length"
+          layout="total, prev, pager, next"
+          class="dark-pagination"
+        />
+      </div>
     </el-card>
 
     <el-card class="warranty-section" style="margin-top: 16px">
@@ -137,6 +147,7 @@
         accept=".pdf,.jpg,.jpeg,.png"
       />
       <el-table :data="attachments" stripe>
+        <el-table-column type="index" label="序号" width="60" />
         <el-table-column prop="original_filename" label="文件名" />
         <el-table-column prop="file_size" label="大小" width="100">
           <template #default="{ row }">{{ formatFileSize(row.file_size) }}</template>
@@ -245,7 +256,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, onMounted, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Files } from '@element-plus/icons-vue'
@@ -267,6 +278,8 @@ const warrantyExtensions = ref<WarrantyExtension[]>([])
 const maintenanceRecords = ref<MaintenanceRecord[]>([])
 const attachments = ref<Attachment[]>([])
 const loading = ref(false)
+const currentPage = ref(1)
+const perPage = ref(20)
 const showAddDialog = ref(false)
 const showExtendWarrantyDialog = ref(false)
 const showMaintenanceDialog = ref(false)
@@ -275,6 +288,13 @@ const previewVisible = ref(false)
 const previewUrl = ref('')
 const previewType = ref<'image' | 'pdf' | 'other'>('other')
 const previewFilename = ref('')
+
+const indexMethod = (index: number) => (currentPage.value - 1) * perPage.value + index + 1
+
+const pagedCheckpoints = computed(() => {
+  const start = (currentPage.value - 1) * perPage.value
+  return checkpoints.value.slice(start, start + perPage.value)
+})
 
 const extendWarrantyForm = reactive({
   project_id: undefined as number | undefined,

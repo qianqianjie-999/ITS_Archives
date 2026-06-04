@@ -37,7 +37,8 @@
             <span>信号灯列表</span>
             <el-button v-if="userStore.isEditor" type="primary" size="small" @click="showTrafficLightDialog = true">新增信号灯</el-button>
           </div>
-          <el-table :data="trafficLights" stripe>
+          <el-table :data="pagedTrafficLights" stripe>
+            <el-table-column :index="indexMethod" label="序号" width="60" />
             <el-table-column prop="project_name" label="归属项目" />
             <el-table-column prop="acceptance_date" label="项目验收日期" width="140" />
             <el-table-column prop="warranty_period" label="项目质保期" width="120">
@@ -72,6 +73,15 @@
               </template>
             </el-table-column>
           </el-table>
+          <div style="display: flex; justify-content: center; margin-top: 16px">
+            <el-pagination
+              v-model:current-page="trafficLightPage"
+              :page-size="perPage"
+              :total="trafficLights.length"
+              layout="total, prev, pager, next"
+              class="dark-pagination"
+            />
+          </div>
         </el-tab-pane>
 
         <el-tab-pane label="电子警察" name="electronicPolices">
@@ -79,7 +89,8 @@
             <span>电子警察列表</span>
             <el-button v-if="userStore.isEditor" type="primary" size="small" @click="showElectronicPoliceDialog = true">新增电子警察</el-button>
           </div>
-          <el-table :data="electronicPolices" stripe>
+          <el-table :data="pagedElectronicPolices" stripe>
+            <el-table-column :index="electronicPoliceIndexMethod" label="序号" width="60" />
             <el-table-column prop="project_name" label="归属项目" />
             <el-table-column prop="acceptance_date" label="项目验收日期" width="140" />
             <el-table-column prop="warranty_period" label="项目质保期" width="120">
@@ -111,6 +122,15 @@
               </template>
             </el-table-column>
           </el-table>
+          <div style="display: flex; justify-content: center; margin-top: 16px">
+            <el-pagination
+              v-model:current-page="electronicPolicePage"
+              :page-size="perPage"
+              :total="electronicPolices.length"
+              layout="total, prev, pager, next"
+              class="dark-pagination"
+            />
+          </div>
         </el-tab-pane>
 
         <el-tab-pane label="附件" name="attachments">
@@ -127,6 +147,7 @@
             accept=".pdf,.jpg,.jpeg,.png"
           />
           <el-table :data="attachments" stripe>
+            <el-table-column type="index" label="序号" width="60" />
             <el-table-column prop="original_filename" label="文件名" />
             <el-table-column prop="file_size" label="大小" width="100">
               <template #default="{ row }">{{ formatFileSize(row.file_size) }}</template>
@@ -163,6 +184,7 @@
             <el-button v-if="userStore.isEditor" type="primary" size="small" @click="showWarrantyDialog = true">申请质保延期</el-button>
           </div>
           <el-table :data="warrantyRecords" stripe>
+            <el-table-column type="index" label="序号" width="60" />
             <el-table-column prop="project_name" label="项目名称" />
             <el-table-column prop="warranty_expire_date" label="质保到期" />
             <el-table-column prop="extension_date" label="开始日期" />
@@ -397,7 +419,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, reactive } from 'vue'
+import { ref, onMounted, reactive, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Files } from '@element-plus/icons-vue'
@@ -425,12 +447,29 @@ const previewUrl = ref('')
 const previewType = ref<'image' | 'pdf' | 'other'>('other')
 const previewFilename = ref('')
 const activeTab = ref('trafficLights')
+const trafficLightPage = ref(1)
+const electronicPolicePage = ref(1)
+const perPage = ref(20)
 
 const showTrafficLightDialog = ref(false)
 const showElectronicPoliceDialog = ref(false)
 const showWarrantyDialog = ref(false)
 const showMaintenanceDialog = ref(false)
 const fileInputRef = ref<HTMLInputElement | null>(null)
+
+const indexMethod = (index: number) => (trafficLightPage.value - 1) * perPage.value + index + 1
+
+const electronicPoliceIndexMethod = (index: number) => (electronicPolicePage.value - 1) * perPage.value + index + 1
+
+const pagedTrafficLights = computed(() => {
+  const start = (trafficLightPage.value - 1) * perPage.value
+  return trafficLights.value.slice(start, start + perPage.value)
+})
+
+const pagedElectronicPolices = computed(() => {
+  const start = (electronicPolicePage.value - 1) * perPage.value
+  return electronicPolices.value.slice(start, start + perPage.value)
+})
 
 interface WarrantyRecord {
   id: number

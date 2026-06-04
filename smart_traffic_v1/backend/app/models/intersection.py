@@ -54,11 +54,23 @@ class Intersection(db.Model):
     def warranty_status(self) -> dict:
         tl_warranty = self._get_device_warranty(self.traffic_lights)
         ep_warranty = self._get_device_warranty(self.electronic_polices)
+
+        tl_status = tl_warranty['warranty_status']
+        ep_status = ep_warranty['warranty_status']
+
+        # 只要信号灯或电警有1个过保，路口就是过保
+        if tl_status == '过保' or ep_status == '过保':
+            combined = '过保'
+        elif tl_status == '在保' or ep_status == '在保':
+            combined = '在保'
+        else:
+            combined = '无项目'
         
         return {
-            'traffic_light_warranty_status': tl_warranty['warranty_status'],
+            'warranty_status': combined,
+            'traffic_light_warranty_status': tl_status,
             'traffic_light_warranty_expire': tl_warranty['latest_expire_date'],
-            'electronic_police_warranty_status': ep_warranty['warranty_status'],
+            'electronic_police_warranty_status': ep_status,
             'electronic_police_warranty_expire': ep_warranty['latest_expire_date']
         }
 

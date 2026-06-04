@@ -194,7 +194,9 @@ export interface BackendDevice {
     warranty_expire_date?: string
     warranty_status?: string
     name: string
+    model?: string
     type?: string
+    quantity?: number
     construction_unit?: string
     construction_company?: string
 }
