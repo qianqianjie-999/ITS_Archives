@@ -27,7 +27,11 @@
       </div>
 
       <el-table :data="pagedBackendDevices" stripe v-loading="loading" @row-click="selectDevice">
-        <el-table-column :index="indexMethod" label="序号" width="60" />
+        <el-table-column label="序号" width="60">
+          <template #default="{ $index }">
+            {{ (currentPage - 1) * perPage + $index + 1 }}
+          </template>
+        </el-table-column>
         <el-table-column prop="name" label="设备名称" />
         <el-table-column prop="model" label="品牌型号" width="140" />
         <el-table-column prop="type" label="设备类型" width="140" />
@@ -273,8 +277,6 @@ const currentPage = ref(1)
 const perPage = ref(20)
 const searchKeyword = ref('')
 const filterWarranty = ref('')
-
-const indexMethod = (index: number) => (currentPage.value - 1) * perPage.value + index + 1
 
 const filteredBackendDevices = computed(() => {
   return backendDevices.value.filter(d => {

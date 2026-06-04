@@ -27,7 +27,11 @@
       </div>
 
       <el-table :data="pagedPoints" stripe v-loading="loading">
-        <el-table-column :index="indexMethod" label="序号" width="60" />
+        <el-table-column label="序号" width="60">
+          <template #default="{ $index }">
+            {{ (currentPage - 1) * perPage + $index + 1 }}
+          </template>
+        </el-table-column>
         <el-table-column prop="name" label="点位名称" />
         <el-table-column prop="area" label="抓拍区域" />
         <el-table-column prop="type" label="安装位置" width="120" />
@@ -122,8 +126,6 @@ const pagedPoints = computed(() => {
   const start = (currentPage.value - 1) * perPage.value
   return filteredPoints.value.slice(start, start + perPage.value)
 })
-
-const indexMethod = (index: number) => (currentPage.value - 1) * perPage.value + index + 1
 
 watch([searchKeyword, filterWarranty], () => {
   currentPage.value = 1

@@ -27,7 +27,11 @@
       </div>
 
       <el-table :data="pagedIntersections" stripe v-loading="loading">
-        <el-table-column :index="indexMethod" label="序号" width="60" />
+        <el-table-column label="序号" width="60">
+          <template #default="{ $index }">
+            {{ (currentPage - 1) * perPage + $index + 1 }}
+          </template>
+        </el-table-column>
         <el-table-column prop="name" label="路口名称" />
         <el-table-column prop="type" label="类型" width="120" />
         <el-table-column prop="east_west_road" label="东西路" />
@@ -133,8 +137,6 @@ const pagedIntersections = computed(() => {
   const start = (currentPage.value - 1) * perPage.value
   return filteredIntersections.value.slice(start, start + perPage.value)
 })
-
-const indexMethod = (index: number) => (currentPage.value - 1) * perPage.value + index + 1
 
 watch([searchKeyword, filterWarranty], () => {
   currentPage.value = 1
