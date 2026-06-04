@@ -29,7 +29,11 @@
           </div>
         </template>
       <el-table :data="pagedParkingEnforcements" stripe v-loading="loading">
-        <el-table-column :index="indexMethod" label="序号" width="60" />
+        <el-table-column label="序号" width="60">
+          <template #default="{ $index }">
+            {{ (currentPage - 1) * perPage + $index + 1 }}
+          </template>
+        </el-table-column>
         <el-table-column prop="project_name" label="归属项目" />
         <el-table-column prop="acceptance_date" label="项目验收日期" width="140" />
         <el-table-column prop="warranty_period" label="项目质保期" width="120">
@@ -310,8 +314,6 @@ const maintenanceForm = reactive({
   fault_time: '',
   solution: ''
 })
-
-const indexMethod = (index: number) => (currentPage.value - 1) * perPage.value + index + 1
 
 const pagedParkingEnforcements = computed(() => {
   const start = (currentPage.value - 1) * perPage.value

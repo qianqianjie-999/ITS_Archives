@@ -38,7 +38,11 @@
             <el-button v-if="userStore.isEditor" type="primary" size="small" @click="showTrafficLightDialog = true">新增信号灯</el-button>
           </div>
           <el-table :data="pagedTrafficLights" stripe>
-            <el-table-column :index="indexMethod" label="序号" width="60" />
+            <el-table-column label="序号" width="60">
+              <template #default="{ $index }">
+                {{ (trafficLightPage - 1) * perPage + $index + 1 }}
+              </template>
+            </el-table-column>
             <el-table-column prop="project_name" label="归属项目" />
             <el-table-column prop="acceptance_date" label="项目验收日期" width="140" />
             <el-table-column prop="warranty_period" label="项目质保期" width="120">
@@ -90,7 +94,11 @@
             <el-button v-if="userStore.isEditor" type="primary" size="small" @click="showElectronicPoliceDialog = true">新增电子警察</el-button>
           </div>
           <el-table :data="pagedElectronicPolices" stripe>
-            <el-table-column :index="electronicPoliceIndexMethod" label="序号" width="60" />
+            <el-table-column label="序号" width="60">
+              <template #default="{ $index }">
+                {{ (electronicPolicePage - 1) * perPage + $index + 1 }}
+              </template>
+            </el-table-column>
             <el-table-column prop="project_name" label="归属项目" />
             <el-table-column prop="acceptance_date" label="项目验收日期" width="140" />
             <el-table-column prop="warranty_period" label="项目质保期" width="120">
@@ -456,10 +464,6 @@ const showElectronicPoliceDialog = ref(false)
 const showWarrantyDialog = ref(false)
 const showMaintenanceDialog = ref(false)
 const fileInputRef = ref<HTMLInputElement | null>(null)
-
-const indexMethod = (index: number) => (trafficLightPage.value - 1) * perPage.value + index + 1
-
-const electronicPoliceIndexMethod = (index: number) => (electronicPolicePage.value - 1) * perPage.value + index + 1
 
 const pagedTrafficLights = computed(() => {
   const start = (trafficLightPage.value - 1) * perPage.value
