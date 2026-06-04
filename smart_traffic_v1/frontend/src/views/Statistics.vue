@@ -59,7 +59,11 @@
     <el-tabs v-model="activeTab" @tab-change="handleTabChange">
       <el-tab-pane label="信号灯" name="traffic_light">
         <el-table :data="pagedData.traffic_light" stripe v-loading="loading" border size="small">
-          <el-table-column :index="indexMethod" label="序号" width="55" fixed />
+          <el-table-column label="序号" width="55" fixed>
+            <template #default="{ $index }">
+              {{ (currentPage - 1) * pageSize + $index + 1 }}
+            </template>
+          </el-table-column>
           <el-table-column prop="intersection_name" label="路口名称" min-width="130" fixed />
           <el-table-column prop="intersection_type" label="路口类型" width="100" />
           <el-table-column prop="project_name" label="归属项目" min-width="130" />
@@ -93,7 +97,11 @@
 
       <el-tab-pane label="电子警察" name="electronic_police">
         <el-table :data="pagedData.electronic_police" stripe v-loading="loading" border size="small">
-          <el-table-column :index="indexMethod" label="序号" width="55" fixed />
+          <el-table-column label="序号" width="55" fixed>
+            <template #default="{ $index }">
+              {{ (currentPage - 1) * pageSize + $index + 1 }}
+            </template>
+          </el-table-column>
           <el-table-column prop="intersection_name" label="路口名称" min-width="130" fixed />
           <el-table-column prop="intersection_type" label="路口类型" width="100" />
           <el-table-column prop="project_name" label="归属项目" min-width="130" />
@@ -124,7 +132,11 @@
 
       <el-tab-pane label="违停球" name="parking_enforcement">
         <el-table :data="pagedData.parking_enforcement" stripe v-loading="loading" border size="small">
-          <el-table-column :index="indexMethod" label="序号" width="55" fixed />
+          <el-table-column label="序号" width="55" fixed>
+            <template #default="{ $index }">
+              {{ (currentPage - 1) * pageSize + $index + 1 }}
+            </template>
+          </el-table-column>
           <el-table-column prop="point_name" label="点位名称" min-width="130" fixed />
           <el-table-column prop="camera_area" label="抓拍区域" min-width="120" />
           <el-table-column prop="project_name" label="归属项目" min-width="130" />
@@ -151,7 +163,11 @@
 
       <el-tab-pane label="卡口" name="checkpoint">
         <el-table :data="pagedData.checkpoint" stripe v-loading="loading" border size="small">
-          <el-table-column :index="indexMethod" label="序号" width="55" fixed />
+          <el-table-column label="序号" width="55" fixed>
+            <template #default="{ $index }">
+              {{ (currentPage - 1) * pageSize + $index + 1 }}
+            </template>
+          </el-table-column>
           <el-table-column prop="point_name" label="点位名称" min-width="130" fixed />
           <el-table-column prop="point_type" label="卡口类型" width="150" />
           <el-table-column prop="project_name" label="归属项目" min-width="130" />
@@ -179,7 +195,11 @@
 
       <el-tab-pane label="结构化相机" name="sky_net">
         <el-table :data="pagedData.sky_net" stripe v-loading="loading" border size="small">
-          <el-table-column :index="indexMethod" label="序号" width="55" fixed />
+          <el-table-column label="序号" width="55" fixed>
+            <template #default="{ $index }">
+              {{ (currentPage - 1) * pageSize + $index + 1 }}
+            </template>
+          </el-table-column>
           <el-table-column prop="point_name" label="点位名称" min-width="130" fixed />
           <el-table-column prop="camera_area" label="监控区域" min-width="120" />
           <el-table-column prop="project_name" label="归属项目" min-width="130" />
@@ -209,7 +229,11 @@
 
       <el-tab-pane label="后端设备" name="backend_device">
         <el-table :data="pagedData.backend_device" stripe v-loading="loading" border size="small">
-          <el-table-column :index="indexMethod" label="序号" width="55" fixed />
+          <el-table-column label="序号" width="55" fixed>
+            <template #default="{ $index }">
+              {{ (currentPage - 1) * pageSize + $index + 1 }}
+            </template>
+          </el-table-column>
           <el-table-column prop="name" label="设备名称" min-width="140" fixed />
           <el-table-column prop="model" label="品牌型号" width="130" />
           <el-table-column prop="type" label="设备类型" width="130" />
@@ -260,8 +284,6 @@ const loading = ref(false)
 const activeTab = ref('traffic_light')
 const currentPage = ref(1)
 const pageSize = ref(20)
-
-const indexMethod = (index: number) => (currentPage.value - 1) * pageSize.value + index + 1
 
 const filterWarranty = ref('')
 const filterProject = ref('')
