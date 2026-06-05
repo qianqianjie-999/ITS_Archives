@@ -113,7 +113,11 @@
         </div>
       </template>
       <el-table :data="maintenanceRecords" stripe>
-        <el-table-column type="index" label="序号" width="60" />
+        <el-table-column label="序号" width="60">
+          <template #default="{ $index }">
+            {{ $index + 1 }}
+          </template>
+        </el-table-column>
         <el-table-column prop="fault_level_text" label="故障等级" width="100">
           <template #default="{ row }">
             <el-tag :type="getFaultLevelType(row.fault_level)">
