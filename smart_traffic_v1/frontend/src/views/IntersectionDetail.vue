@@ -772,7 +772,10 @@ async function previewAttachment(attachment: Attachment) {
   const filename = attachment.original_filename.toLowerCase()
   previewFilename.value = attachment.original_filename
   
-  if (filename.endsWith('.jpg') || filename.endsWith('.jpeg') || filename.endsWith('.png')) {
+  const imageExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.bmp', '.webp', '.tiff']
+  const isImage = imageExtensions.some(ext => filename.endsWith(ext))
+  
+  if (isImage) {
     previewType.value = 'image'
     try {
       const response = await attachmentApi.download(attachment.id) as unknown as Blob
@@ -783,7 +786,7 @@ async function previewAttachment(attachment: Attachment) {
     }
   } else if (filename.endsWith('.pdf')) {
     previewType.value = 'pdf'
-    previewUrl.value = `http://localhost:5000/api/attachments/${attachment.id}?preview=true`
+    previewUrl.value = `${import.meta.env.VITE_API_BASE_URL || '/api'}/attachments/${attachment.id}?preview=true`
   } else {
     previewType.value = 'other'
   }
