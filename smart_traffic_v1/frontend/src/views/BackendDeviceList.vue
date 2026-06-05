@@ -210,6 +210,9 @@
         <el-form-item label="故障现象" required>
           <el-input v-model="maintenanceForm.fault_description" type="textarea" :rows="4" placeholder="请描述故障现象" />
         </el-form-item>
+        <el-form-item label="故障发现时间">
+          <el-date-picker v-model="maintenanceForm.fault_time" type="datetime" value-format="YYYY-MM-DDTHH:mm:ss" placeholder="选择故障发现时间" style="width: 100%" />
+        </el-form-item>
         <el-form-item label="解决办法">
           <el-input v-model="maintenanceForm.solution" type="textarea" :rows="4" placeholder="请描述解决办法" />
         </el-form-item>
