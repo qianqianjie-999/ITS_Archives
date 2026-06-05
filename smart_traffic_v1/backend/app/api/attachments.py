@@ -124,7 +124,13 @@ class AttachmentDetail(Resource):
         
         if preview:
             # 预览模式：不强制下载，让浏览器自行处理（PDF可以预览）
-            return send_from_directory(upload_folder, attachment.file_name)
+            from flask import send_file
+            # 设置正确的Content-Type以支持PDF预览
+            filename_lower = attachment.file_name.lower()
+            if filename_lower.endswith('.pdf'):
+                return send_file(file_path, mimetype='application/pdf')
+            else:
+                return send_from_directory(upload_folder, attachment.file_name)
         else:
             # 下载模式：强制下载
             return send_from_directory(upload_folder, attachment.file_name, as_attachment=True, download_name=attachment.file_name)
