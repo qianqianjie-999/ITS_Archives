@@ -3,7 +3,8 @@ from flask_restx import Namespace, Resource, fields
 from ..extensions import db
 from ..models.attachment import Attachment
 from ..models.intersection import Intersection
-from ..models.point import ParkingEnforcementPoint, CheckpointPoint
+from ..models.point import ParkingEnforcementPoint, CheckpointPoint, SkyNet
+from ..models.backend_device import BackendDevice
 from ..utils.decorators import token_required, role_required
 import os
 from werkzeug.utils import secure_filename
@@ -64,8 +65,12 @@ class AttachmentUpload(Resource):
             
             if related_entity_type == 'intersection':
                 facility = db.session.query(Intersection).get(related_entity_id)
-            elif related_entity_type == 'point' or related_entity_type == 'parking_enforcement':
+            elif related_entity_type in ['point', 'parking_enforcement', 'checkpoint']:
                 facility = db.session.query(ParkingEnforcementPoint).get(related_entity_id) or db.session.query(CheckpointPoint).get(related_entity_id)
+            elif related_entity_type == 'backend_device':
+                facility = db.session.query(BackendDevice).get(related_entity_id)
+            elif related_entity_type == 'sky_net':
+                facility = db.session.query(SkyNet).get(related_entity_id)
             else:
                 return {'status': 'error', 'message': '无效的实体类型'}, 400
             
