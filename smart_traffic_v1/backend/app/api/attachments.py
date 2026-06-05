@@ -119,7 +119,15 @@ class AttachmentDetail(Resource):
         if not os.path.exists(file_path):
             return {'status': 'error', 'message': '文件已删除'}, 404
 
-        return send_from_directory(upload_folder, attachment.file_name, as_attachment=True, download_name=attachment.file_name)
+        # 检查是否是预览模式
+        preview = request.args.get('preview', 'false').lower() == 'true'
+        
+        if preview:
+            # 预览模式：不强制下载，让浏览器自行处理（PDF可以预览）
+            return send_from_directory(upload_folder, attachment.file_name)
+        else:
+            # 下载模式：强制下载
+            return send_from_directory(upload_folder, attachment.file_name, as_attachment=True, download_name=attachment.file_name)
 
     @token_required
     @role_required('admin')
