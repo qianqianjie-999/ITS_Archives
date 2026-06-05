@@ -22,6 +22,7 @@ attachment_model = ns.model('Attachment', {
 })
 
 ALLOWED_EXTENSIONS = {'pdf', 'doc', 'docx', 'xls', 'xlsx', 'jpg', 'jpeg', 'png', 'gif'}
+MAX_FILE_SIZE = 16 * 1024 * 1024  # 16MB
 
 
 def _get_upload_folder():
@@ -57,6 +58,14 @@ class AttachmentUpload(Resource):
             return {'status': 'error', 'message': '未选择文件'}, 400
         
         if file and allowed_file(file.filename):
+            # 检查文件大小
+            file.seek(0, os.SEEK_END)
+            file_size = file.tell()
+            file.seek(0)
+            
+            if file_size > MAX_FILE_SIZE:
+                return {'status': 'error', 'message': f'文件大小超过限制（最大16MB）'}, 400
+            
             related_entity_type = request.form.get('related_entity_type')
             related_entity_id = request.form.get('related_entity_id', type=int)
             
