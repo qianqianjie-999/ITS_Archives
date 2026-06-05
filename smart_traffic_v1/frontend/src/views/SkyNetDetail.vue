@@ -145,7 +145,7 @@
       <template #header>
         <div class="card-header">
           <span>附件列表</span>
-          <span v-if="userStore.isEditor" class="upload-tip">（仅支持 PDF、JPG、JPEG、PNG、GIF、BMP、WEBP 格式，最大16MB）</span>
+          <span v-if="userStore.isEditor" class="upload-tip">（仅支持 PDF、doc、docx、excel、JPG、JPEG、PNG、GIF、BMP、WEBP 格式，最大16MB）</span>
           <el-button v-if="userStore.isEditor" type="primary" size="small" @click="triggerFileInput()">上传附件</el-button>
         </div>
       </template>

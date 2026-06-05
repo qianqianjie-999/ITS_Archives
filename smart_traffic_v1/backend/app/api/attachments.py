@@ -21,7 +21,7 @@ attachment_model = ns.model('Attachment', {
     'upload_time': fields.String(readonly=True)
 })
 
-ALLOWED_EXTENSIONS = {'pdf', 'doc', 'docx', 'xls', 'xlsx', 'jpg', 'jpeg', 'png', 'gif'}
+ALLOWED_EXTENSIONS = {'pdf', 'doc', 'docx', 'xls', 'xlsx', 'jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp'}
 MAX_FILE_SIZE = 16 * 1024 * 1024  # 16MB
 
 
