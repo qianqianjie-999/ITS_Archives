@@ -1,5 +1,5 @@
 import os
-from flask import Flask
+from flask import Flask, send_from_directory
 from sqlalchemy.exc import IntegrityError
 from .extensions import db, cors, migrate
 from .config import config
@@ -9,7 +9,7 @@ def create_app(config_name=None):
     if config_name is None:
         config_name = os.environ.get('FLASK_CONFIG', 'default')
 
-    app = Flask(__name__)
+    app = Flask(__name__, static_folder='../frontend/dist', static_url_path='')
     app.config.from_object(config[config_name])
 
     db.init_app(app)
@@ -18,6 +18,11 @@ def create_app(config_name=None):
     migrate.init_app(app, db)
 
     os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
+
+    @app.route('/assets/<path:filename>')
+    def serve_assets(filename):
+        assets_dir = os.path.join(app.static_folder, 'assets')
+        return send_from_directory(assets_dir, filename)
 
     from .api import api_bp
     app.register_blueprint(api_bp)
