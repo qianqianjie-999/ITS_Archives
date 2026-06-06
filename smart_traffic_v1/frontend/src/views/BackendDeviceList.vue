@@ -121,7 +121,9 @@
         </el-table-column>
         <el-table-column prop="fault_description" label="故障现象" />
         <el-table-column prop="solution" label="解决办法" />
-        <el-table-column prop="record_time" label="记录时间" width="180" />
+        <el-table-column label="记录时间" width="180">
+          <template #default="{ row }">{{ formatDateTime(row.record_time) }}</template>
+        </el-table-column>
         <el-table-column prop="recorder_name" label="记录人" width="120" />
         <el-table-column v-if="userStore.isAdmin" label="操作" width="100">
           <template #default="{ row }">
@@ -152,7 +154,9 @@
         <el-table-column prop="file_size" label="大小" width="100">
           <template #default="{ row }">{{ formatFileSize(row.file_size) }}</template>
         </el-table-column>
-        <el-table-column prop="upload_time" label="上传时间" width="150" />
+        <el-table-column label="上传时间" width="180">
+          <template #default="{ row }">{{ formatDateTime(row.upload_time) }}</template>
+        </el-table-column>
         <el-table-column label="操作" width="200">
           <template #default="{ row }">
             <el-button type="primary" size="small" @click="previewAttachment(row)">预览</el-button>
@@ -263,6 +267,7 @@ import { projectApi } from '@/api/projects'
 import { maintenanceApi } from '@/api/maintenance'
 import { attachmentApi, type Attachment } from '@/api/attachments'
 import type { BackendDevice, Project } from '@/types'
+import { formatDateTime } from '@/utils/date'
 
 const userStore = useUserStore()
 const loading = ref(false)
@@ -613,11 +618,12 @@ async function deleteAttachment(id: number) {
 
 async function downloadAttachment(id: number) {
   try {
+    const attachment = attachments.value.find(a => a.id === id)
     const response = await attachmentApi.download(id) as unknown as Blob
     const url = window.URL.createObjectURL(response)
     const a = document.createElement('a')
     a.href = url
-    a.download = `attachment_${id}`
+    a.download = attachment?.original_filename || `attachment_${id}`
     document.body.appendChild(a)
     a.click()
     document.body.removeChild(a)

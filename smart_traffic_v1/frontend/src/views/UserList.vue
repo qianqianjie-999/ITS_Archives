@@ -36,7 +36,7 @@
           </el-table-column>
           <el-table-column prop="last_login" label="最后登录">
             <template #default="scope">
-              {{ scope.row.last_login ? formatDate(scope.row.last_login) : '-' }}
+              {{ scope.row.last_login ? formatDateTime(scope.row.last_login) : '-' }}
             </template>
           </el-table-column>
           <el-table-column label="操作" width="150">
@@ -103,6 +103,7 @@
 import { ref, reactive, computed } from 'vue'
 import { Plus, Edit, Delete } from '@element-plus/icons-vue'
 import { userApi, type User, type UserCreate, type UserUpdate } from '@/api/users'
+import { formatDateTime } from '@/utils/date'
 
 const users = ref<User[]>([])
 const loading = ref(false)
@@ -140,10 +141,7 @@ function getRoleTagType(role: string) {
   return 'info'
 }
 
-function formatDate(dateStr: string) {
-  if (!dateStr) return '-'
-  return new Date(dateStr).toLocaleString('zh-CN')
-}
+
 
 async function fetchUsers() {
   loading.value = true

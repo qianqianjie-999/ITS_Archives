@@ -7,7 +7,8 @@ from ..models.point import ParkingEnforcementPoint, CheckpointPoint, SkyNet
 from ..models.backend_device import BackendDevice
 from ..utils.decorators import token_required, role_required
 import os
-from werkzeug.utils import secure_filename
+import uuid
+from urllib.parse import quote
 
 ns = Namespace('attachments', description='附件管理')
 
@@ -86,8 +87,9 @@ class AttachmentUpload(Resource):
             if not facility:
                 return {'status': 'error', 'message': '实体不存在'}, 404
             
-            filename = secure_filename(file.filename)
-            unique_filename = f"{related_entity_type}_{related_entity_id}_{filename}"
+            original_filename = file.filename
+            _, ext = os.path.splitext(file.filename)
+            unique_filename = f"{related_entity_type}_{related_entity_id}_{uuid.uuid4().hex}{ext}"
             upload_folder = _get_upload_folder()
             file_path = os.path.join(upload_folder, unique_filename)
             file.save(file_path)
@@ -97,7 +99,7 @@ class AttachmentUpload(Resource):
                 related_entity_id=related_entity_id,
                 file_name=unique_filename,
                 file_path=file_path,
-                original_filename=filename,
+                original_filename=original_filename,
                 file_size=os.path.getsize(file_path)
             )
             db.session.add(attachment)
@@ -123,17 +125,24 @@ class AttachmentDetail(Resource):
         preview = request.args.get('preview', 'false').lower() == 'true'
         
         if preview:
-            # 预览模式：不强制下载，让浏览器自行处理（PDF可以预览）
-            from flask import send_file
-            # 设置正确的Content-Type以支持PDF预览
+            from flask import make_response, send_file
             filename_lower = attachment.file_name.lower()
             if filename_lower.endswith('.pdf'):
-                return send_file(file_path, mimetype='application/pdf')
+                response = make_response(send_file(file_path, mimetype='application/pdf'))
+                response.headers['Content-Disposition'] = 'inline; filename="preview.pdf"'
+                response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+                response.headers['Pragma'] = 'no-cache'
+                response.headers['Expires'] = '0'
+                return response
             else:
-                return send_from_directory(upload_folder, attachment.file_name)
+                response = make_response(send_from_directory(upload_folder, attachment.file_name))
+                response.headers['Content-Disposition'] = 'inline'
+                return response
         else:
-            # 下载模式：强制下载
-            return send_from_directory(upload_folder, attachment.file_name, as_attachment=True, download_name=attachment.file_name)
+            encoded_filename = quote(attachment.original_filename.encode('utf-8'), safe='')
+            response = make_response(send_from_directory(upload_folder, attachment.file_name, as_attachment=True))
+            response.headers['Content-Disposition'] = f'attachment; filename="{encoded_filename}"; filename*=UTF-8\'\'{encoded_filename}'
+            return response
 
     @token_required
     @role_required('admin')
