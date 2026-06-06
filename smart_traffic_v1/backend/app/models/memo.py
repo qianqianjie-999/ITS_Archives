@@ -1,21 +1,23 @@
-from datetime import datetime
-from sqlalchemy import Column, Integer, String, Text, DateTime
+from datetime import datetime, timezone
+from sqlalchemy import String, Integer, Text, DateTime
+from sqlalchemy.orm import Mapped, mapped_column
 from sqlalchemy.dialects.postgresql import ARRAY
-from .base import Base
+from typing import Optional, List
+from ..extensions import db
 
 
-class Memo(Base):
+class Memo(db.Model):
     __tablename__ = 'memos'
 
-    id = Column(Integer, primary_key=True, autoincrement=True)
-    title = Column(String(255), nullable=False)
-    content = Column(Text)
-    category = Column(String(100))
-    priority = Column(String(20), default='medium')
-    status = Column(String(20), default='pending')
-    attachments = Column(ARRAY(String), default=[])
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    id: Mapped[int] = mapped_column(primary_key=True)
+    title: Mapped[str] = mapped_column(String(255), nullable=False)
+    content: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    category: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
+    priority: Mapped[str] = mapped_column(String(20), default='medium')
+    status: Mapped[str] = mapped_column(String(20), default='pending')
+    attachments: Mapped[Optional[List[str]]] = mapped_column(ARRAY(String), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(timezone.utc))
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
 
     def to_dict(self):
         return {
@@ -26,6 +28,6 @@ class Memo(Base):
             'priority': self.priority,
             'status': self.status,
             'attachments': self.attachments or [],
-            'created_at': self.created_at.isoformat() + 'Z' if self.created_at else None,
-            'updated_at': self.updated_at.isoformat() + 'Z' if self.updated_at else None
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+            'updated_at': self.updated_at.isoformat() if self.updated_at else None
         }
