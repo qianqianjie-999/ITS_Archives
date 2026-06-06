@@ -11,6 +11,7 @@ def create_app(config_name=None):
 
     app = Flask(__name__, static_folder='../frontend/dist', static_url_path='')
     app.config.from_object(config[config_name])
+    app.url_map.strict_slashes = False
 
     db.init_app(app)
     allowed_origins = os.environ.get('CORS_ORIGINS', 'http://localhost:5173,http://localhost:3000').split(',')
