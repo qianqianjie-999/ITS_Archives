@@ -10,15 +10,15 @@ export interface MemoListParams {
   per_page?: number
 }
 
-export const getMemos = (params?: MemoListParams) => {
-  return apiClient.get<MemoListResponse>('/memos', { params })
+export const getMemos = (params?: MemoListParams): Promise<MemoListResponse> => {
+  return apiClient.get('/memos', { params })
 }
 
-export const getMemo = (id: number) => {
-  return apiClient.get<Memo>(`/memos/${id}`)
+export const getMemo = (id: number): Promise<Memo> => {
+  return apiClient.get(`/memos/${id}`)
 }
 
-export const createMemo = (data: MemoForm, files?: FileList) => {
+export const createMemo = (data: MemoForm, files?: FileList): Promise<Memo> => {
   const formData = new FormData()
   formData.append('title', data.title)
   formData.append('content', data.content || '')
@@ -31,12 +31,12 @@ export const createMemo = (data: MemoForm, files?: FileList) => {
     }
   }
   
-  return apiClient.post<Memo>('/memos', formData, {
+  return apiClient.post('/memos', formData, {
     headers: { 'Content-Type': 'multipart/form-data' }
   })
 }
 
-export const updateMemo = (id: number, data: MemoForm, files?: FileList) => {
+export const updateMemo = (id: number, data: MemoForm, files?: FileList): Promise<Memo> => {
   const formData = new FormData()
   formData.append('title', data.title)
   formData.append('content', data.content || '')
@@ -49,16 +49,16 @@ export const updateMemo = (id: number, data: MemoForm, files?: FileList) => {
     }
   }
   
-  return apiClient.put<Memo>(`/memos/${id}`, formData, {
+  return apiClient.put(`/memos/${id}`, formData, {
     headers: { 'Content-Type': 'multipart/form-data' }
   })
 }
 
-export const deleteMemo = (id: number) => {
+export const deleteMemo = (id: number): Promise<any> => {
   return apiClient.delete(`/memos/${id}`)
 }
 
-export const deleteAttachment = (memoId: number, aid: number) => {
+export const deleteAttachment = (memoId: number, aid: number): Promise<any> => {
   return apiClient.delete(`/memos/${memoId}/attachments/${aid}`)
 }
 

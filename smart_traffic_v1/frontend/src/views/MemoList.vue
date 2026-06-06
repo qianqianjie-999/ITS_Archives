@@ -231,8 +231,8 @@ const fetchMemos = async () => {
       page: pagination.page,
       per_page: pagination.per_page
     })
-    memos.value = result.data.items
-    total.value = result.data.total
+    memos.value = result.items
+    total.value = result.total
   } catch (error) {
     ElMessage.error('获取备忘录列表失败')
   }
@@ -263,7 +263,7 @@ const openCreateModal = async () => {
   // 获取当前登录用户作为默认记录人
   try {
     const userResult = await getCurrentUser()
-    const userData = userResult.data as { user?: { display_name?: string; username?: string } }
+    const userData = userResult as { user?: { display_name?: string; username?: string } }
     memoForm.create_user = userData.user?.display_name || userData.user?.username || 'system'
   } catch {
     memoForm.create_user = 'system'
@@ -369,7 +369,7 @@ const handleDeleteAttachment = async (attach: MemoAttachment) => {
     ElMessage.success('删除成功')
     // 刷新详情
     const result = await getMemos({ keyword: '', page: 1, per_page: 1000 })
-    const updated = result.data.items.find(m => m.id === selectedMemo.value!.id)
+    const updated = result.items.find(m => m.id === selectedMemo.value!.id)
     if (updated) {
       selectedMemo.value = updated
     }
