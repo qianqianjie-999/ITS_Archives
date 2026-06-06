@@ -1,8 +1,17 @@
 from sqlalchemy import String, Integer, Text, DateTime, ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional
 from ..extensions import db
+
+def format_datetime(dt: datetime) -> str:
+    if dt is None:
+        return None
+    if dt.tzinfo is None:
+        dt = dt.replace(tzinfo=timezone.utc)
+    else:
+        dt = dt.astimezone(timezone.utc)
+    return dt.isoformat()
 
 class MaintenanceRecord(db.Model):
     __tablename__ = 'maintenance_record'
@@ -27,9 +36,9 @@ class MaintenanceRecord(db.Model):
             'fault_level': self.fault_level,
             'fault_level_text': self.get_fault_level_text(),
             'fault_description': self.fault_description,
-            'fault_time': self.fault_time.isoformat() if self.fault_time else None,
+            'fault_time': format_datetime(self.fault_time),
             'solution': self.solution,
-            'record_time': self.record_time.isoformat() if self.record_time else None,
+            'record_time': format_datetime(self.record_time),
             'recorder_id': self.recorder_id,
             'recorder_name': self.recorder.display_name if self.recorder else None
         }

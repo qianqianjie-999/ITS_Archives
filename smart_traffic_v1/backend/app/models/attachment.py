@@ -1,8 +1,17 @@
 from sqlalchemy import String, Integer, Text, ForeignKey, TIMESTAMP
 from sqlalchemy.orm import Mapped, mapped_column
 from typing import Optional
-from datetime import datetime
+from datetime import datetime, timezone
 from ..extensions import db
+
+def format_datetime(dt: datetime) -> str:
+    if dt is None:
+        return None
+    if dt.tzinfo is None:
+        dt = dt.replace(tzinfo=timezone.utc)
+    else:
+        dt = dt.astimezone(timezone.utc)
+    return dt.isoformat()
 
 class Attachment(db.Model):
     __tablename__ = 'attachments'
@@ -29,7 +38,7 @@ class Attachment(db.Model):
             'original_filename': self.original_filename,
             'file_size': self.file_size,
             'mime_type': self.mime_type,
-            'upload_time': self.upload_time.isoformat() if self.upload_time else None,
+            'upload_time': format_datetime(self.upload_time),
             'uploaded_by': self.uploaded_by,
             'description': self.description
         }

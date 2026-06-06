@@ -1,9 +1,20 @@
-from datetime import datetime
+from datetime import datetime, timezone, timedelta
 from werkzeug.security import generate_password_hash, check_password_hash
 from sqlalchemy import String, Boolean, Enum, TIMESTAMP
 from sqlalchemy.orm import Mapped, mapped_column
 from typing import Optional
 from ..extensions import db
+
+def to_utc_datetime(dt: datetime) -> datetime:
+    if dt.tzinfo is None:
+        return dt.replace(tzinfo=timezone.utc)
+    return dt.astimezone(timezone.utc)
+
+def format_datetime(dt: datetime) -> str:
+    if dt is None:
+        return None
+    utc_dt = to_utc_datetime(dt)
+    return utc_dt.isoformat()
 
 class User(db.Model):
     __tablename__ = 'user'
@@ -30,5 +41,5 @@ class User(db.Model):
             'display_name': self.display_name,
             'role': self.role,
             'is_active': self.is_active,
-            'last_login': self.last_login.isoformat() if self.last_login else None
+            'last_login': format_datetime(self.last_login)
         }
