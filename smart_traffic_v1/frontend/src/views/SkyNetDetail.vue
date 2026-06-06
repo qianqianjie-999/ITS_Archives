@@ -635,13 +635,7 @@ async function previewAttachment(attachment: Attachment) {
 
   if (isImage) {
     previewType.value = 'image'
-    try {
-      const response = await attachmentApi.download(attachment.id) as unknown as Blob
-      previewUrl.value = window.URL.createObjectURL(response)
-    } catch (error) {
-      ElMessage.error('预览失败')
-      return
-    }
+    previewUrl.value = `${import.meta.env.VITE_API_BASE_URL || '/api'}/attachments/${attachment.id}?preview=true`
   } else if (filename.endsWith('.pdf')) {
     previewType.value = 'pdf'
     previewUrl.value = `${import.meta.env.VITE_API_BASE_URL || '/api'}/attachments/${attachment.id}?preview=true`
