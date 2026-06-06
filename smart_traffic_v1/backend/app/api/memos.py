@@ -7,7 +7,7 @@ from datetime import datetime, timezone
 from werkzeug.utils import secure_filename
 from flask import send_file
 
-memo_bp = Blueprint('memo', __name__, url_prefix='/api/memos')
+memo_bp = Blueprint('memo', __name__, url_prefix='/memos')
 
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'pdf', 'doc', 'docx', 'xls', 'xlsx', 'zip', 'rar'}
 

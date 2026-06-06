@@ -261,6 +261,30 @@ CREATE TABLE IF NOT EXISTS maintenance_record (
   FOREIGN KEY (recorder_id) REFERENCES user(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- 备忘录主表
+CREATE TABLE IF NOT EXISTS memo_list (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  title VARCHAR(128) NOT NULL,
+  content TEXT NULL,
+  happen_time DATETIME NULL,
+  create_user VARCHAR(64) NOT NULL,
+  create_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  update_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  is_del TINYINT(1) NOT NULL DEFAULT 0
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- 备忘录附件表
+CREATE TABLE IF NOT EXISTS memo_attachment (
+  aid INT AUTO_INCREMENT PRIMARY KEY,
+  memo_id INT NOT NULL,
+  file_name VARCHAR(255) NOT NULL,
+  file_path VARCHAR(512) NOT NULL,
+  file_size BIGINT NULL,
+  file_type VARCHAR(32) NULL,
+  upload_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (memo_id) REFERENCES memo_list(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 -- ==============================================
 -- 4. 创建索引
 -- ==============================================
