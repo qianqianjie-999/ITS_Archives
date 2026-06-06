@@ -224,6 +224,27 @@ export interface OperationLog {
   operation_time: string
 }
 
+export interface Memo {
+  id: number
+  title: string
+  content?: string
+  category?: string
+  priority: 'high' | 'medium' | 'low'
+  status: 'pending' | 'in_progress' | 'completed'
+  attachments?: Array<{ file_name: string; original_filename: string }>
+  created_at: string
+  updated_at: string
+}
+
+export interface MemoForm {
+  title: string
+  content?: string
+  category?: string
+  priority: 'high' | 'medium' | 'low'
+  status: 'pending' | 'in_progress' | 'completed'
+  attachments?: Array<{ file_name: string; original_filename: string }>
+}
+
 export interface ApiResponse<T = any> {
   status: 'success' | 'error'
   message?: string

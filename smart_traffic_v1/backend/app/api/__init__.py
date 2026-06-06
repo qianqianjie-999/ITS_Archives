@@ -28,3 +28,7 @@ api.add_namespace(attachments_ns, path='/attachments')
 api.add_namespace(export_ns, path='/export')
 api.add_namespace(users_ns, path='/users')
 api.add_namespace(maintenance_ns, path='/maintenance')
+
+
+from .memos import memo_bp
+api_bp.register_blueprint(memo_bp)

@@ -49,6 +49,11 @@
           <span>统计报表</span>
         </el-menu-item>
 
+        <el-menu-item index="/memos">
+          <el-icon><Edit /></el-icon>
+          <span>备忘录</span>
+        </el-menu-item>
+
         <el-menu-item index="/users">
           <el-icon><User /></el-icon>
           <span>用户管理</span>
@@ -68,7 +73,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useRoute } from 'vue-router'
-import { House, Folder, Location, DArrowLeft, DArrowRight, Camera, DataAnalysis, User, Monitor, Setting, Odometer } from '@element-plus/icons-vue'
+import { House, Folder, Location, DArrowLeft, DArrowRight, Camera, DataAnalysis, User, Monitor, Setting, Odometer, Edit } from '@element-plus/icons-vue'
 
 defineProps<{
   isCollapsed: boolean
@@ -87,6 +92,7 @@ const activeMenu = computed(() => {
   if (path.startsWith('/backend-devices')) return '/backend-devices'
   if (path.startsWith('/projects')) return '/projects'
   if (path.startsWith('/statistics')) return '/statistics'
+  if (path.startsWith('/memos')) return '/memos'
   if (path.startsWith('/users')) return '/users'
   return path
 })
