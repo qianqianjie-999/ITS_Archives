@@ -42,6 +42,8 @@ export const authApi = {
   getCurrentUser: () => apiClient.get<ApiResponse<{ user: User }>>('/auth/current_user')
 }
 
+export const getCurrentUser = () => apiClient.get<ApiResponse<{ user: User }>>('/auth/current_user')
+
 export { intersectionApi } from './intersections'
 export { pointApi } from './points'
 export { projectApi } from './projects'

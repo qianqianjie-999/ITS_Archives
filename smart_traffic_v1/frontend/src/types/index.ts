@@ -228,21 +228,37 @@ export interface Memo {
   id: number
   title: string
   content?: string
-  category?: string
-  priority: 'high' | 'medium' | 'low'
-  status: 'pending' | 'in_progress' | 'completed'
-  attachments?: Array<{ file_name: string; original_filename: string }>
-  created_at: string
-  updated_at: string
+  happen_time?: string  // 事件发生时间
+  create_user: string  // 记录人
+  create_time: string  // 创建时间
+  update_time: string  // 更新时间
+  is_del: number  // 软删除标记
+  attachments: MemoAttachment[]
+}
+
+export interface MemoAttachment {
+  aid: number
+  memo_id: number
+  file_name: string  // 原文件名
+  file_path: string  // 服务器存储路径
+  file_size?: number  // 文件大小
+  file_type?: string  // 文件后缀
+  upload_time: string  // 上传时间
 }
 
 export interface MemoForm {
   title: string
   content?: string
-  category?: string
-  priority: 'high' | 'medium' | 'low'
-  status: 'pending' | 'in_progress' | 'completed'
-  attachments?: Array<{ file_name: string; original_filename: string }>
+  happen_time?: string
+  create_user: string
+}
+
+export interface MemoListResponse {
+  items: Memo[]
+  total: number
+  page: number
+  per_page: number
+  pages: number
 }
 
 export interface ApiResponse<T = any> {
