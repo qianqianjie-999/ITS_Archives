@@ -74,6 +74,7 @@
             <el-option label="闯禁区卡口" value="闯禁区卡口" />
             <el-option label="大货车不靠右行驶卡口" value="大货车不靠右行驶卡口" />
             <el-option label="单行道卡口" value="单行道卡口" />
+            <el-option label="区间测速" value="区间测速" />
           </el-select>
         </el-form-item>
         <el-form-item label="安装位置">
