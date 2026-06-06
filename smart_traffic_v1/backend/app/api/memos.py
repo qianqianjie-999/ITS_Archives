@@ -8,6 +8,7 @@ from werkzeug.utils import secure_filename
 from flask import send_file
 
 memo_bp = Blueprint('memo', __name__, url_prefix='/memos')
+memo_bp.url_map.strict_slashes = False
 
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'pdf', 'doc', 'docx', 'xls', 'xlsx', 'zip', 'rar'}
 
