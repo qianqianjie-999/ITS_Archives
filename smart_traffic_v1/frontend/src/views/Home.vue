@@ -40,13 +40,6 @@
                 :stroke-dashoffset="-(pieInWarranty || 0)"
                 transform="rotate(-90 80 80)"
               />
-              <circle
-                cx="80" cy="80" r="65" fill="none"
-                stroke="#4b5563" stroke-width="20"
-                :stroke-dasharray="pieNone + ' ' + (408.4 - pieNone)"
-                :stroke-dashoffset="-((pieInWarranty || 0) + (pieExpired || 0))"
-                transform="rotate(-90 80 80)"
-              />
             </svg>
             <div class="pie-center">
               <div class="pie-percent">{{ warrantyRate }}%</div>
@@ -63,11 +56,6 @@
               <span class="legend-dot" style="background:#ff4d4f"></span>
               <span class="legend-label">已过保</span>
               <span class="legend-count">{{ warrantyTotal.expired }}</span>
-            </div>
-            <div class="legend-row">
-              <span class="legend-dot" style="background:#4b5563"></span>
-              <span class="legend-label">点位无关联项目</span>
-              <span class="legend-count">{{ warrantyTotal.noProject }}</span>
             </div>
             <div class="legend-row total-row">
               <span class="legend-label">点位总计</span>
@@ -230,7 +218,7 @@ const stats = ref({
   backendDevices: 0
 })
 
-const warrantyTotal = ref({ inCoverage: 0, expired: 0, noProject: 0, total: 0 })
+const warrantyTotal = ref({ inCoverage: 0, expired: 0, total: 0 })
 const warrantyByType = ref<any[]>([])
 const expiringDevices = ref<any[]>([])
 const serviceRanking = ref<any[]>([])
@@ -290,11 +278,6 @@ const pieInWarranty = computed(() => {
 const pieExpired = computed(() => {
   if (!warrantyTotal.value.total) return 0
   return (warrantyTotal.value.expired / warrantyTotal.value.total) * circumference
-})
-
-const pieNone = computed(() => {
-  if (!warrantyTotal.value.total) return 0
-  return (warrantyTotal.value.noProject / warrantyTotal.value.total) * circumference
 })
 
 const warrantyRate = computed(() => {
@@ -440,8 +423,7 @@ async function fetchStats() {
     warrantyTotal.value = {
       inCoverage: t1.inCoverage + t2.inCoverage + t3.inCoverage + t4.inCoverage + t5.inCoverage + t6.inCoverage,
       expired: t1.expired + t2.expired + t3.expired + t4.expired + t5.expired + t6.expired,
-      noProject: t1.noProject + t2.noProject + t3.noProject + t4.noProject + t5.noProject + t6.noProject,
-      total: tl.length + ep.length + pe.length + cp.length + sn.length + bd.length
+      total: (t1.inCoverage + t1.expired) + (t2.inCoverage + t2.expired) + (t3.inCoverage + t3.expired) + (t4.inCoverage + t4.expired) + (t5.inCoverage + t5.expired) + (t6.inCoverage + t6.expired)
     }
 
     expiringDevices.value = []
