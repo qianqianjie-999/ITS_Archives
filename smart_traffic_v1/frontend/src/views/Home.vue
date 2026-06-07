@@ -480,8 +480,7 @@ onMounted(fetchStats)
 
 .home-page {
   width: 100%;
-  min-height: 100vh;
-  padding: 16px;
+  min-height: 100%;
   animation: fadeIn 0.4s ease;
 }
 
