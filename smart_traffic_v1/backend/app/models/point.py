@@ -30,13 +30,13 @@ class ParkingEnforcementPoint(db.Model):
     @property
     def warranty_status(self) -> dict:
         if not self.parking_enforcements:
-            return {'status': '无项目', 'latest_expire_date': None}
+            return {'status': '点位无关联项目', 'latest_expire_date': None}
         
         latest_pe = max(self.parking_enforcements, key=lambda pe: pe.id)
         expire_date = latest_pe.effective_warranty_expire_date
 
         if not expire_date:
-            return {'status': '无项目', 'latest_expire_date': None}
+            return {'status': '点位无关联项目', 'latest_expire_date': None}
 
         today = date.today()
         if expire_date >= today:
@@ -75,13 +75,13 @@ class CheckpointPoint(db.Model):
     @property
     def warranty_status(self) -> dict:
         if not self.checkpoints:
-            return {'status': '无项目', 'latest_expire_date': None}
+            return {'status': '点位无关联项目', 'latest_expire_date': None}
         
         latest_cp = max(self.checkpoints, key=lambda cp: cp.id)
         expire_date = latest_cp.effective_warranty_expire_date
 
         if not expire_date:
-            return {'status': '无项目', 'latest_expire_date': None}
+            return {'status': '点位无关联项目', 'latest_expire_date': None}
 
         today = date.today()
         if expire_date >= today:
@@ -128,7 +128,7 @@ class ParkingEnforcement(db.Model):
                 return '在保'
             else:
                 return '过保'
-        return '无项目'
+        return '点位无关联项目'
 
     def to_dict(self):
         return {
@@ -177,13 +177,13 @@ class SkyNetPoint(db.Model):
     @property
     def warranty_status(self) -> dict:
         if not self.sky_nets:
-            return {'status': '无项目', 'latest_expire_date': None}
+            return {'status': '点位无关联项目', 'latest_expire_date': None}
         
         latest_sn = max(self.sky_nets, key=lambda sn: sn.id)
         expire_date = latest_sn.effective_warranty_expire_date
 
         if not expire_date:
-            return {'status': '无项目', 'latest_expire_date': None}
+            return {'status': '点位无关联项目', 'latest_expire_date': None}
 
         today = date.today()
         if expire_date >= today:
@@ -233,7 +233,7 @@ class SkyNet(db.Model):
                 return '在保'
             else:
                 return '过保'
-        return '无项目'
+        return '点位无关联项目'
 
     def to_dict(self):
         return {
@@ -294,7 +294,7 @@ class Checkpoint(db.Model):
                 return '在保'
             else:
                 return '过保'
-        return '无项目'
+        return '点位无关联项目'
 
     def to_dict(self):
         return {

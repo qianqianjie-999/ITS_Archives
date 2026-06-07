@@ -47,7 +47,7 @@ class BackendDevice(db.Model):
                 return '在保'
             else:
                 return '过保'
-        return '无项目'
+        return '点位无关联项目'
 
     def to_dict(self):
         return {

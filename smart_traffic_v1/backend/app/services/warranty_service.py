@@ -36,7 +36,7 @@ class WarrantyService:
                 expire_dates.append(ext.project.warranty_expire_date)
 
         if not expire_dates:
-            return {'status': '无项目', 'latest_expire_date': None}
+            return {'status': '点位无关联项目', 'latest_expire_date': None}
 
         latest = max(expire_dates)
         return {
@@ -70,7 +70,7 @@ class WarrantyService:
                 expire_dates.append(ext.project.warranty_expire_date)
 
         if not expire_dates:
-            return {'status': '无项目', 'latest_expire_date': None}
+            return {'status': '点位无关联项目', 'latest_expire_date': None}
 
         latest = max(expire_dates)
         return {

@@ -66,7 +66,7 @@
             </div>
             <div class="legend-row">
               <span class="legend-dot" style="background:#4b5563"></span>
-              <span class="legend-label">无项目</span>
+              <span class="legend-label">点位无关联项目</span>
               <span class="legend-count">{{ warrantyTotal.noProject }}</span>
             </div>
             <div class="legend-row total-row">

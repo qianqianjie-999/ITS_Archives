@@ -31,19 +31,17 @@ class Intersection(db.Model):
 
     def _get_device_warranty(self, devices):
         if not devices:
-            return {'warranty_status': '无项目', 'latest_expire_date': None}
+            return {'warranty_status': '点位无关联项目', 'latest_expire_date': None}
         
-        latest_device = max(devices, key=lambda d: d.id)
-        expire_date = latest_device.effective_warranty_expire_date
+        # 只要任意1个设备有项目，就属于"有项目"；取最晚的到期日期
+        valid_dates = [d.effective_warranty_expire_date for d in devices if d.effective_warranty_expire_date]
         
-        if not expire_date:
-            return {'warranty_status': '无项目', 'latest_expire_date': None}
+        if not valid_dates:
+            return {'warranty_status': '点位无关联项目', 'latest_expire_date': None}
         
+        expire_date = max(valid_dates)
         today = date.today()
-        if expire_date >= today:
-            status = '在保'
-        else:
-            status = '过保'
+        status = '在保' if expire_date >= today else '过保'
         
         return {
             'warranty_status': status,
@@ -64,7 +62,7 @@ class Intersection(db.Model):
         elif tl_status == '在保' or ep_status == '在保':
             combined = '在保'
         else:
-            combined = '无项目'
+            combined = '点位无关联项目'
         
         return {
             'warranty_status': combined,
@@ -114,7 +112,7 @@ class TrafficLight(db.Model):
                 return '在保'
             else:
                 return '过保'
-        return '无项目'
+        return '点位无关联项目'
 
     def to_dict(self):
         return {
@@ -181,7 +179,7 @@ class ElectronicPolice(db.Model):
                 return '在保'
             else:
                 return '过保'
-        return '无项目'
+        return '点位无关联项目'
 
     def to_dict(self):
         return {

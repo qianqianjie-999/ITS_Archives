@@ -15,7 +15,7 @@
               <el-option label="全部" value="" />
               <el-option label="在保" value="在保" />
               <el-option label="过保" value="过保" />
-              <el-option label="无项目" value="无项目" />
+              <el-option label="点位无关联项目" value="点位无关联项目" />
             </el-select>
           </el-col>
           <el-col :span="14">
@@ -551,7 +551,7 @@ async function deleteMaintenanceRecord(id: number) {
 function getStatusType(status?: string) {
   if (status === '在保') return 'success'
   if (status === '过保') return 'danger'
-  if (status === '无项目') return 'warning'
+  if (status === '点位无关联项目') return 'warning'
   if (status && new Date(status) >= new Date()) return 'success'
   if (status && new Date(status) < new Date()) return 'danger'
   return 'info'

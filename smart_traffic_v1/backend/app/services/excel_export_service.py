@@ -38,7 +38,7 @@ class ExcelExportService:
     def _get_warranty_status(project_id):
         project = db.session.query(Project).get(project_id)
         if not project or not project.warranty_expire_date:
-            return '无项目'
+            return '点位无关联项目'
         if project.warranty_expire_date >= date.today():
             return '在保'
         return '过保'
