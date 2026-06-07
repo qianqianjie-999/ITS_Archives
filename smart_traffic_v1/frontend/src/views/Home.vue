@@ -489,8 +489,8 @@ onMounted(fetchStats)
 
 .card-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-  gap: 16px;
+  grid-template-columns: repeat(9, 1fr);
+  gap: 12px;
   margin-bottom: 20px;
 }
 
@@ -744,11 +744,9 @@ onMounted(fetchStats)
 }
 
 .quick-grid {
-  display: flex;
-  flex-wrap: nowrap;
-  gap: 12px;
-  overflow-x: auto;
-  padding-bottom: 8px;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
 }
 
 .quick-item {
