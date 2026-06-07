@@ -255,8 +255,8 @@ const statCards = computed(() => {
     { key: 'parkingEnforcements', label: '违停球点位', value: s.parkingEnforcements, icon: Bell, gradient: 'linear-gradient(135deg, rgba(250, 140, 22, 0.2), rgba(250, 140, 22, 0.05))', class: '', badge: '违停点位', badgeColor: '#fa8c16' },
     { key: 'checkpoints', label: '卡口点位', value: s.checkpoints, icon: Folder, gradient: 'linear-gradient(135deg, rgba(19, 194, 194, 0.2), rgba(19, 194, 194, 0.05))', class: '', badge: '卡口点位', badgeColor: '#13c2c2' },
     { key: 'skyNetPoints', label: '结构化相机', value: s.skyNetPoints, icon: Camera, gradient: 'linear-gradient(135deg, rgba(235, 45, 150, 0.2), rgba(235, 45, 150, 0.05))', class: '', badge: '劝导相机', badgeColor: '#eb2f96' },
-    { key: 'projects', label: '项目总数', value: s.projects, icon: DocumentAdd, gradient: 'linear-gradient(135deg, rgba(114, 46, 209, 0.2), rgba(114, 46, 209, 0.05))', class: '', badge: '已录入', badgeColor: '#722ed1' },
-    { key: 'backendDevices', label: '后端设备', value: s.backendDevices, icon: Monitor, gradient: 'linear-gradient(135deg, rgba(47, 84, 235, 0.2), rgba(47, 84, 235, 0.05))', class: '', badge: '机房设备', badgeColor: '#2f54eb' }
+    { key: 'backendDevices', label: '后端设备', value: s.backendDevices, icon: Monitor, gradient: 'linear-gradient(135deg, rgba(47, 84, 235, 0.2), rgba(47, 84, 235, 0.05))', class: '', badge: '机房设备', badgeColor: '#2f54eb' },
+    { key: 'projects', label: '项目总数', value: s.projects, icon: DocumentAdd, gradient: 'linear-gradient(135deg, rgba(114, 46, 209, 0.2), rgba(114, 46, 209, 0.05))', class: '', badge: '已录入', badgeColor: '#722ed1' }
   ]
 })
 
@@ -491,10 +491,9 @@ onMounted(fetchStats)
 
 .card-grid {
   display: grid;
-  grid-template-columns: repeat(9, minmax(0, 1fr));
+  grid-template-columns: repeat(8, minmax(0, 1fr));
   gap: 10px;
   margin-bottom: 20px;
-  width: 100%;
 }
 
 .stat-card {
