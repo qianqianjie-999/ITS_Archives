@@ -492,9 +492,10 @@ onMounted(fetchStats)
 
 .card-grid {
   display: grid;
-  grid-template-columns: repeat(9, 1fr);
-  gap: 12px;
+  grid-template-columns: repeat(9, minmax(0, 1fr));
+  gap: 10px;
   margin-bottom: 20px;
+  width: 100%;
 }
 
 .stat-card {
