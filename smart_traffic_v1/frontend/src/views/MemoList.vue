@@ -74,7 +74,7 @@
     <el-empty v-if="memos.length === 0" description="暂无备忘录" />
 
     <!-- 详情弹窗 -->
-    <el-dialog title="备忘录详情" :visible.sync="detailVisible" width="700px">
+    <el-dialog title="备忘录详情" v-model="detailVisible" width="700px" :append-to-body="false">
       <div v-if="selectedMemo" class="memo-detail">
         <div class="detail-item">
           <label>主题：</label>
@@ -113,6 +113,10 @@
             </div>
           </div>
         </div>
+        <div class="detail-item" v-else>
+          <label>附件：</label>
+          <span class="no-attachment">暂无附件</span>
+        </div>
       </div>
       <template #footer>
         <el-button @click="detailVisible = false">关闭</el-button>
@@ -122,7 +126,7 @@
     </el-dialog>
 
     <!-- 新建/编辑弹窗 -->
-    <el-dialog :title="isEdit ? '编辑备忘录' : '新建备忘录'" :visible.sync="formVisible" width="600px">
+    <el-dialog :title="isEdit ? '编辑备忘录' : '新建备忘录'" v-model="formVisible" width="600px" :append-to-body="false">
       <el-form :model="memoForm" label-width="100px" :rules="formRules" ref="formRef">
         <el-form-item label="主题" prop="title">
           <el-input v-model="memoForm.title" placeholder="请输入备忘录主题" />
@@ -183,7 +187,6 @@ import { ref, reactive, onMounted } from 'vue'
 import { Plus, Files, Upload, Clock, User, Paperclip } from '@element-plus/icons-vue'
 import { formatDateTime, formatDate } from '@/utils/date'
 import { getMemos, createMemo, updateMemo, deleteMemo, deleteAttachment, downloadAttachment, previewAttachment } from '@/api/memos'
-import { getCurrentUser } from '@/api'
 import type { Memo, MemoForm, MemoAttachment } from '@/types'
 import { ElMessage, ElMessageBox } from 'element-plus'
 
@@ -258,19 +261,12 @@ const handleDateChange = (val: [string, string] | null) => {
   }
 }
 
-const openCreateModal = async () => {
+const openCreateModal = () => {
   isEdit.value = false
-  // 获取当前登录用户作为默认记录人
-  try {
-    const userResult = await getCurrentUser()
-    const userData = userResult as { user?: { display_name?: string; username?: string } }
-    memoForm.create_user = userData.user?.display_name || userData.user?.username || 'system'
-  } catch {
-    memoForm.create_user = 'system'
-  }
   memoForm.title = ''
   memoForm.content = ''
   memoForm.happen_time = ''
+  memoForm.create_user = ''
   selectedFiles.value = []
   formVisible.value = true
 }
@@ -322,10 +318,10 @@ const handleSubmit = async () => {
     await formRef.value?.validate()
     
     if (isEdit.value && selectedMemo.value) {
-      await updateMemo(selectedMemo.value.id, memoForm, fileInputRef.value?.files || undefined)
+      await updateMemo(selectedMemo.value.id, memoForm, selectedFiles.value.length > 0 ? selectedFiles.value : undefined)
       ElMessage.success('更新成功')
     } else {
-      await createMemo(memoForm, fileInputRef.value?.files || undefined)
+      await createMemo(memoForm, selectedFiles.value.length > 0 ? selectedFiles.value : undefined)
       ElMessage.success('创建成功')
     }
     
@@ -388,7 +384,7 @@ const handlePreview = (attach: MemoAttachment) => {
   previewAttachment(attach.file_path)
 }
 
-const canPreview = (fileType?: string) => {
+const canPreview = (fileType?: string): boolean => {
   if (!fileType) return false
   const previewTypes = ['png', 'jpg', 'jpeg', 'gif', 'pdf']
   return previewTypes.includes(fileType.toLowerCase())
@@ -407,6 +403,8 @@ onMounted(() => {
 </script>
 
 <style lang="scss" scoped>
+@import '@/styles/variables.scss';
+
 .memo-page {
   padding: 20px;
 }
@@ -436,17 +434,18 @@ onMounted(() => {
 }
 
 .memo-card {
-  background: #fff;
+  background: $bg-card;
   border-radius: 12px;
   padding: 20px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  box-shadow: $shadow-sm;
   cursor: pointer;
   transition: all 0.3s ease;
-  border-left: 4px solid #409eff;
+  border-left: 4px solid $primary-color;
 
   &:hover {
     transform: translateY(-4px);
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+    box-shadow: $shadow-md;
+    background: $bg-hover;
   }
 }
 
@@ -457,13 +456,13 @@ onMounted(() => {
 .memo-title {
   font-size: 16px;
   font-weight: 600;
-  color: #1f2937;
+  color: $text-primary;
   margin: 0;
 }
 
 .memo-content {
   font-size: 14px;
-  color: #6b7280;
+  color: $text-secondary;
   line-height: 1.6;
   margin: 0 0 12px;
   white-space: pre-wrap;
@@ -474,7 +473,7 @@ onMounted(() => {
   gap: 16px;
   margin-bottom: 12px;
   font-size: 13px;
-  color: #6b7280;
+  color: $text-secondary;
 
   .meta-item {
     display: flex;
@@ -488,9 +487,9 @@ onMounted(() => {
   justify-content: space-between;
   align-items: center;
   font-size: 12px;
-  color: #9ca3af;
+  color: $text-placeholder;
   padding-top: 12px;
-  border-top: 1px solid #f3f4f6;
+  border-top: 1px solid $border-color;
 
   .attach-count {
     display: flex;
@@ -505,27 +504,40 @@ onMounted(() => {
   justify-content: flex-end;
 }
 
+
+
+:deep(.el-dialog__body) {
+  max-height: 65vh;
+  overflow-y: auto;
+}
+
 .memo-detail {
   .detail-item {
     margin-bottom: 16px;
 
     label {
       font-weight: 600;
-      color: #374151;
+      color: $text-primary;
       display: block;
       margin-bottom: 4px;
     }
 
-    span, .content-text {
-      color: #6b7280;
+    span, .content-text, .no-attachment {
+      color: $text-secondary;
       line-height: 1.6;
     }
 
     .content-text {
       white-space: pre-wrap;
-      background: #f9fafb;
+      background: $bg-card;
       padding: 12px;
       border-radius: 6px;
+      border: 1px solid $border-color;
+    }
+
+    .no-attachment {
+      color: $text-placeholder;
+      font-style: italic;
     }
   }
 }
@@ -541,49 +553,47 @@ onMounted(() => {
   align-items: center;
   gap: 8px;
   padding: 8px 12px;
-  background: #f9fafb;
+  background: $bg-card;
   border-radius: 6px;
+  border: 1px solid $border-color;
 
   .file-name {
     flex: 1;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+    color: $text-primary;
   }
 
   .file-size {
-    color: #9ca3af;
+    color: $text-placeholder;
     font-size: 12px;
   }
 }
 
 .upload-area {
-  border: 2px dashed #d1d5db;
+  border: 2px dashed $border-color;
   border-radius: 8px;
   padding: 24px;
   text-align: center;
   cursor: pointer;
   transition: all 0.3s ease;
-  color: #6b7280;
+  color: $text-secondary;
+  background: $bg-card;
 
   &:hover {
-    border-color: #409eff;
-    background: #eff6ff;
+    border-color: $primary-color;
+    background: $bg-hover;
   }
 
   .upload-hint {
-    display: block;
     font-size: 12px;
-    color: #9ca3af;
-    margin-top: 4px;
+    color: $text-placeholder;
   }
 }
 
 .file-list {
   margin-top: 12px;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
 }
 
 .file-item {
@@ -591,17 +601,18 @@ onMounted(() => {
   align-items: center;
   gap: 8px;
   padding: 8px 12px;
-  background: #f9fafb;
+  background: $bg-card;
   border-radius: 6px;
+  border: 1px solid $border-color;
 
   span {
     flex: 1;
+    color: $text-primary;
   }
 
   .file-size {
-    color: #9ca3af;
+    color: $text-placeholder;
     font-size: 12px;
-    flex: none;
   }
 }
 </style>

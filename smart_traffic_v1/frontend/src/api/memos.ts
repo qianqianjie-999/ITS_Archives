@@ -18,7 +18,7 @@ export const getMemo = (id: number): Promise<Memo> => {
   return apiClient.get(`/memos/${id}`)
 }
 
-export const createMemo = (data: MemoForm, files?: FileList): Promise<Memo> => {
+export const createMemo = (data: MemoForm, files?: File[]): Promise<Memo> => {
   const formData = new FormData()
   formData.append('title', data.title)
   formData.append('content', data.content || '')
@@ -26,8 +26,8 @@ export const createMemo = (data: MemoForm, files?: FileList): Promise<Memo> => {
   formData.append('create_user', data.create_user)
   
   if (files) {
-    for (let i = 0; i < files.length; i++) {
-      formData.append('files', files[i])
+    for (const file of files) {
+      formData.append('files', file)
     }
   }
   
@@ -36,7 +36,7 @@ export const createMemo = (data: MemoForm, files?: FileList): Promise<Memo> => {
   })
 }
 
-export const updateMemo = (id: number, data: MemoForm, files?: FileList): Promise<Memo> => {
+export const updateMemo = (id: number, data: MemoForm, files?: File[]): Promise<Memo> => {
   const formData = new FormData()
   formData.append('title', data.title)
   formData.append('content', data.content || '')
@@ -44,8 +44,8 @@ export const updateMemo = (id: number, data: MemoForm, files?: FileList): Promis
   formData.append('create_user', data.create_user)
   
   if (files) {
-    for (let i = 0; i < files.length; i++) {
-      formData.append('files', files[i])
+    for (const file of files) {
+      formData.append('files', file)
     }
   }
   

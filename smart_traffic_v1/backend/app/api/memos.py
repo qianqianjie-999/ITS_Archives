@@ -224,8 +224,10 @@ def preview_attachment(filename):
     
     mime_type = mime_types.get(ext, 'application/octet-stream')
     
-    response = make_response(send_file(file_path))
-    response.headers['Content-Type'] = mime_type
-    response.headers['Content-Disposition'] = 'inline'
-    response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
-    return response
+    # 使用 send_from_directory 更简洁可靠
+    return send_from_directory(
+        upload_folder, 
+        filename, 
+        as_attachment=False, 
+        mimetype=mime_type
+    )
