@@ -75,6 +75,19 @@
             </div>
           </div>
         </div>
+        <div class="warranty-detail">
+          <div class="detail-row" v-for="item in warrantyDetails" :key="item.label">
+            <div class="detail-label">{{ item.label }}</div>
+            <div class="detail-stats">
+              <span class="detail-stat">在保: {{ item.inCoverage }}</span>
+              <span class="detail-stat">过保: {{ item.expired }}</span>
+              <span class="detail-stat">总数: {{ item.total }}</span>
+              <span class="detail-rate" :style="{ color: item.rate > 60 ? '#52c41a' : '#fa8c16' }">
+                在保率: {{ item.rate }}%
+              </span>
+            </div>
+          </div>
+        </div>
       </div>
 
       <div class="panel panel-actions">
@@ -144,6 +157,10 @@
             <el-icon :size="18" class="panel-icon"><DataAnalysis /></el-icon>
             <h3 class="panel-title">点位设备服役期限排名</h3>
           </div>
+          <div class="panel-action" @click="goToRanking">
+            <span class="action-text">更多</span>
+            <el-icon><ArrowRight /></el-icon>
+          </div>
         </div>
         <div class="ranking-list" v-if="serviceRanking.length">
           <div class="ranking-row" v-for="(item, index) in serviceRanking.slice(0, 6)" :key="item.id">
@@ -197,7 +214,7 @@ import { pointApi, checkpointPointApi, backendDeviceApi, skyNetApi } from '@/api
 import { projectApi } from '@/api/projects'
 import {
   Location, Camera, Folder, Monitor, Clock, Bell,
-  DocumentAdd, Plus, SuccessFilled, DataAnalysis, PieChart
+  DocumentAdd, Plus, SuccessFilled, DataAnalysis, PieChart, ArrowRight
 } from '@element-plus/icons-vue'
 
 const router = useRouter()
@@ -214,9 +231,20 @@ const stats = ref({
 })
 
 const warrantyTotal = ref({ inCoverage: 0, expired: 0, noProject: 0, total: 0 })
+const warrantyByType = ref<any[]>([])
 const expiringDevices = ref<any[]>([])
 const serviceRanking = ref<any[]>([])
 const recentProjects = ref<any[]>([])
+
+const warrantyDetails = computed(() => {
+  return warrantyByType.value.map(item => {
+    const rate = item.total > 0 ? Math.round((item.inCoverage / item.total) * 100) : 0
+    return {
+      ...item,
+      rate
+    }
+  })
+})
 
 const statCards = computed(() => {
   const s = stats.value
@@ -280,11 +308,18 @@ const quickLinks = [
   { path: '/parking-enforcements', label: '违停管理', icon: Camera, color: 'linear-gradient(135deg, #fa8c16, #d46b08)' },
   { path: '/checkpoints', label: '卡口管理', icon: Folder, color: 'linear-gradient(135deg, #13c2c2, #08979c)' },
   { path: '/backend-devices', label: '后端设备', icon: Monitor, color: 'linear-gradient(135deg, #2f54eb, #1d39c4)' },
-  { path: '/statistics', label: '统计报表', icon: Plus, color: 'linear-gradient(135deg, #00d4ff, #00a8cc)' }
+  { path: '/statistics', label: '统计报表', icon: Plus, color: 'linear-gradient(135deg, #00d4ff, #00a8cc)' },
+  { path: '/sky-net', label: '结构化相机', icon: Camera, color: 'linear-gradient(135deg, #52c41a, #389e0d)' },
+  { path: '/memos', label: '备忘录', icon: DocumentAdd, color: 'linear-gradient(135deg, #722ed1, #531dab)' },
+  { path: '/users', label: '用户管理', icon: DocumentAdd, color: 'linear-gradient(135deg, #13c2c2, #08979c)' }
 ]
 
 function navigateTo(path: string) {
   router.push(path)
+}
+
+function goToRanking() {
+  router.push('/service-ranking')
 }
 
 function countWarranty(list: any[], field = 'warranty_status') {
@@ -392,6 +427,15 @@ async function fetchStats() {
     const t4 = countWarranty(cp)
     const t5 = countWarranty(sn)
     const t6 = countWarranty(bd)
+
+    warrantyByType.value = [
+      { label: '信号灯', inCoverage: t1.inCoverage, expired: t1.expired, total: tl.length },
+      { label: '电子警察', inCoverage: t2.inCoverage, expired: t2.expired, total: ep.length },
+      { label: '违停球', inCoverage: t3.inCoverage, expired: t3.expired, total: pe.length },
+      { label: '卡口', inCoverage: t4.inCoverage, expired: t4.expired, total: cp.length },
+      { label: '结构化相机', inCoverage: t5.inCoverage, expired: t5.expired, total: sn.length },
+      { label: '后端设备', inCoverage: t6.inCoverage, expired: t6.expired, total: bd.length }
+    ]
 
     warrantyTotal.value = {
       inCoverage: t1.inCoverage + t2.inCoverage + t3.inCoverage + t4.inCoverage + t5.inCoverage + t6.inCoverage,
@@ -566,6 +610,20 @@ onMounted(fetchStats)
     color: $text-primary;
     margin: 0;
   }
+
+  .panel-action {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    cursor: pointer;
+    color: $text-secondary;
+    transition: color 0.2s;
+    font-size: 13px;
+
+    &:hover {
+      color: $primary-color;
+    }
+  }
 }
 
 .warranty-content {
@@ -644,6 +702,45 @@ onMounted(fetchStats)
   font-size: 16px;
   font-weight: 600;
   color: $text-primary;
+}
+
+.warranty-detail {
+  margin-top: 16px;
+  border-top: 1px solid $border-color;
+  padding-top: 16px;
+}
+
+.detail-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+  
+  &:not(:last-child) {
+    border-bottom: 1px solid $border-color;
+  }
+}
+
+.detail-label {
+  font-size: 13px;
+  font-weight: 500;
+  color: $text-primary;
+}
+
+.detail-stats {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+}
+
+.detail-stat {
+  font-size: 12px;
+  color: $text-secondary;
+}
+
+.detail-rate {
+  font-size: 13px;
+  font-weight: 600;
 }
 
 .quick-grid {
