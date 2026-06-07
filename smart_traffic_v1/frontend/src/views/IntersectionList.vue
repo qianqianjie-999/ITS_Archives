@@ -126,8 +126,7 @@ const filteredIntersections = computed(() => {
     }
     if (filterWarranty.value) {
       const status = (i as any).warranty_status
-      if (filterWarranty.value === '在保' && status !== '在保') return false
-      if (filterWarranty.value === '过保' && status !== '过保') return false
+      if (status !== filterWarranty.value) return false
     }
     return true
   })
