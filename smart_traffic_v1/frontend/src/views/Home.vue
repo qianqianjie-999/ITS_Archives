@@ -479,6 +479,9 @@ onMounted(fetchStats)
 @import '@/styles/variables.scss';
 
 .home-page {
+  width: 100%;
+  min-height: 100vh;
+  padding: 16px;
   animation: fadeIn 0.4s ease;
 }
 
