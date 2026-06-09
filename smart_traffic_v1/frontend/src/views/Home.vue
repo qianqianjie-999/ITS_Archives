@@ -302,21 +302,20 @@ const expiryLevels = computed(() => {
   const d60 = new Date(today.getTime() + 60 * 86400000)
   const d90 = new Date(today.getTime() + 90 * 86400000)
 
-  let expired = 0, in30 = 0, in60 = 0, in90 = 0, safe = 0
+  let in30 = 0, in60 = 0, in90 = 0
 
   expiringDevices.value.forEach(d => {
     const exp = new Date(d.expire)
-    if (exp <= today) { expired++ }
-    else if (exp <= d30) { in30++ }
+    if (exp <= today) return // 过保的从warrantyTotal取
+    if (exp <= d30) { in30++ }
     else if (exp <= d60) { in60++ }
     else if (exp <= d90) { in90++ }
-    else { safe++ }
   })
 
-  // Also count already-expired from warrantyTotal
-  expired = warrantyTotal.value.expired
-  const total = expired + in30 + in60 + in90 + safe
-  return { expired, d30: in30, d60: in60, d90: in90, safe, total }
+  const expired = warrantyTotal.value.expired
+  const safe = warrantyTotal.value.inCoverage - in30 - in60 - in90
+  const total = expired + in30 + in60 + in90 + Math.max(safe, 0)
+  return { expired, d30: in30, d60: in60, d90: in90, safe: Math.max(safe, 0), total }
 })
 
 const expiryBars = computed(() => {
