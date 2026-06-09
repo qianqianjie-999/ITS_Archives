@@ -119,16 +119,44 @@
         <div class="panel-header">
           <div class="panel-title-box">
             <el-icon :size="18" class="panel-icon"><Clock /></el-icon>
-            <h3 class="panel-title">质保到期提醒</h3>
+            <h3 class="panel-title">质保到期预警</h3>
           </div>
         </div>
-        <div class="expiry-list" v-if="expiringDevices.length">
-          <div class="expiry-row" v-for="d in expiringDevices.slice(0, 6)" :key="d.id">
-            <div class="expiry-info">
-              <span class="expiry-name">{{ d.name }}</span>
-              <span class="expiry-type">{{ d.type }}</span>
+        <div class="expiry-levels" v-if="expiryLevels.total > 0">
+          <div class="level-row">
+            <div class="level-bar-wrap">
+              <div class="level-bar expired" :style="{ width: expiryLevels.expiredPercent + '%' }">
+                <span v-if="expiryLevels.expired > 0">{{ expiryLevels.expired }}</span>
+              </div>
+              <div class="level-bar d30" :style="{ width: expiryLevels.d30Percent + '%' }">
+                <span v-if="expiryLevels.d30 > 0">{{ expiryLevels.d30 }}</span>
+              </div>
+              <div class="level-bar d60" :style="{ width: expiryLevels.d60Percent + '%' }">
+                <span v-if="expiryLevels.d60 > 0">{{ expiryLevels.d60 }}</span>
+              </div>
+              <div class="level-bar d90" :style="{ width: expiryLevels.d90Percent + '%' }">
+                <span v-if="expiryLevels.d90 > 0">{{ expiryLevels.d90 }}</span>
+              </div>
+              <div class="level-bar safe" :style="{ width: expiryLevels.safePercent + '%' }">
+                <span v-if="expiryLevels.safe > 0">{{ expiryLevels.safe }}</span>
+              </div>
             </div>
-            <el-tag :type="d.urgent ? 'danger' : 'warning'" size="small">{{ d.expire }}</el-tag>
+          </div>
+          <div class="level-legend">
+            <span class="level-dot expired"></span><span>已过保 {{ expiryLevels.expired }}</span>
+            <span class="level-dot d30"></span><span>30天内 {{ expiryLevels.d30 }}</span>
+            <span class="level-dot d60"></span><span>60天内 {{ expiryLevels.d60 }}</span>
+            <span class="level-dot d90"></span><span>90天内 {{ expiryLevels.d90 }}</span>
+            <span class="level-dot safe"></span><span>90天以上 {{ expiryLevels.safe }}</span>
+          </div>
+          <div class="expiry-list" v-if="expiringDevices.length">
+            <div class="expiry-row" v-for="d in expiringDevices.slice(0, 5)" :key="d.id">
+              <div class="expiry-info">
+                <span class="expiry-name">{{ d.name }}</span>
+                <span class="expiry-type">{{ d.type }}</span>
+              </div>
+              <el-tag :type="d.urgent ? 'danger' : 'warning'" size="small">{{ d.expire }}</el-tag>
+            </div>
           </div>
         </div>
         <div class="empty-state" v-else>
@@ -169,25 +197,25 @@
         </div>
       </div>
 
-      <div class="panel panel-projects">
+      <div class="panel panel-builder">
         <div class="panel-header">
           <div class="panel-title-box">
             <el-icon :size="18" class="panel-icon"><Folder /></el-icon>
-            <h3 class="panel-title">最近项目</h3>
+            <h3 class="panel-title">建设单位排名</h3>
           </div>
         </div>
-        <div class="project-list" v-if="recentProjects.length">
-          <div class="project-row" v-for="p in recentProjects.slice(0, 6)" :key="p.id">
-            <div class="project-info">
-              <span class="project-name">{{ p.name }}</span>
-              <span class="project-date">{{ p.acceptance_date }}</span>
+        <div class="ranking-list" v-if="builderRanking.length">
+          <div class="ranking-row" v-for="(item, index) in builderRanking.slice(0, 6)" :key="item.name">
+            <div class="ranking-num" :class="getRankingClass(index)">{{ index + 1 }}</div>
+            <div class="ranking-info">
+              <span class="ranking-name">{{ item.name }}</span>
             </div>
-            <el-tag :type="getProjectTagType(p.warranty_status)" size="small">{{ p.warranty_status }}</el-tag>
+            <span class="ranking-count">{{ item.count }}台</span>
           </div>
         </div>
         <div class="empty-state" v-else>
           <el-icon :size="40"><DocumentAdd /></el-icon>
-          <p>暂无项目数据</p>
+          <p>暂无数据</p>
         </div>
       </div>
     </div>
@@ -222,7 +250,7 @@ const warrantyTotal = ref({ inCoverage: 0, expired: 0, total: 0 })
 const warrantyByType = ref<any[]>([])
 const expiringDevices = ref<any[]>([])
 const serviceRanking = ref<any[]>([])
-const recentProjects = ref<any[]>([])
+const builderRanking = ref<{ name: string; count: number }[]>([])
 
 const warrantyDetails = computed(() => {
   return warrantyByType.value.map(item => {
@@ -283,6 +311,35 @@ const pieExpired = computed(() => {
 const warrantyRate = computed(() => {
   if (!warrantyTotal.value.total) return 0
   return Math.round((warrantyTotal.value.inCoverage / warrantyTotal.value.total) * 100)
+})
+
+const expiryLevels = computed(() => {
+  const today = new Date()
+  const d30 = new Date(today.getTime() + 30 * 86400000)
+  const d60 = new Date(today.getTime() + 60 * 86400000)
+  const d90 = new Date(today.getTime() + 90 * 86400000)
+
+  let expired = 0, in30 = 0, in60 = 0, in90 = 0, safe = 0
+
+  expiringDevices.value.forEach(d => {
+    const exp = new Date(d.expire)
+    if (exp <= today) { expired++ }
+    else if (exp <= d30) { in30++ }
+    else if (exp <= d60) { in60++ }
+    else if (exp <= d90) { in90++ }
+    else { safe++ }
+  })
+
+  // Also count already-expired from warrantyTotal
+  expired = warrantyTotal.value.expired
+  const total = expired + in30 + in60 + in90 + safe
+  const p = (n: number) => total > 0 ? Math.round((n / total) * 100) : 0
+
+  return {
+    expired, d30: in30, d60: in60, d90: in90, safe, total,
+    expiredPercent: p(expired), d30Percent: p(in30), d60Percent: p(in60),
+    d90Percent: p(in90), safePercent: p(safe)
+  }
 })
 
 const quickLinks = [
@@ -363,12 +420,6 @@ function getRankingClass(index: number) {
   return ''
 }
 
-function getProjectTagType(status: string) {
-  if (status === '在保') return 'success'
-  if (status === '过保') return 'danger'
-  return 'info'
-}
-
 async function fetchStats() {
   try {
     const [
@@ -444,11 +495,15 @@ async function fetchStats() {
     collectServiceDuration(bd, 'name', '后端设备')
     serviceRanking.value.sort((a, b) => (parseFloat(b.duration) - parseFloat(a.duration)))
 
-    recentProjects.value = pr.sort((a: any, b: any) => {
-      const dateA = new Date(a.acceptance_date || a.created_at || 0)
-      const dateB = new Date(b.acceptance_date || b.created_at || 0)
-      return dateB.getTime() - dateA.getTime()
+    // 建设单位排名：按各建设单位的设备总数排序
+    const builderMap: Record<string, number> = {}
+    ;[...tl, ...ep, ...pe, ...cp, ...sn, ...bd].forEach((item: any) => {
+      const unit = item.construction_unit
+      if (unit) builderMap[unit] = (builderMap[unit] || 0) + 1
     })
+    builderRanking.value = Object.entries(builderMap)
+      .map(([name, count]) => ({ name, count }))
+      .sort((a, b) => b.count - a.count)
   } catch (error) {
     console.error('获取统计数据失败', error)
   }
@@ -814,6 +869,61 @@ onMounted(fetchStats)
   text-align: right;
 }
 
+.expiry-levels {
+  .level-row {
+    margin-bottom: 10px;
+  }
+
+  .level-bar-wrap {
+    display: flex;
+    height: 28px;
+    border-radius: 6px;
+    overflow: hidden;
+    background: $border-color;
+  }
+
+  .level-bar {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    font-weight: 600;
+    color: #fff;
+    transition: width 0.6s ease;
+    min-width: 0;
+
+    &.expired { background: #ff4d4f; }
+    &.d30 { background: #fa8c16; }
+    &.d60 { background: #faad14; }
+    &.d90 { background: #1890ff; }
+    &.safe { background: #52c41a; }
+  }
+
+  .level-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin: 10px 0;
+    font-size: 11px;
+    color: $text-secondary;
+
+    .level-dot {
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      margin-right: 3px;
+      vertical-align: middle;
+
+      &.expired { background: #ff4d4f; }
+      &.d30 { background: #fa8c16; }
+      &.d60 { background: #faad14; }
+      &.d90 { background: #1890ff; }
+      &.safe { background: #52c41a; }
+    }
+  }
+}
+
 .expiry-list {
   max-height: 260px;
   overflow-y: auto;
@@ -942,5 +1052,12 @@ onMounted(fetchStats)
     font-size: 11px;
     color: $text-secondary;
   }
+}
+
+.ranking-count {
+  font-size: 15px;
+  font-weight: 700;
+  color: $primary-color;
+  white-space: nowrap;
 }
 </style>

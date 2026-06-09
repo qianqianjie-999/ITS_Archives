@@ -32,6 +32,13 @@
       </div>
     </div>
 
+    <div class="component-summary">
+      <div class="comp-card" v-for="c in componentTotals" :key="c.label">
+        <span class="comp-label">{{ c.label }}</span>
+        <span class="comp-value" :style="{ color: c.color }">{{ c.value.toLocaleString() }}</span>
+      </div>
+    </div>
+
     <div class="filter-bar">
       <el-row :gutter="12">
         <el-col :span="6">
@@ -254,6 +261,33 @@
           <el-table-column prop="usage_days" label="使用时长（天）" width="120" align="center" />
         </el-table>
       </el-tab-pane>
+
+      <el-tab-pane label="项目概览" name="project_overview">
+        <el-table :data="projectSummary" stripe v-loading="loading" border size="small">
+          <el-table-column label="序号" width="55" fixed>
+            <template #default="{ $index }">{{ $index + 1 }}</template>
+          </el-table-column>
+          <el-table-column prop="name" label="项目名称" min-width="140" fixed />
+          <el-table-column prop="builder" label="建设单位" min-width="100" />
+          <el-table-column prop="tl" label="信号灯" width="80" align="center" />
+          <el-table-column prop="ep" label="电子警察" width="80" align="center" />
+          <el-table-column prop="pe" label="违停球" width="80" align="center" />
+          <el-table-column prop="cp" label="卡口" width="80" align="center" />
+          <el-table-column prop="sn" label="结构化相机" width="100" align="center" />
+          <el-table-column prop="bd" label="后端设备" width="80" align="center" />
+          <el-table-column prop="total" label="合计" width="70" align="center">
+            <template #default="{ row }">
+              <b>{{ row.total }}</b>
+            </template>
+          </el-table-column>
+          <el-table-column prop="warranty_expire_date" label="质保到期" width="110" />
+          <el-table-column prop="warranty_status" label="质保状态" width="90">
+            <template #default="{ row }">
+              <el-tag :type="tagType(row.warranty_status)" size="small">{{ row.warranty_status }}</el-tag>
+            </template>
+          </el-table-column>
+        </el-table>
+      </el-tab-pane>
     </el-tabs>
 
     <div class="pager">
@@ -356,6 +390,10 @@ const filteredData = computed(() => {
 })
 
 const pagedData = computed(() => {
+  if (activeTab.value === 'project_overview') {
+    const start = (currentPage.value - 1) * pageSize.value
+    return { project_overview: projectSummary.value.slice(start, start + pageSize.value) }
+  }
   const start = (currentPage.value - 1) * pageSize.value
   const end = start + pageSize.value
   const result: Record<string, any[]> = {}
@@ -367,7 +405,67 @@ const pagedData = computed(() => {
 
 const currentTabTotal = computed(() => {
   const tab = activeTab.value
+  if (tab === 'project_overview') return projectSummary.value.length
   return (filteredData.value as any)[tab]?.length || 0
+})
+
+const componentTotals = computed(() => {
+  const tl = trafficLights.value, ep = electronicPolices.value, pe = parkingEnforcements.value
+  const cp = checkpoints.value, sn = skyNetPoints.value, bd = backendDevices.value
+
+  const sum = (arr: any[], field: string) => arr.reduce((s, i) => s + (Number(i[field]) || 0), 0)
+
+  return [
+    { label: '抓拍相机', value: sum(ep, 'forward_capture_count') + sum(ep, 'reverse_capture_count') + sum(ep, 'ptz_count') + sum(pe, 'camera_count') + sum(cp, 'camera_count') + sum(sn, 'camera_count'), color: '#1890ff' },
+    { label: '信号机', value: sum(tl, 'signal_count'), color: '#52c41a' },
+    { label: '雷达', value: sum(tl, 'radar_count') + sum(cp, 'radar_count'), color: '#fa8c16' },
+    { label: '补光灯', value: sum(ep, 'led_light_count') + sum(ep, 'strobe_light_count') + sum(cp, 'strobe_light_count') + sum(sn, 'fill_light_count'), color: '#faad14' },
+    { label: '标志牌', value: sum(pe, 'parking_sign_count') + sum(pe, 'monitor_sign_count') + sum(cp, 'sign_count'), color: '#722ed1' },
+    { label: '诱导屏', value: sum(tl, 'guide_screen_count'), color: '#13c2c2' },
+    { label: '倒计时器', value: sum(tl, 'countdown_timer_count'), color: '#eb2f96' },
+    { label: '终端服务器', value: sum(ep, 'terminal_server_count'), color: '#2f54eb' },
+    { label: '后端服务器', value: sum(bd, 'server_count'), color: '#00d4ff' },
+    { label: '存储设备', value: sum(bd, 'storage_count'), color: '#fa541c' },
+  ].filter(c => c.value > 0)
+})
+
+const projectSummary = computed(() => {
+  const projects = new Map<number, any>()
+  const allData = [...trafficLights.value, ...electronicPolices.value, ...parkingEnforcements.value,
+    ...checkpoints.value, ...skyNetPoints.value, ...backendDevices.value]
+
+  allData.forEach((item: any) => {
+    const pid = item.project_id
+    if (!pid) return
+    if (!projects.has(pid)) {
+      projects.set(pid, {
+        id: pid,
+        name: item.project_name || '未知项目',
+        builder: item.construction_unit || '-',
+        warranty_expire_date: item.warranty_expire_date || '-',
+        warranty_status: '在保',
+        tl: 0, ep: 0, pe: 0, cp: 0, sn: 0, bd: 0, total: 0
+      })
+    }
+    const p = projects.get(pid)!
+    if ('signal_type' in item) p.tl++
+    else if ('capture_type' in item) p.ep++
+    else if ('checkpoint_type' in item) p.cp++
+    else if ('parking_sign_count' in item) p.pe++
+    else if ('bracket_count' in item || 'pole_count' in item) p.sn++
+    else if ('server_count' in item || 'switch_count' in item || 'storage_count' in item) p.bd++
+    else if ('intersection_name' in item && 'total_signal_count' in item) p.tl++
+    else if ('intersection_name' in item) p.ep++
+    // track worst warranty status
+    if (item.warranty_status === '过保') p.warranty_status = '过保'
+    if (item.warranty_expire_date && (!p.warranty_expire_date || p.warranty_expire_date === '-' || item.warranty_expire_date < p.warranty_expire_date)) {
+      p.warranty_expire_date = item.warranty_expire_date
+    }
+  })
+
+  const result = Array.from(projects.values())
+  result.forEach(p => { p.total = p.tl + p.ep + p.pe + p.cp + p.sn + p.bd })
+  return result.sort((a, b) => b.total - a.total)
 })
 
 const totalCount = computed(() => {
@@ -480,6 +578,37 @@ onMounted(fetchData)
     &.green .sum-value { color: $success-color; }
     &.red .sum-value { color: $error-color; }
     &.blue .sum-value { color: $primary-color; }
+  }
+}
+
+.component-summary {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+  gap: 10px;
+  margin-bottom: 16px;
+
+  .comp-card {
+    background: $bg-card;
+    border: 1px solid $border-color;
+    border-radius: $radius-md;
+    padding: 14px 16px;
+    text-align: center;
+    transition: all $transition-fast;
+    box-shadow: $shadow-md;
+    &:hover {
+      border-color: rgba($primary-color, 0.3);
+      transform: translateY(-2px);
+    }
+    .comp-label {
+      display: block;
+      font-size: 11px;
+      color: $text-secondary;
+      margin-bottom: 4px;
+    }
+    .comp-value {
+      font-size: 26px;
+      font-weight: 700;
+    }
   }
 }
 
