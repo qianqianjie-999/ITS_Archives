@@ -49,6 +49,11 @@
           <span>统计报表</span>
         </el-menu-item>
 
+        <el-menu-item index="/service-ranking">
+          <el-icon><Histogram /></el-icon>
+          <span>服务排名</span>
+        </el-menu-item>
+
         <el-menu-item index="/memos">
           <el-icon><Edit /></el-icon>
           <span>备忘录</span>
@@ -73,7 +78,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useRoute } from 'vue-router'
-import { House, Folder, Location, DArrowLeft, DArrowRight, Camera, DataAnalysis, User, Monitor, Setting, Odometer, Edit } from '@element-plus/icons-vue'
+import { House, Folder, Location, DArrowLeft, DArrowRight, Camera, DataAnalysis, User, Monitor, Setting, Odometer, Edit, Histogram } from '@element-plus/icons-vue'
 
 defineProps<{
   isCollapsed: boolean
@@ -94,6 +99,7 @@ const activeMenu = computed(() => {
   if (path.startsWith('/statistics')) return '/statistics'
   if (path.startsWith('/memos')) return '/memos'
   if (path.startsWith('/users')) return '/users'
+  if (path.startsWith('/service-ranking')) return '/service-ranking'
   return path
 })
 </script>

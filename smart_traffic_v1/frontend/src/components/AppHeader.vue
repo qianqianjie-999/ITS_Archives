@@ -19,6 +19,9 @@
       </div>
 
       <div class="header-actions">
+        <button class="action-btn" title="帮助" @click="showHelp = true">
+          <el-icon :size="18"><QuestionFilled /></el-icon>
+        </button>
         <button class="action-btn" @click="showNotification">
           <el-icon :size="18"><Bell /></el-icon>
           <span class="badge" v-if="notificationCount > 0">{{ notificationCount }}</span>
@@ -59,6 +62,7 @@
       </div>
     </div>
   </header>
+  <HelpDialog v-model="showHelp" />
 </template>
 
 <script setup lang="ts">
@@ -66,7 +70,8 @@ import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessageBox } from 'element-plus'
 import { useUserStore } from '@/stores/user'
-import { Menu, MapLocation, Bell, Setting, ArrowDown, User, ArrowRight, Clock } from '@element-plus/icons-vue'
+import { Menu, MapLocation, Bell, Setting, ArrowDown, User, ArrowRight, Clock, QuestionFilled } from '@element-plus/icons-vue'
+import HelpDialog from '@/components/HelpDialog.vue'
 
 defineEmits(['toggleSidebar'])
 
@@ -75,6 +80,7 @@ const userStore = useUserStore()
 
 const notificationCount = ref(0)
 const currentTime = ref('')
+const showHelp = ref(false)
 
 const roleText = computed(() => {
   switch (userStore.user?.role) {
