@@ -123,31 +123,14 @@
           </div>
         </div>
         <div class="expiry-levels" v-if="expiryLevels.total > 0">
-          <div class="level-row">
-            <div class="level-bar-wrap">
-              <div class="level-bar expired" :style="{ width: expiryLevels.expiredPercent + '%' }">
-                <span v-if="expiryLevels.expired > 0">{{ expiryLevels.expired }}</span>
+          <div class="device-bars">
+            <div class="bar-row" v-for="bar in expiryBars" :key="bar.label">
+              <div class="bar-label">{{ bar.label }}</div>
+              <div class="bar-track">
+                <div class="bar-fill" :style="{ width: bar.percent + '%', background: bar.color }"></div>
               </div>
-              <div class="level-bar d30" :style="{ width: expiryLevels.d30Percent + '%' }">
-                <span v-if="expiryLevels.d30 > 0">{{ expiryLevels.d30 }}</span>
-              </div>
-              <div class="level-bar d60" :style="{ width: expiryLevels.d60Percent + '%' }">
-                <span v-if="expiryLevels.d60 > 0">{{ expiryLevels.d60 }}</span>
-              </div>
-              <div class="level-bar d90" :style="{ width: expiryLevels.d90Percent + '%' }">
-                <span v-if="expiryLevels.d90 > 0">{{ expiryLevels.d90 }}</span>
-              </div>
-              <div class="level-bar safe" :style="{ width: expiryLevels.safePercent + '%' }">
-                <span v-if="expiryLevels.safe > 0">{{ expiryLevels.safe }}</span>
-              </div>
+              <div class="bar-num">{{ bar.value }}</div>
             </div>
-          </div>
-          <div class="level-legend">
-            <span class="level-dot expired"></span><span>已过保 {{ expiryLevels.expired }}</span>
-            <span class="level-dot d30"></span><span>30天内 {{ expiryLevels.d30 }}</span>
-            <span class="level-dot d60"></span><span>60天内 {{ expiryLevels.d60 }}</span>
-            <span class="level-dot d90"></span><span>90天内 {{ expiryLevels.d90 }}</span>
-            <span class="level-dot safe"></span><span>90天以上 {{ expiryLevels.safe }}</span>
           </div>
           <div class="expiry-list" v-if="expiringDevices.length">
             <div class="expiry-row" v-for="d in expiringDevices.slice(0, 5)" :key="d.id">
@@ -333,13 +316,20 @@ const expiryLevels = computed(() => {
   // Also count already-expired from warrantyTotal
   expired = warrantyTotal.value.expired
   const total = expired + in30 + in60 + in90 + safe
-  const p = (n: number) => total > 0 ? Math.round((n / total) * 100) : 0
+  return { expired, d30: in30, d60: in60, d90: in90, safe, total }
+})
 
-  return {
-    expired, d30: in30, d60: in60, d90: in90, safe, total,
-    expiredPercent: p(expired), d30Percent: p(in30), d60Percent: p(in60),
-    d90Percent: p(in90), safePercent: p(safe)
-  }
+const expiryBars = computed(() => {
+  const e = expiryLevels.value
+  if (!e.total) return []
+  const max = Math.max(e.expired, e.d30, e.d60, e.d90, e.safe, 1)
+  return [
+    { label: '已过保', value: e.expired, color: '#ff4d4f', percent: (e.expired / max) * 100 },
+    { label: '30天内', value: e.d30, color: '#fa8c16', percent: (e.d30 / max) * 100 },
+    { label: '60天内', value: e.d60, color: '#faad14', percent: (e.d60 / max) * 100 },
+    { label: '90天内', value: e.d90, color: '#1890ff', percent: (e.d90 / max) * 100 },
+    { label: '90天以上', value: e.safe, color: '#52c41a', percent: (e.safe / max) * 100 }
+  ]
 })
 
 const quickLinks = [
@@ -867,61 +857,6 @@ onMounted(fetchStats)
   font-weight: 600;
   color: $text-primary;
   text-align: right;
-}
-
-.expiry-levels {
-  .level-row {
-    margin-bottom: 10px;
-  }
-
-  .level-bar-wrap {
-    display: flex;
-    height: 28px;
-    border-radius: 6px;
-    overflow: hidden;
-    background: $border-color;
-  }
-
-  .level-bar {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 11px;
-    font-weight: 600;
-    color: #fff;
-    transition: width 0.6s ease;
-    min-width: 0;
-
-    &.expired { background: #ff4d4f; }
-    &.d30 { background: #fa8c16; }
-    &.d60 { background: #faad14; }
-    &.d90 { background: #1890ff; }
-    &.safe { background: #52c41a; }
-  }
-
-  .level-legend {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 12px;
-    margin: 10px 0;
-    font-size: 11px;
-    color: $text-secondary;
-
-    .level-dot {
-      display: inline-block;
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-      margin-right: 3px;
-      vertical-align: middle;
-
-      &.expired { background: #ff4d4f; }
-      &.d30 { background: #fa8c16; }
-      &.d60 { background: #faad14; }
-      &.d90 { background: #1890ff; }
-      &.safe { background: #52c41a; }
-    }
-  }
 }
 
 .expiry-list {

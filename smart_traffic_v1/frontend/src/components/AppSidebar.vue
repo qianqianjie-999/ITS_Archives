@@ -51,7 +51,7 @@
 
         <el-menu-item index="/service-ranking">
           <el-icon><Histogram /></el-icon>
-          <span>服务排名</span>
+          <span>服役时间排名</span>
         </el-menu-item>
 
         <el-menu-item index="/memos">
