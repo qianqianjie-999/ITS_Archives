@@ -224,7 +224,7 @@ class ExcelExportService:
     def _create_traffic_light_sheet(wb):
         ws = wb.create_sheet('信号灯')
         headers = [
-            '路口名称', '路口类型', '归属项目', '项目验收日期', '项目质保期',
+            '序号', '路口名称', '路口类型', '归属项目', '项目验收日期', '项目质保期',
             '项目质保到期时间', '质保状态', '建设单位', '施工单位',
             '信号机类型', '信号机数量', '左转箭头灯数量', '直行箭头数量',
             '右转箭头数量', '满屏灯数量', '非机动灯数量', '人行灯数量',
@@ -241,6 +241,8 @@ class ExcelExportService:
                 grouped[key] = tl
 
         intersection_types = ['十字路口', '丁字路口', '行人过街', '其他']
+        
+        row_idx = 1
 
         for intersection_type in intersection_types:
             type_lights = [tl for tl in grouped.values()
@@ -260,6 +262,7 @@ class ExcelExportService:
                     usage_years = round((date.today() - acc_date).days / 365, 2)
 
                 row = [
+                    row_idx,
                     intersection_name,
                     intersection_type,
                     project_info['name'],
@@ -283,6 +286,7 @@ class ExcelExportService:
                     usage_years
                 ]
                 ws.append(row)
+                row_idx += 1
 
         ExcelExportService._auto_adjust_column_width(ws)
 
@@ -290,7 +294,7 @@ class ExcelExportService:
     def _create_electronic_police_sheet(wb):
         ws = wb.create_sheet('电子警察')
         headers = [
-            '路口名称', '路口类型', '归属项目', '项目验收日期', '项目质保期',
+            '序号', '路口名称', '路口类型', '归属项目', '项目验收日期', '项目质保期',
             '项目质保到期时间', '质保状态', '建设单位', '施工单位',
             '抓拍类型', '终端服务器数量', '正向抓拍数量', '反向抓拍数量',
             'LED灯', '爆闪灯', '监控球机数量', '信号灯检测器数量', '取网说明', '设备服役时长（年）'
@@ -306,6 +310,8 @@ class ExcelExportService:
                 grouped[key] = ep
 
         intersection_types = ['十字路口', '丁字路口', '行人过街', '其他']
+        
+        row_idx = 1
 
         for intersection_type in intersection_types:
             type_eps = [ep for ep in grouped.values()
@@ -325,6 +331,7 @@ class ExcelExportService:
                     usage_years = round((date.today() - acc_date).days / 365, 2)
 
                 row = [
+                    row_idx,
                     intersection_name,
                     intersection_type,
                     project_info['name'],
@@ -346,6 +353,7 @@ class ExcelExportService:
                     usage_years
                 ]
                 ws.append(row)
+                row_idx += 1
 
         ExcelExportService._auto_adjust_column_width(ws)
 
@@ -353,7 +361,7 @@ class ExcelExportService:
     def _create_parking_enforcement_sheet(wb):
         ws = wb.create_sheet('违停球')
         headers = [
-            '点位名称', '抓拍区域', '归属项目', '项目验收日期', '项目质保期',
+            '序号', '点位名称', '抓拍区域', '归属项目', '项目验收日期', '项目质保期',
             '项目质保到期时间', '质保状态', '建设单位', '施工单位',
             '抓拍机数量', '违停标牌数量', '监控标牌数量', '取电说明', '取网说明', '设备服役时长（年）'
         ]
@@ -368,6 +376,8 @@ class ExcelExportService:
                 grouped[key] = pe
 
         warranty_statuses = ['在保', '过保']
+        
+        row_idx = 1
 
         for warranty_status in warranty_statuses:
             type_pes = [pe for pe in grouped.values()
@@ -386,6 +396,7 @@ class ExcelExportService:
                     usage_years = round((date.today() - acc_date).days / 365, 2)
 
                 row = [
+                    row_idx,
                     point_info['name'],
                     point_info['area'],
                     project_info['name'],
@@ -403,6 +414,7 @@ class ExcelExportService:
                     usage_years
                 ]
                 ws.append(row)
+                row_idx += 1
 
         ExcelExportService._auto_adjust_column_width(ws)
 
@@ -410,7 +422,7 @@ class ExcelExportService:
     def _create_checkpoint_sheet(wb):
         ws = wb.create_sheet('卡口')
         headers = [
-            '点位名称', '卡口类型', '归属项目', '项目验收日期', '项目质保期',
+            '序号', '点位名称', '卡口类型', '归属项目', '项目验收日期', '项目质保期',
             '项目质保到期时间', '质保状态', '建设单位', '施工单位',
             '抓拍机数量', '爆闪灯数量', '测速雷达数量', '标牌数量', '取电说明', '取网说明', '设备服役时长（年）'
         ]
@@ -425,6 +437,8 @@ class ExcelExportService:
                 grouped[key] = cp
 
         checkpoint_types = ['雷达测速卡口', '闯禁区卡口', '大货车不靠右行驶卡口', '单行道卡口']
+        
+        row_idx = 1
 
         for cp_type in checkpoint_types:
             type_cps = []
@@ -447,6 +461,7 @@ class ExcelExportService:
                     usage_years = round((date.today() - acc_date).days / 365, 2)
 
                 row = [
+                    row_idx,
                     point_info['name'],
                     cp_type,
                     project_info['name'],
@@ -465,6 +480,7 @@ class ExcelExportService:
                     usage_years
                 ]
                 ws.append(row)
+                row_idx += 1
 
         ExcelExportService._auto_adjust_column_width(ws)
 
@@ -472,7 +488,7 @@ class ExcelExportService:
     def _create_sky_net_sheet(wb):
         ws = wb.create_sheet('结构化相机')
         headers = [
-            '点位名称', '监控区域', '归属项目', '项目验收日期', '项目质保期',
+            '序号', '点位名称', '监控区域', '归属项目', '项目验收日期', '项目质保期',
             '项目质保到期时间', '质保状态', '建设单位', '施工单位',
             '相机数量', '支架数量', '立杆数量', '挂箱数量', '补光灯数量', '音箱数量', '取电说明', '取网说明', '设备服役时长（年）'
         ]
@@ -485,6 +501,8 @@ class ExcelExportService:
             key = sn.point_id
             if key not in grouped or sn.id > grouped[key].id:
                 grouped[key] = sn
+        
+        row_idx = 1
 
         for sn in grouped.values():
             project_info = ExcelExportService._get_project_info(sn.project_id)
@@ -498,6 +516,7 @@ class ExcelExportService:
                 usage_years = round((date.today() - acc_date).days / 365, 2)
 
             row = [
+                row_idx,
                 point_name,
                 sn.camera_area or '',
                 project_info['name'],
@@ -518,6 +537,7 @@ class ExcelExportService:
                 usage_years
             ]
             ws.append(row)
+            row_idx += 1
 
         ExcelExportService._auto_adjust_column_width(ws)
 
@@ -525,7 +545,7 @@ class ExcelExportService:
     def _create_backend_device_sheet(wb):
         ws = wb.create_sheet('后端设备')
         headers = [
-            '设备名称', '品牌型号', '设备类型', '设备数量', '归属项目', '项目验收日期', '项目质保期',
+            '序号', '设备名称', '品牌型号', '设备类型', '设备数量', '归属项目', '项目验收日期', '项目质保期',
             '项目质保到期时间', '质保状态', '建设单位', '施工单位', '设备服役时长（年）'
         ]
         ws.append(headers)
@@ -542,6 +562,8 @@ class ExcelExportService:
                 grouped[key] = d
         
         device_types = ['网络交换设备', '网络安全设备', '服务器', '存储设备', '显示设备', '操作设备', '消防设备', '用电设备', '空调设备', '软件平台']
+        
+        row_idx = 1
 
         for device_type in device_types:
             type_devices = [d for d in grouped.values()
@@ -560,6 +582,7 @@ class ExcelExportService:
                     usage_years = round((date.today() - acc_date).days / 365, 2)
 
                 row = [
+                    row_idx,
                     d.name or '',
                     d.model or '',
                     device_type,
@@ -574,6 +597,7 @@ class ExcelExportService:
                     usage_years
                 ]
                 ws.append(row)
+                row_idx += 1
 
         ExcelExportService._auto_adjust_column_width(ws)
 
