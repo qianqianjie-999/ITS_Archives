@@ -263,9 +263,25 @@
       </el-tab-pane>
 
       <el-tab-pane label="项目概览" name="project_overview">
-        <el-table :data="projectSummary" stripe v-loading="loading" border size="small">
+        <div class="filter-bar" style="margin-bottom: 16px;">
+          <el-row :gutter="12">
+            <el-col :span="10">
+              <el-select v-model="filterProjectOverviewWarranty" placeholder="质保状态" clearable>
+                <el-option label="全部" value="" />
+                <el-option label="在保" value="在保" />
+                <el-option label="过保" value="过保" />
+              </el-select>
+            </el-col>
+            <el-col :span="14">
+              <el-input v-model="searchProjectOverviewKeyword" placeholder="搜索项目名称、建设单位..." clearable>
+                <template #prefix><el-icon><Search /></el-icon></template>
+              </el-input>
+            </el-col>
+          </el-row>
+        </div>
+        <el-table :data="pagedData.project_overview" stripe v-loading="loading" border size="small">
           <el-table-column label="序号" width="55" fixed>
-            <template #default="{ $index }">{{ $index + 1 }}</template>
+            <template #default="{ $index }">{{ (currentPage - 1) * pageSize + $index + 1 }}</template>
           </el-table-column>
           <el-table-column prop="name" label="项目名称" min-width="140" fixed />
           <el-table-column prop="builder" label="建设单位" min-width="100" />
@@ -322,6 +338,8 @@ const pageSize = ref(20)
 const filterWarranty = ref('')
 const filterProject = ref('')
 const searchKeyword = ref('')
+const filterProjectOverviewWarranty = ref('')
+const searchProjectOverviewKeyword = ref('')
 
 const projects = ref<any[]>([])
 const trafficLights = ref<any[]>([])
@@ -392,7 +410,7 @@ const filteredData = computed(() => {
 const pagedData = computed(() => {
   if (activeTab.value === 'project_overview') {
     const start = (currentPage.value - 1) * pageSize.value
-    return { project_overview: projectSummary.value.slice(start, start + pageSize.value) }
+    return { project_overview: filteredProjectSummary.value.slice(start, start + pageSize.value) }
   }
   const start = (currentPage.value - 1) * pageSize.value
   const end = start + pageSize.value
@@ -405,7 +423,7 @@ const pagedData = computed(() => {
 
 const currentTabTotal = computed(() => {
   const tab = activeTab.value
-  if (tab === 'project_overview') return projectSummary.value.length
+  if (tab === 'project_overview') return filteredProjectSummary.value.length
   return (filteredData.value as any)[tab]?.length || 0
 })
 
@@ -468,6 +486,21 @@ const projectSummary = computed(() => {
   return result.sort((a, b) => b.total - a.total)
 })
 
+const filteredProjectSummary = computed(() => {
+  return projectSummary.value.filter(p => {
+    if (searchProjectOverviewKeyword.value) {
+      const kw = searchProjectOverviewKeyword.value.toLowerCase()
+      const haystack = [p.name, p.builder].filter(Boolean).join(' ').toLowerCase()
+      if (!haystack.includes(kw)) return false
+    }
+    if (filterProjectOverviewWarranty.value) {
+      if (filterProjectOverviewWarranty.value === '在保' && p.warranty_status !== '在保') return false
+      if (filterProjectOverviewWarranty.value === '过保' && p.warranty_status !== '过保') return false
+    }
+    return true
+  })
+})
+
 const totalCount = computed(() => {
   return trafficLights.value.length + electronicPolices.value.length +
     parkingEnforcements.value.length + checkpoints.value.length + skyNetPoints.value.length + backendDevices.value.length
@@ -497,6 +530,7 @@ function handleFilter() { currentPage.value = 1 }
 function handleTabChange() { currentPage.value = 1 }
 function handleSizeChange() { currentPage.value = 1 }
 function handleCurrentChange() {}
+function handleProjectOverviewFilter() { currentPage.value = 1 }
 
 async function fetchData() {
   loading.value = true
