@@ -111,7 +111,7 @@ import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Search } from '@element-plus/icons-vue'
 import { checkpointPointApi } from '@/api/points'
-import { getMemos } from '@/api/memos'
+import { attachmentApi, type Attachment } from '@/api/attachments'
 import { useUserStore } from '@/stores/user'
 import type { CheckpointPoint } from '@/types'
 
@@ -119,7 +119,7 @@ const router = useRouter()
 const userStore = useUserStore()
 const allPoints = ref<CheckpointPoint[]>([])
 const allCheckpoints = ref<any[]>([])
-const allMemos = ref<any[]>([])
+const allAttachments = ref<Attachment[]>([])
 const loading = ref(false)
 const showDialog = ref(false)
 const currentPage = ref(1)
@@ -230,11 +230,11 @@ function loadPoints() {
   Promise.all([
     checkpointPointApi.list({ per_page: 0 }),
     checkpointPointApi.getCheckpointsAll(),
-    getMemos({ per_page: 0 })
-  ]).then(([pointsRes, checkpointsRes, memosRes]) => {
+    attachmentApi.list('checkpoint')
+  ]).then(([pointsRes, checkpointsRes, attachmentsRes]) => {
     allPoints.value = pointsRes.data
     allCheckpoints.value = checkpointsRes.data || []
-    allMemos.value = memosRes.data || []
+    allAttachments.value = attachmentsRes.data || []
     loading.value = false
   }).catch(() => {
     loading.value = false
@@ -246,7 +246,7 @@ function hasProject(pointId: number): boolean {
 }
 
 function hasAttachment(pointId: number): boolean {
-  return allMemos.value.some(m => m.checkpoint_id === pointId && m.attachments && m.attachments.length > 0)
+  return allAttachments.value.some(a => a.related_entity_id === pointId)
 }
 
 onMounted(() => {
@@ -267,8 +267,8 @@ onMounted(() => {
 
 .status-dot {
   display: inline-block;
-  width: 12px;
-  height: 12px;
+  width: 8px;
+  height: 8px;
   border-radius: 50%;
 }
 

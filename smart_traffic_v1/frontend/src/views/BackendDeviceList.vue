@@ -276,7 +276,6 @@ import { backendDeviceApi } from '@/api/points'
 import { projectApi } from '@/api/projects'
 import { maintenanceApi } from '@/api/maintenance'
 import { attachmentApi, type Attachment } from '@/api/attachments'
-import { getMemos } from '@/api/memos'
 import type { BackendDevice, Project } from '@/types'
 import { formatDateTime } from '@/utils/date'
 
@@ -285,7 +284,7 @@ const loading = ref(false)
 const backendDevices = ref<BackendDevice[]>([])
 const projects = ref<Project[]>([])
 const attachments = ref<Attachment[]>([])
-const allMemos = ref<any[]>([])
+const allDeviceAttachments = ref<Attachment[]>([])
 const showDialog = ref(false)
 const fileInputRef = ref<HTMLInputElement | null>(null)
 const previewVisible = ref(false)
@@ -374,12 +373,12 @@ const editForm = ref<any>({
 async function fetchData() {
   loading.value = true
   try {
-    const [devicesRes, memosRes] = await Promise.all([
+    const [devicesRes, attachmentsRes] = await Promise.all([
       backendDeviceApi.list({ per_page: 0 }),
-      getMemos({ per_page: 0 })
+      attachmentApi.list('backend_device')
     ])
     backendDevices.value = devicesRes.data
-    allMemos.value = memosRes.data || []
+    allDeviceAttachments.value = attachmentsRes.data || []
   } catch (error) {
     ElMessage.error('获取后端设备列表失败')
   } finally {
@@ -393,7 +392,7 @@ function hasProject(deviceId: number): boolean {
 }
 
 function hasAttachment(deviceId: number): boolean {
-  return allMemos.value.some(m => m.backend_device_id === deviceId && m.attachments && m.attachments.length > 0)
+  return allDeviceAttachments.value.some(a => a.related_entity_id === deviceId)
 }
 
 async function fetchProjects() {
@@ -698,8 +697,8 @@ onMounted(() => {
 
 .status-dot {
   display: inline-block;
-  width: 12px;
-  height: 12px;
+  width: 8px;
+  height: 8px;
   border-radius: 50%;
 }
 

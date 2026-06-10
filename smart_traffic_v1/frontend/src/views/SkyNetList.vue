@@ -105,7 +105,7 @@ import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Search } from '@element-plus/icons-vue'
 import { skyNetApi } from '@/api/points'
-import { getMemos } from '@/api/memos'
+import { attachmentApi, type Attachment } from '@/api/attachments'
 import { useUserStore } from '@/stores/user'
 import type { SkyNetPoint } from '@/types'
 
@@ -113,7 +113,7 @@ const router = useRouter()
 const userStore = useUserStore()
 const allPoints = ref<SkyNetPoint[]>([])
 const allSkyNets = ref<any[]>([])
-const allMemos = ref<any[]>([])
+const allAttachments = ref<Attachment[]>([])
 const loading = ref(false)
 const showDialog = ref(false)
 const currentPage = ref(1)
@@ -224,11 +224,11 @@ function loadPoints() {
   Promise.all([
     skyNetApi.listPoints({ per_page: 0 }),
     skyNetApi.getSkyNetsAll(),
-    getMemos({ per_page: 0 })
-  ]).then(([pointsRes, skyNetsRes, memosRes]) => {
+    attachmentApi.list('sky_net')
+  ]).then(([pointsRes, skyNetsRes, attachmentsRes]) => {
     allPoints.value = pointsRes.data
     allSkyNets.value = skyNetsRes.data || []
-    allMemos.value = memosRes.data || []
+    allAttachments.value = attachmentsRes.data || []
     loading.value = false
   }).catch(() => {
     loading.value = false
@@ -240,7 +240,7 @@ function hasProject(pointId: number): boolean {
 }
 
 function hasAttachment(pointId: number): boolean {
-  return allMemos.value.some(m => m.sky_net_id === pointId && m.attachments && m.attachments.length > 0)
+  return allAttachments.value.some(a => a.related_entity_id === pointId)
 }
 
 onMounted(() => {
@@ -261,8 +261,8 @@ onMounted(() => {
 
 .status-dot {
   display: inline-block;
-  width: 12px;
-  height: 12px;
+  width: 8px;
+  height: 8px;
   border-radius: 50%;
 }
 

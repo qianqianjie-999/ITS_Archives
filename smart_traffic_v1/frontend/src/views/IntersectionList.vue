@@ -114,7 +114,7 @@ import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Search } from '@element-plus/icons-vue'
 import { intersectionApi } from '@/api/intersections'
-import { getMemos } from '@/api/memos'
+import { attachmentApi, type Attachment } from '@/api/attachments'
 import { useUserStore } from '@/stores/user'
 import type { Intersection } from '@/types'
 
@@ -123,7 +123,7 @@ const userStore = useUserStore()
 const allIntersections = ref<Intersection[]>([])
 const allTrafficLights = ref<any[]>([])
 const allElectronicPolices = ref<any[]>([])
-const allMemos = ref<any[]>([])
+const allAttachments = ref<Attachment[]>([])
 const loading = ref(false)
 const showDialog = ref(false)
 const currentPage = ref(1)
@@ -215,16 +215,16 @@ async function deleteIntersection(id: number) {
 async function fetchData() {
   loading.value = true
   try {
-    const [intersections, trafficLights, electronicPolices, memos] = await Promise.all([
+    const [intersections, trafficLights, electronicPolices, attachmentsRes] = await Promise.all([
       intersectionApi.list({ per_page: 0 }),
       intersectionApi.getTrafficLightsAll(),
       intersectionApi.getElectronicPolicesAll(),
-      getMemos({ per_page: 0 })
+      attachmentApi.list('intersection')
     ])
     allIntersections.value = intersections.data
     allTrafficLights.value = trafficLights.data || []
     allElectronicPolices.value = electronicPolices.data || []
-    allMemos.value = memos.data || []
+    allAttachments.value = attachmentsRes.data || []
   } catch (error) {
     ElMessage.error('获取数据失败')
   } finally {
@@ -239,7 +239,7 @@ function hasProject(intersectionId: number): boolean {
 }
 
 function hasAttachment(intersectionId: number): boolean {
-  return allMemos.value.some(m => m.intersection_id === intersectionId && m.attachments && m.attachments.length > 0)
+  return allAttachments.value.some(a => a.related_entity_id === intersectionId)
 }
 
 onMounted(fetchData)
@@ -258,8 +258,8 @@ onMounted(fetchData)
 
 .status-dot {
   display: inline-block;
-  width: 12px;
-  height: 12px;
+  width: 8px;
+  height: 8px;
   border-radius: 50%;
 }
 
