@@ -193,7 +193,7 @@
             <div class="ranking-info">
               <span class="ranking-name">{{ item.name }}</span>
             </div>
-            <span class="ranking-count">{{ item.count }}台</span>
+            <span class="ranking-count">{{ item.count }}点位</span>
           </div>
         </div>
         <div class="empty-state" v-else>
