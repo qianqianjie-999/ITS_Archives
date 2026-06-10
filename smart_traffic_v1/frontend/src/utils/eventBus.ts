@@ -2,6 +2,8 @@ type EventCallback = (type: string) => void
 
 class EventBus {
   private listeners: Map<string, Set<EventCallback>> = new Map()
+  private debounceTimers: Map<string, ReturnType<typeof setTimeout>> = new Map()
+  private readonly debounceDelay = 500
 
   on(event: string, callback: EventCallback): void {
     if (!this.listeners.has(event)) {
@@ -18,10 +20,20 @@ class EventBus {
   }
 
   emit(event: string, type: string): void {
-    const callbacks = this.listeners.get(event)
-    if (callbacks) {
-      callbacks.forEach(callback => callback(type))
+    const existingTimer = this.debounceTimers.get(event)
+    if (existingTimer) {
+      clearTimeout(existingTimer)
     }
+
+    const timer = setTimeout(() => {
+      const callbacks = this.listeners.get(event)
+      if (callbacks) {
+        callbacks.forEach(callback => callback(type))
+      }
+      this.debounceTimers.delete(event)
+    }, this.debounceDelay)
+
+    this.debounceTimers.set(event, timer)
   }
 }
 

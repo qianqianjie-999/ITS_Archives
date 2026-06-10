@@ -583,8 +583,40 @@ async function exportData() {
   }
 }
 
-function handleDataUpdated() {
-  fetchData()
+async function fetchTrafficLightData() {
+  try {
+    const tl = await intersectionApi.getTrafficLightsAll()
+    trafficLights.value = tl.data || []
+  } catch (error) {
+    console.error('获取信号灯数据失败', error)
+  }
+}
+
+async function fetchElectronicPoliceData() {
+  try {
+    const ep = await intersectionApi.getElectronicPolicesAll()
+    electronicPolices.value = ep.data || []
+  } catch (error) {
+    console.error('获取电子警察数据失败', error)
+  }
+}
+
+function handleDataUpdated(type?: string) {
+  if (!type) {
+    fetchData()
+    return
+  }
+  
+  switch (type) {
+    case 'trafficLight':
+      fetchTrafficLightData()
+      break
+    case 'electronicPolice':
+      fetchElectronicPoliceData()
+      break
+    default:
+      fetchData()
+  }
 }
 
 onMounted(() => {
