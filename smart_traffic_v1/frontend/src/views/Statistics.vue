@@ -434,16 +434,18 @@ const componentTotals = computed(() => {
   const sum = (arr: any[], field: string) => arr.reduce((s, i) => s + (Number(i[field]) || 0), 0)
 
   return [
-    { label: '抓拍相机', value: sum(ep, 'forward_capture_count') + sum(ep, 'reverse_capture_count') + sum(ep, 'ptz_count') + sum(pe, 'camera_count') + sum(cp, 'camera_count') + sum(sn, 'camera_count'), color: '#1890ff' },
     { label: '信号机', value: sum(tl, 'signal_count'), color: '#52c41a' },
-    { label: '雷达', value: sum(tl, 'radar_count') + sum(cp, 'radar_count'), color: '#fa8c16' },
-    { label: '补光灯', value: sum(ep, 'led_light_count') + sum(ep, 'strobe_light_count') + sum(cp, 'strobe_light_count') + sum(sn, 'fill_light_count'), color: '#faad14' },
-    { label: '标志牌', value: sum(pe, 'parking_sign_count') + sum(pe, 'monitor_sign_count') + sum(cp, 'sign_count'), color: '#722ed1' },
+    { label: '雷达', value: sum(tl, 'radar_count'), color: '#fa8c16' },
     { label: '诱导屏', value: sum(tl, 'guide_screen_count'), color: '#13c2c2' },
-    { label: '倒计时器', value: sum(tl, 'countdown_timer_count'), color: '#eb2f96' },
+    { label: '正向抓拍相机', value: sum(ep, 'forward_capture_count'), color: '#1890ff' },
+    { label: '反向抓拍相机', value: sum(ep, 'reverse_capture_count'), color: '#722ed1' },
+    { label: '监控球机', value: sum(ep, 'ptz_count'), color: '#eb2f96' },
     { label: '终端服务器', value: sum(ep, 'terminal_server_count'), color: '#2f54eb' },
-    { label: '后端服务器', value: sum(bd, 'server_count'), color: '#00d4ff' },
-    { label: '存储设备', value: sum(bd, 'storage_count'), color: '#fa541c' },
+    { label: '违停抓拍机', value: sum(pe, 'camera_count'), color: '#faad14' },
+    { label: '卡口相机', value: sum(cp, 'camera_count'), color: '#00d4ff' },
+    { label: '测速雷达', value: sum(cp, 'radar_count'), color: '#fa541c' },
+    { label: '结构化相机', value: sum(sn, 'camera_count'), color: '#c41d7f' },
+    { label: '后端设备', value: bd.length, color: '#595959' },
   ].filter(c => c.value > 0)
 })
 
