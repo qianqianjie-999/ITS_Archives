@@ -186,10 +186,10 @@
             <el-icon :size="18" class="panel-icon"><Folder /></el-icon>
             <h3 class="panel-title">建设单位排名</h3>
           </div>
-          <button class="more-btn" @click="showBuilderRankingDialog = true" v-if="builderRanking.length > 6">
-            <span>更多</span>
-            <el-icon :size="14"><ArrowRight /></el-icon>
-          </button>
+          <div class="panel-action" @click="showBuilderRankingDialog = true" v-if="builderRanking.length > 6">
+            <span class="action-text">更多</span>
+            <el-icon><ArrowRight /></el-icon>
+          </div>
         </div>
         <div class="ranking-list" v-if="builderRanking.length">
           <div class="ranking-row" v-for="(item, index) in builderRanking.slice(0, 6)" :key="item.name">
@@ -749,25 +749,6 @@ onMounted(fetchStats)
 
     &:hover {
       color: $primary-color;
-    }
-  }
-
-  .more-btn {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    cursor: pointer;
-    color: $primary-color;
-    transition: color 0.2s;
-    font-size: 13px;
-    background: none;
-    border: none;
-    padding: 4px 8px;
-    border-radius: $radius-sm;
-    transition: background-color 0.2s;
-
-    &:hover {
-      background-color: rgba($primary-color, 0.1);
     }
   }
 }
