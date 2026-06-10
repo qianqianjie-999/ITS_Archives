@@ -111,7 +111,7 @@ import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Search } from '@element-plus/icons-vue'
 import { checkpointPointApi } from '@/api/points'
-import { memoApi } from '@/api/memos'
+import { getMemos } from '@/api/memos'
 import { useUserStore } from '@/stores/user'
 import type { CheckpointPoint } from '@/types'
 
@@ -230,7 +230,7 @@ function loadPoints() {
   Promise.all([
     checkpointPointApi.list({ per_page: 0 }),
     checkpointPointApi.getCheckpointsAll(),
-    memoApi.list({ per_page: 0 })
+    getMemos({ per_page: 0 })
   ]).then(([pointsRes, checkpointsRes, memosRes]) => {
     allPoints.value = pointsRes.data
     allCheckpoints.value = checkpointsRes.data || []

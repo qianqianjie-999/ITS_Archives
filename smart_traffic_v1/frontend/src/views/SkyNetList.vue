@@ -105,7 +105,7 @@ import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Search } from '@element-plus/icons-vue'
 import { skyNetApi } from '@/api/points'
-import { memoApi } from '@/api/memos'
+import { getMemos } from '@/api/memos'
 import { useUserStore } from '@/stores/user'
 import type { SkyNetPoint } from '@/types'
 
@@ -224,7 +224,7 @@ function loadPoints() {
   Promise.all([
     skyNetApi.listPoints({ per_page: 0 }),
     skyNetApi.getSkyNetsAll(),
-    memoApi.list({ per_page: 0 })
+    getMemos({ per_page: 0 })
   ]).then(([pointsRes, skyNetsRes, memosRes]) => {
     allPoints.value = pointsRes.data
     allSkyNets.value = skyNetsRes.data || []

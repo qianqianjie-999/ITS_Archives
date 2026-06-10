@@ -276,7 +276,7 @@ import { backendDeviceApi } from '@/api/points'
 import { projectApi } from '@/api/projects'
 import { maintenanceApi } from '@/api/maintenance'
 import { attachmentApi, type Attachment } from '@/api/attachments'
-import { memoApi } from '@/api/memos'
+import { getMemos } from '@/api/memos'
 import type { BackendDevice, Project } from '@/types'
 import { formatDateTime } from '@/utils/date'
 
@@ -376,7 +376,7 @@ async function fetchData() {
   try {
     const [devicesRes, memosRes] = await Promise.all([
       backendDeviceApi.list({ per_page: 0 }),
-      memoApi.list({ per_page: 0 })
+      getMemos({ per_page: 0 })
     ])
     backendDevices.value = devicesRes.data
     allMemos.value = memosRes.data || []

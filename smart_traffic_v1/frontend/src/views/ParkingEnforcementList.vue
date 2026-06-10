@@ -105,7 +105,7 @@ import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Search } from '@element-plus/icons-vue'
 import { pointApi } from '@/api/points'
-import { memoApi } from '@/api/memos'
+import { getMemos } from '@/api/memos'
 import { useUserStore } from '@/stores/user'
 import type { ParkingEnforcementPoint } from '@/types'
 
@@ -224,7 +224,7 @@ function loadPoints() {
   Promise.all([
     pointApi.list({ per_page: 0 }),
     pointApi.getParkingEnforcementsAll(),
-    memoApi.list({ per_page: 0 })
+    getMemos({ per_page: 0 })
   ]).then(([pointsRes, enforcementsRes, memosRes]) => {
     allPoints.value = pointsRes.data
     allParkingEnforcements.value = enforcementsRes.data || []

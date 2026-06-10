@@ -114,7 +114,7 @@ import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Search } from '@element-plus/icons-vue'
 import { intersectionApi } from '@/api/intersections'
-import { memoApi } from '@/api/memos'
+import { getMemos } from '@/api/memos'
 import { useUserStore } from '@/stores/user'
 import type { Intersection } from '@/types'
 
@@ -219,7 +219,7 @@ async function fetchData() {
       intersectionApi.list({ per_page: 0 }),
       intersectionApi.getTrafficLightsAll(),
       intersectionApi.getElectronicPolicesAll(),
-      memoApi.list({ per_page: 0 })
+      getMemos({ per_page: 0 })
     ])
     allIntersections.value = intersections.data
     allTrafficLights.value = trafficLights.data || []
