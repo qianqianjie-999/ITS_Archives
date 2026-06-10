@@ -484,52 +484,76 @@ async function fetchStats() {
     collectServiceDuration(bd, 'name', '后端设备')
     serviceRanking.value.sort((a, b) => (parseFloat(b.duration) - parseFloat(a.duration)))
 
-    // 建设单位排名：按各建设单位的点位总数排序（同一点位不重复计算）
+    // 建设单位排名：按设备→项目→建设单位统计（按点位去重）
     const builderMap: Record<string, number> = {}
     const builderPoints: Record<string, Set<number>> = {}
     
-    // 路口点位（信号灯和电子警察所在路口）
-    intersections.data?.forEach((item: any) => {
-      const unit = item.construction_unit
-      if (unit) {
-        if (!builderPoints[unit]) builderPoints[unit] = new Set()
-        builderPoints[unit].add(item.id)
+    // 创建项目到建设单位的映射
+    const projectToBuilder: Record<number | string, string> = {}
+    pr.forEach((p: any) => {
+      if (p.id && p.construction_unit) {
+        projectToBuilder[p.id] = p.construction_unit
       }
     })
     
-    // 违停球点位
+    // 信号灯 → 项目 → 建设单位
+    tl.forEach((item: any) => {
+      const projectId = item.project_id
+      const unit = projectToBuilder[projectId]
+      if (unit && item.intersection_id) {
+        if (!builderPoints[unit]) builderPoints[unit] = new Set()
+        builderPoints[unit].add('tl_' + item.intersection_id)
+      }
+    })
+    
+    // 电子警察 → 项目 → 建设单位
+    ep.forEach((item: any) => {
+      const projectId = item.project_id
+      const unit = projectToBuilder[projectId]
+      if (unit && item.intersection_id) {
+        if (!builderPoints[unit]) builderPoints[unit] = new Set()
+        builderPoints[unit].add('ep_' + item.intersection_id)
+      }
+    })
+    
+    // 违停球 → 项目 → 建设单位
     pe.forEach((item: any) => {
-      const unit = item.construction_unit
+      const projectId = item.project_id
+      const unit = projectToBuilder[projectId]
       if (unit && item.point_id) {
         if (!builderPoints[unit]) builderPoints[unit] = new Set()
-        builderPoints[unit].add(item.point_id)
+        builderPoints[unit].add('pe_' + item.point_id)
       }
     })
     
-    // 卡口点位
+    // 卡口 → 项目 → 建设单位
     cp.forEach((item: any) => {
-      const unit = item.construction_unit
+      const projectId = item.project_id
+      const unit = projectToBuilder[projectId]
       if (unit && item.point_id) {
         if (!builderPoints[unit]) builderPoints[unit] = new Set()
-        builderPoints[unit].add(item.point_id)
+        builderPoints[unit].add('cp_' + item.point_id)
       }
     })
     
-    // 结构化相机点位
+    // 结构化相机 → 项目 → 建设单位
     sn.forEach((item: any) => {
-      const unit = item.construction_unit
+      const projectId = item.project_id
+      const unit = projectToBuilder[projectId]
       if (unit && item.point_id) {
         if (!builderPoints[unit]) builderPoints[unit] = new Set()
-        builderPoints[unit].add(item.point_id)
+        builderPoints[unit].add('sn_' + item.point_id)
       }
     })
     
-    // 后端设备点位
+    // 后端设备 → 项目 → 建设单位
     bd.forEach((item: any) => {
-      const unit = item.construction_unit
-      if (unit && item.point_id) {
+      const projectId = item.project_id
+      const unit = projectToBuilder[projectId]
+      if (unit) {
+        const pointKey = item.point_id ? 'bd_' + item.point_id : 'bd_' + item.id
         if (!builderPoints[unit]) builderPoints[unit] = new Set()
-        builderPoints[unit].add(item.point_id)
+        builderPoints[unit].add(pointKey)
       }
     })
     
