@@ -7,7 +7,7 @@ from openpyxl.utils import get_column_letter
 from flask import send_file
 from ..extensions import db
 from ..models.intersection import Intersection, TrafficLight, ElectronicPolice
-from ..models.point import ParkingEnforcementPoint, CheckpointPoint, ParkingEnforcement, Checkpoint
+from ..models.point import ParkingEnforcementPoint, CheckpointPoint, ParkingEnforcement, Checkpoint, SkyNetPoint, SkyNet
 from ..models.project import Project
 from ..models.backend_device import BackendDevice
 
@@ -75,10 +75,12 @@ class ExcelExportService:
         wb = Workbook()
         wb.remove(wb.active)
 
+        ExcelExportService._create_project_overview_sheet(wb)
         ExcelExportService._create_traffic_light_sheet(wb)
         ExcelExportService._create_electronic_police_sheet(wb)
         ExcelExportService._create_parking_enforcement_sheet(wb)
         ExcelExportService._create_checkpoint_sheet(wb)
+        ExcelExportService._create_sky_net_sheet(wb)
         ExcelExportService._create_backend_device_sheet(wb)
 
         output = io.BytesIO()
@@ -174,6 +176,48 @@ class ExcelExportService:
         ]
         ws.append(headers)
         ws.append(['', '', '', '', '', '', '', '', '', '', ''])
+        ExcelExportService._auto_adjust_column_width(ws)
+
+    @staticmethod
+    def _create_project_overview_sheet(wb):
+        ws = wb.create_sheet('项目概览')
+        headers = [
+            '序号', '项目名称', '建设单位', '信号灯', '电子警察', '违停球', 
+            '卡口', '结构化相机', '后端设备', '合计', '质保到期', '质保状态'
+        ]
+        ws.append(headers)
+
+        projects = db.session.query(Project).all()
+        
+        for idx, project in enumerate(projects, 1):
+            tl_count = db.session.query(TrafficLight).filter_by(project_id=project.id).count()
+            ep_count = db.session.query(ElectronicPolice).filter_by(project_id=project.id).count()
+            pe_count = db.session.query(ParkingEnforcement).filter_by(project_id=project.id).count()
+            cp_count = db.session.query(Checkpoint).filter_by(project_id=project.id).count()
+            sn_count = db.session.query(SkyNet).filter_by(project_id=project.id).count()
+            bd_count = db.session.query(BackendDevice).filter_by(project_id=project.id).count()
+            
+            total = tl_count + ep_count + pe_count + cp_count + sn_count + bd_count
+            
+            warranty_expire_date = project.warranty_expire_date.isoformat() if project.warranty_expire_date else '-'
+            warranty_status = '在保' if project.warranty_expire_date and project.warranty_expire_date >= date.today() else '过保' if project.warranty_expire_date else '-'
+
+            row = [
+                idx,
+                project.name or '',
+                project.builder or '-',
+                tl_count,
+                ep_count,
+                pe_count,
+                cp_count,
+                sn_count,
+                bd_count,
+                total,
+                warranty_expire_date,
+                warranty_status
+            ]
+            ws.append(row)
+
         ExcelExportService._auto_adjust_column_width(ws)
 
     @staticmethod
@@ -421,6 +465,59 @@ class ExcelExportService:
                     usage_years
                 ]
                 ws.append(row)
+
+        ExcelExportService._auto_adjust_column_width(ws)
+
+    @staticmethod
+    def _create_sky_net_sheet(wb):
+        ws = wb.create_sheet('结构化相机')
+        headers = [
+            '点位名称', '监控区域', '归属项目', '项目验收日期', '项目质保期',
+            '项目质保到期时间', '质保状态', '建设单位', '施工单位',
+            '相机数量', '支架数量', '立杆数量', '挂箱数量', '补光灯数量', '音箱数量', '取电说明', '取网说明', '设备服役时长（年）'
+        ]
+        ws.append(headers)
+
+        sn_list = db.session.query(SkyNet).all()
+        
+        grouped = {}
+        for sn in sn_list:
+            key = sn.point_id
+            if key not in grouped or sn.id > grouped[key].id:
+                grouped[key] = sn
+
+        for sn in grouped.values():
+            project_info = ExcelExportService._get_project_info(sn.project_id)
+            point = db.session.query(SkyNetPoint).get(sn.point_id)
+            point_name = point.name if point else ''
+            warranty_status = ExcelExportService._get_warranty_status(sn.project_id)
+            
+            usage_years = ''
+            if project_info['acceptance_date']:
+                acc_date = date.fromisoformat(project_info['acceptance_date'])
+                usage_years = round((date.today() - acc_date).days / 365, 2)
+
+            row = [
+                point_name,
+                sn.camera_area or '',
+                project_info['name'],
+                project_info['acceptance_date'],
+                project_info['warranty_period'],
+                project_info['warranty_expire_date'],
+                warranty_status,
+                project_info['builder'],
+                project_info['construction_unit'],
+                sn.camera_count or 0,
+                sn.bracket_count or 0,
+                sn.pole_count or 0,
+                sn.box_count or 0,
+                sn.fill_light_count or 0,
+                sn.speaker_count or 0,
+                sn.power_source or '',
+                sn.network_source or '',
+                usage_years
+            ]
+            ws.append(row)
 
         ExcelExportService._auto_adjust_column_width(ws)
 
