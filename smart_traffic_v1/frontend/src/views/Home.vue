@@ -186,6 +186,10 @@
             <el-icon :size="18" class="panel-icon"><Folder /></el-icon>
             <h3 class="panel-title">建设单位排名</h3>
           </div>
+          <button class="more-btn" @click="showBuilderRankingDialog = true" v-if="builderRanking.length > 6">
+            <span>更多</span>
+            <el-icon :size="14"><ArrowRight /></el-icon>
+          </button>
         </div>
         <div class="ranking-list" v-if="builderRanking.length">
           <div class="ranking-row" v-for="(item, index) in builderRanking.slice(0, 6)" :key="item.name">
@@ -203,6 +207,28 @@
       </div>
     </div>
   </div>
+
+  <!-- 建设单位排名详情弹窗 -->
+  <el-dialog
+    title="建设单位排名"
+    v-model="showBuilderRankingDialog"
+    width="500px"
+    :close-on-click-modal="true"
+  >
+    <div class="ranking-modal-content">
+      <div class="ranking-row" v-for="(item, index) in builderRanking" :key="item.name">
+        <div class="ranking-num" :class="getRankingClass(index)">{{ index + 1 }}</div>
+        <div class="ranking-info">
+          <span class="ranking-name">{{ item.name }}</span>
+        </div>
+        <span class="ranking-count">{{ item.count }}点位</span>
+      </div>
+      <div class="empty-state" v-if="!builderRanking.length">
+        <el-icon :size="40"><DocumentAdd /></el-icon>
+        <p>暂无数据</p>
+      </div>
+    </div>
+  </el-dialog>
 </template>
 
 <script setup lang="ts">
@@ -234,6 +260,7 @@ const warrantyByType = ref<any[]>([])
 const expiringDevices = ref<any[]>([])
 const serviceRanking = ref<any[]>([])
 const builderRanking = ref<{ name: string; count: number }[]>([])
+const showBuilderRankingDialog = ref(false)
 
 const warrantyDetails = computed(() => {
   return warrantyByType.value.map(item => {
@@ -724,6 +751,25 @@ onMounted(fetchStats)
       color: $primary-color;
     }
   }
+
+  .more-btn {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    cursor: pointer;
+    color: $primary-color;
+    transition: color 0.2s;
+    font-size: 13px;
+    background: none;
+    border: none;
+    padding: 4px 8px;
+    border-radius: $radius-sm;
+    transition: background-color 0.2s;
+
+    &:hover {
+      background-color: rgba($primary-color, 0.1);
+    }
+  }
 }
 
 .warranty-content {
@@ -1065,5 +1111,10 @@ onMounted(fetchStats)
   font-weight: 700;
   color: $primary-color;
   white-space: nowrap;
+}
+
+.ranking-modal-content {
+  max-height: 400px;
+  overflow-y: auto;
 }
 </style>
