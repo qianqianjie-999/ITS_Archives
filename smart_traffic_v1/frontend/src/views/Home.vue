@@ -491,8 +491,8 @@ async function fetchStats() {
     // 创建项目到建设单位的映射
     const projectToBuilder: Record<number | string, string> = {}
     pr.forEach((p: any) => {
-      if (p.id && p.construction_unit) {
-        projectToBuilder[p.id] = p.construction_unit
+      if (p.id && p.builder) {
+        projectToBuilder[p.id] = p.builder
       }
     })
     
