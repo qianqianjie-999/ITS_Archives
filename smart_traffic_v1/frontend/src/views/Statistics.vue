@@ -322,13 +322,14 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import { Download, Search } from '@element-plus/icons-vue'
 import { intersectionApi } from '@/api/intersections'
 import { pointApi, checkpointPointApi, backendDeviceApi, skyNetApi } from '@/api/points'
 import { projectApi } from '@/api/projects'
 import apiClient from '@/api'
+import { eventBus } from '@/utils/eventBus'
 
 const loading = ref(false)
 const activeTab = ref('traffic_light')
@@ -582,7 +583,18 @@ async function exportData() {
   }
 }
 
-onMounted(fetchData)
+function handleDataUpdated() {
+  fetchData()
+}
+
+onMounted(() => {
+  fetchData()
+  eventBus.on('dataUpdated', handleDataUpdated)
+})
+
+onUnmounted(() => {
+  eventBus.off('dataUpdated', handleDataUpdated)
+})
 </script>
 
 <style lang="scss" scoped>

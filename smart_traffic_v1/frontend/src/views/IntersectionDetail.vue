@@ -453,6 +453,7 @@ import { maintenanceApi } from '@/api/maintenance'
 import { useUserStore } from '@/stores/user'
 import type { TrafficLight, ElectronicPolice } from '@/types'
 import { formatDateTime } from '@/utils/date'
+import { eventBus } from '@/utils/eventBus'
 
 const route = useRoute()
 const router = useRouter()
@@ -628,6 +629,7 @@ async function submitTrafficLight() {
     showTrafficLightDialog.value = false
     resetTrafficLightForm()
     fetchData()
+    eventBus.emit('dataUpdated', 'trafficLight')
   } catch (error: any) {
     ElMessage.error(error?.response?.data?.message || '操作失败')
   }
@@ -639,6 +641,7 @@ async function deleteTrafficLight(id: number) {
     await intersectionApi.deleteTrafficLight(Number(route.params.id), id)
     ElMessage.success('删除成功')
     fetchData()
+    eventBus.emit('dataUpdated', 'trafficLight')
   } catch (error: any) {
     if (error !== 'cancel') {
       ElMessage.error(error?.response?.data?.message || '删除失败')
@@ -698,6 +701,7 @@ async function submitElectronicPolice() {
     showElectronicPoliceDialog.value = false
     resetElectronicPoliceForm()
     fetchData()
+    eventBus.emit('dataUpdated', 'electronicPolice')
   } catch (error: any) {
     ElMessage.error(error?.response?.data?.message || '操作失败')
   }
@@ -709,6 +713,7 @@ async function deleteElectronicPolice(id: number) {
     await intersectionApi.deleteElectronicPolice(Number(route.params.id), id)
     ElMessage.success('删除成功')
     fetchData()
+    eventBus.emit('dataUpdated', 'electronicPolice')
   } catch (error: any) {
     if (error !== 'cancel') {
       ElMessage.error(error?.response?.data?.message || '删除失败')
