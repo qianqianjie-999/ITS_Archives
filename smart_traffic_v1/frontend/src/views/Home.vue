@@ -232,11 +232,12 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { intersectionApi } from '@/api/intersections'
 import { pointApi, checkpointPointApi, backendDeviceApi, skyNetApi } from '@/api/points'
 import { projectApi } from '@/api/projects'
+import { eventBus } from '@/utils/eventBus'
 import {
   Location, Camera, Folder, Monitor, Clock, Bell,
   DocumentAdd, Plus, SuccessFilled, DataAnalysis, PieChart, ArrowRight
@@ -597,7 +598,18 @@ async function fetchStats() {
   }
 }
 
-onMounted(fetchStats)
+function handleDataUpdated() {
+  fetchStats()
+}
+
+onMounted(() => {
+  fetchStats()
+  eventBus.on('dataUpdated', handleDataUpdated)
+})
+
+onUnmounted(() => {
+  eventBus.off('dataUpdated', handleDataUpdated)
+})
 </script>
 
 <style lang="scss" scoped>
