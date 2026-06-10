@@ -413,7 +413,8 @@ async function fetchStats() {
   try {
     const [
       intersections, trafficLights, electronicPolices,
-      parkingEnforcements, checkpoints, skyNetPoints, projects, backendDevices
+      parkingEnforcements, checkpoints, skyNetPoints, projects, backendDevices,
+      parkingPoints, checkpointPoints, skyNetPointsData
     ] = await Promise.all([
       intersectionApi.list({ per_page: 0 }),
       intersectionApi.getTrafficLightsAll(),
@@ -422,7 +423,11 @@ async function fetchStats() {
       checkpointPointApi.getCheckpointsAll(),
       skyNetApi.getSkyNetsAll(),
       projectApi.list({ per_page: 0 }),
-      backendDeviceApi.list({ per_page: 0 })
+      backendDeviceApi.list({ per_page: 0 }),
+      // 点位数据（用于建设单位排名）
+      pointApi.list({ per_page: 0 }),
+      checkpointPointApi.list({ per_page: 0 }),
+      skyNetApi.listPoints({ per_page: 0 })
     ])
 
     const tl = trafficLights.data || []
@@ -484,12 +489,39 @@ async function fetchStats() {
     collectServiceDuration(bd, 'name', '后端设备')
     serviceRanking.value.sort((a, b) => (parseFloat(b.duration) - parseFloat(a.duration)))
 
-    // 建设单位排名：按各建设单位的设备总数排序
+    // 建设单位排名：按各建设单位的点位总数排序
     const builderMap: Record<string, number> = {}
-    ;[...tl, ...ep, ...pe, ...cp, ...sn, ...bd].forEach((item: any) => {
+    
+    // 路口点位（信号灯和电子警察所在路口）
+    intersections.data?.forEach((item: any) => {
       const unit = item.construction_unit
       if (unit) builderMap[unit] = (builderMap[unit] || 0) + 1
     })
+    
+    // 违停球点位
+    parkingPoints.data?.forEach((item: any) => {
+      const unit = item.construction_unit
+      if (unit) builderMap[unit] = (builderMap[unit] || 0) + 1
+    })
+    
+    // 卡口点位
+    checkpointPoints.data?.forEach((item: any) => {
+      const unit = item.construction_unit
+      if (unit) builderMap[unit] = (builderMap[unit] || 0) + 1
+    })
+    
+    // 结构化相机点位
+    skyNetPointsData.data?.forEach((item: any) => {
+      const unit = item.construction_unit
+      if (unit) builderMap[unit] = (builderMap[unit] || 0) + 1
+    })
+    
+    // 后端设备点位
+    bd.forEach((item: any) => {
+      const unit = item.construction_unit
+      if (unit) builderMap[unit] = (builderMap[unit] || 0) + 1
+    })
+    
     builderRanking.value = Object.entries(builderMap)
       .map(([name, count]) => ({ name, count }))
       .sort((a, b) => b.count - a.count)
