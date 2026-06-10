@@ -111,12 +111,13 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, reactive, computed, watch } from 'vue'
+import { ref, onMounted, reactive, computed, watch, onUnmounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Search } from '@element-plus/icons-vue'
 import { projectApi } from '@/api/projects'
 import { useUserStore } from '@/stores/user'
 import type { Project } from '@/types'
+import { eventBus } from '@/utils/eventBus'
 
 const userStore = useUserStore()
 const allProjects = ref<Project[]>([])
@@ -231,7 +232,18 @@ async function fetchData() {
   }
 }
 
-onMounted(fetchData)
+function handleDataUpdated() {
+  fetchData()
+}
+
+onMounted(() => {
+  fetchData()
+  eventBus.on('dataUpdated', handleDataUpdated)
+})
+
+onUnmounted(() => {
+  eventBus.off('dataUpdated', handleDataUpdated)
+})
 </script>
 
 <style scoped>

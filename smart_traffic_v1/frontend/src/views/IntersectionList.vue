@@ -109,7 +109,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, reactive, computed, watch } from 'vue'
+import { ref, onMounted, reactive, computed, watch, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Search } from '@element-plus/icons-vue'
@@ -117,6 +117,7 @@ import { intersectionApi } from '@/api/intersections'
 import { attachmentApi, type Attachment } from '@/api/attachments'
 import { useUserStore } from '@/stores/user'
 import type { Intersection } from '@/types'
+import { eventBus } from '@/utils/eventBus'
 
 const router = useRouter()
 const userStore = useUserStore()
@@ -242,7 +243,18 @@ function hasAttachment(intersectionId: number): boolean {
   return allAttachments.value.some(a => a.related_entity_id === intersectionId)
 }
 
-onMounted(fetchData)
+function handleDataUpdated() {
+  fetchData()
+}
+
+onMounted(() => {
+  fetchData()
+  eventBus.on('dataUpdated', handleDataUpdated)
+})
+
+onUnmounted(() => {
+  eventBus.off('dataUpdated', handleDataUpdated)
+})
 </script>
 
 <style scoped>

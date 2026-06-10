@@ -100,7 +100,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, reactive, computed, watch } from 'vue'
+import { ref, onMounted, reactive, computed, watch, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Search } from '@element-plus/icons-vue'
@@ -108,6 +108,7 @@ import { pointApi } from '@/api/points'
 import { attachmentApi, type Attachment } from '@/api/attachments'
 import { useUserStore } from '@/stores/user'
 import type { ParkingEnforcementPoint } from '@/types'
+import { eventBus } from '@/utils/eventBus'
 
 const router = useRouter()
 const userStore = useUserStore()
@@ -243,8 +244,17 @@ function hasAttachment(pointId: number): boolean {
   return allAttachments.value.some(a => a.related_entity_id === pointId)
 }
 
+function handleDataUpdated() {
+  loadPoints()
+}
+
 onMounted(() => {
   loadPoints()
+  eventBus.on('dataUpdated', handleDataUpdated)
+})
+
+onUnmounted(() => {
+  eventBus.off('dataUpdated', handleDataUpdated)
 })
 </script>
 

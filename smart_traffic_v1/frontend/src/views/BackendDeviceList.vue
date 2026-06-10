@@ -268,7 +268,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed, watch } from 'vue'
+import { ref, onMounted, computed, watch, onUnmounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Files, Search } from '@element-plus/icons-vue'
 import { useUserStore } from '@/stores/user'
@@ -278,6 +278,7 @@ import { maintenanceApi } from '@/api/maintenance'
 import { attachmentApi, type Attachment } from '@/api/attachments'
 import type { BackendDevice, Project } from '@/types'
 import { formatDateTime } from '@/utils/date'
+import { eventBus } from '@/utils/eventBus'
 
 const userStore = useUserStore()
 const loading = ref(false)
@@ -676,9 +677,19 @@ async function previewAttachment(attachment: Attachment) {
   previewVisible.value = true
 }
 
+function handleDataUpdated() {
+  fetchData()
+  fetchProjects()
+}
+
 onMounted(() => {
   fetchData()
   fetchProjects()
+  eventBus.on('dataUpdated', handleDataUpdated)
+})
+
+onUnmounted(() => {
+  eventBus.off('dataUpdated', handleDataUpdated)
 })
 </script>
 
