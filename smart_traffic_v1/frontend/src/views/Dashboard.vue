@@ -5,9 +5,9 @@
       <AppSidebar :isCollapsed="sidebarCollapsed" @toggle="sidebarCollapsed = !sidebarCollapsed" />
       <main class="dashboard-content">
         <router-view v-slot="{ Component }">
-          <transition name="fade" mode="out-in">
+          <keep-alive :include="cachedViews">
             <component :is="Component" />
-          </transition>
+          </keep-alive>
         </router-view>
       </main>
     </div>
@@ -20,6 +20,20 @@ import AppHeader from '@/components/AppHeader.vue'
 import AppSidebar from '@/components/AppSidebar.vue'
 
 const sidebarCollapsed = ref(false)
+
+const cachedViews = [
+  'Home',
+  'IntersectionList',
+  'ProjectList',
+  'ParkingEnforcementList',
+  'SkyNetList',
+  'CheckpointList',
+  'BackendDeviceList',
+  'Statistics',
+  'ServiceRanking',
+  'MemoList',
+  'UserList'
+]
 </script>
 
 <style lang="scss" scoped>
