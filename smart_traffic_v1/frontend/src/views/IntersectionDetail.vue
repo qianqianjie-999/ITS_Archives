@@ -355,6 +355,11 @@
         </el-row>
         <el-row :gutter="20">
           <el-col :span="12">
+            <el-form-item label="车流量雷达数量">
+              <el-input-number v-model="trafficLightForm.radar_count" :min="0" />
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
             <el-form-item label="诱导屏数量">
               <el-input-number v-model="trafficLightForm.guide_screen_count" :min="0" />
             </el-form-item>
