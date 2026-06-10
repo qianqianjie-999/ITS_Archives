@@ -38,6 +38,16 @@
         <el-table-column prop="north_south_road" label="南北路" />
         <el-table-column prop="latitude" label="纬度" width="120" />
         <el-table-column prop="longitude" label="经度" width="120" />
+        <el-table-column label="关联项目" width="100" align="center">
+          <template #default="{ row }">
+            <span :class="hasProject(row.id) ? 'status-dot green' : 'status-dot gray'" />
+          </template>
+        </el-table-column>
+        <el-table-column label="附件" width="80" align="center">
+          <template #default="{ row }">
+            <span :class="hasAttachment(row.id) ? 'status-dot green' : 'status-dot gray'" />
+          </template>
+        </el-table-column>
         <el-table-column label="操作" width="240">
           <template #default="{ row }">
             <el-button type="primary" size="small" @click="goToDetail(row.id)">
@@ -104,12 +114,16 @@ import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Search } from '@element-plus/icons-vue'
 import { intersectionApi } from '@/api/intersections'
+import { memoApi } from '@/api/memos'
 import { useUserStore } from '@/stores/user'
 import type { Intersection } from '@/types'
 
 const router = useRouter()
 const userStore = useUserStore()
 const allIntersections = ref<Intersection[]>([])
+const allTrafficLights = ref<any[]>([])
+const allElectronicPolices = ref<any[]>([])
+const allMemos = ref<any[]>([])
 const loading = ref(false)
 const showDialog = ref(false)
 const currentPage = ref(1)
@@ -201,13 +215,31 @@ async function deleteIntersection(id: number) {
 async function fetchData() {
   loading.value = true
   try {
-    const res = await intersectionApi.list({ per_page: 0 })
-    allIntersections.value = res.data
+    const [intersections, trafficLights, electronicPolices, memos] = await Promise.all([
+      intersectionApi.list({ per_page: 0 }),
+      intersectionApi.getTrafficLightsAll(),
+      intersectionApi.getElectronicPolicesAll(),
+      memoApi.list({ per_page: 0 })
+    ])
+    allIntersections.value = intersections.data
+    allTrafficLights.value = trafficLights.data || []
+    allElectronicPolices.value = electronicPolices.data || []
+    allMemos.value = memos.data || []
   } catch (error) {
     ElMessage.error('获取数据失败')
   } finally {
     loading.value = false
   }
+}
+
+function hasProject(intersectionId: number): boolean {
+  const hasTrafficLight = allTrafficLights.value.some(tl => tl.intersection_id === intersectionId && tl.project_id)
+  const hasElectronicPolice = allElectronicPolices.value.some(ep => ep.intersection_id === intersectionId && ep.project_id)
+  return hasTrafficLight || hasElectronicPolice
+}
+
+function hasAttachment(intersectionId: number): boolean {
+  return allMemos.value.some(m => m.intersection_id === intersectionId && m.attachments && m.attachments.length > 0)
 }
 
 onMounted(fetchData)
@@ -222,5 +254,20 @@ onMounted(fetchData)
 
 .filter-bar {
   margin-bottom: 16px;
+}
+
+.status-dot {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+}
+
+.status-dot.green {
+  background-color: #67c23a;
+}
+
+.status-dot.gray {
+  background-color: #909399;
 }
 </style>

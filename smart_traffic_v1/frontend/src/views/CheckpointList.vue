@@ -37,6 +37,16 @@
         <el-table-column prop="type" label="安装位置" width="120" />
         <el-table-column prop="latitude" label="纬度" width="120" />
         <el-table-column prop="longitude" label="经度" width="120" />
+        <el-table-column label="关联项目" width="100" align="center">
+          <template #default="{ row }">
+            <span :class="hasProject(row.id) ? 'status-dot green' : 'status-dot gray'" />
+          </template>
+        </el-table-column>
+        <el-table-column label="附件" width="80" align="center">
+          <template #default="{ row }">
+            <span :class="hasAttachment(row.id) ? 'status-dot green' : 'status-dot gray'" />
+          </template>
+        </el-table-column>
         <el-table-column label="操作" width="240">
           <template #default="{ row }">
             <el-button type="primary" size="small" @click="goToDetail(row.id)">
@@ -101,12 +111,15 @@ import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Search } from '@element-plus/icons-vue'
 import { checkpointPointApi } from '@/api/points'
+import { memoApi } from '@/api/memos'
 import { useUserStore } from '@/stores/user'
 import type { CheckpointPoint } from '@/types'
 
 const router = useRouter()
 const userStore = useUserStore()
 const allPoints = ref<CheckpointPoint[]>([])
+const allCheckpoints = ref<any[]>([])
+const allMemos = ref<any[]>([])
 const loading = ref(false)
 const showDialog = ref(false)
 const currentPage = ref(1)
@@ -214,12 +227,26 @@ function deletePoint(id: number) {
 
 function loadPoints() {
   loading.value = true
-  checkpointPointApi.list({ per_page: 0 }).then(res => {
-    allPoints.value = res.data
+  Promise.all([
+    checkpointPointApi.list({ per_page: 0 }),
+    checkpointPointApi.getCheckpointsAll(),
+    memoApi.list({ per_page: 0 })
+  ]).then(([pointsRes, checkpointsRes, memosRes]) => {
+    allPoints.value = pointsRes.data
+    allCheckpoints.value = checkpointsRes.data || []
+    allMemos.value = memosRes.data || []
     loading.value = false
   }).catch(() => {
     loading.value = false
   })
+}
+
+function hasProject(pointId: number): boolean {
+  return allCheckpoints.value.some(cp => cp.point_id === pointId && cp.project_id)
+}
+
+function hasAttachment(pointId: number): boolean {
+  return allMemos.value.some(m => m.checkpoint_id === pointId && m.attachments && m.attachments.length > 0)
 }
 
 onMounted(() => {
@@ -236,5 +263,20 @@ onMounted(() => {
 
 .filter-bar {
   margin-bottom: 16px;
+}
+
+.status-dot {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+}
+
+.status-dot.green {
+  background-color: #67c23a;
+}
+
+.status-dot.gray {
+  background-color: #909399;
 }
 </style>

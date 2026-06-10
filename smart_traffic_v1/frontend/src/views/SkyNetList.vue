@@ -37,6 +37,16 @@
         <el-table-column prop="location" label="安装位置" width="120" />
         <el-table-column prop="latitude" label="纬度" width="120" />
         <el-table-column prop="longitude" label="经度" width="120" />
+        <el-table-column label="关联项目" width="100" align="center">
+          <template #default="{ row }">
+            <span :class="hasProject(row.id) ? 'status-dot green' : 'status-dot gray'" />
+          </template>
+        </el-table-column>
+        <el-table-column label="附件" width="80" align="center">
+          <template #default="{ row }">
+            <span :class="hasAttachment(row.id) ? 'status-dot green' : 'status-dot gray'" />
+          </template>
+        </el-table-column>
         <el-table-column label="操作" width="240">
           <template #default="{ row }">
             <el-button type="primary" size="small" @click="goToDetail(row.id)">
@@ -95,12 +105,15 @@ import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Search } from '@element-plus/icons-vue'
 import { skyNetApi } from '@/api/points'
+import { memoApi } from '@/api/memos'
 import { useUserStore } from '@/stores/user'
 import type { SkyNetPoint } from '@/types'
 
 const router = useRouter()
 const userStore = useUserStore()
 const allPoints = ref<SkyNetPoint[]>([])
+const allSkyNets = ref<any[]>([])
+const allMemos = ref<any[]>([])
 const loading = ref(false)
 const showDialog = ref(false)
 const currentPage = ref(1)
@@ -208,12 +221,26 @@ function deletePoint(id: number) {
 
 function loadPoints() {
   loading.value = true
-  skyNetApi.listPoints({ per_page: 0 }).then(res => {
-    allPoints.value = res.data
+  Promise.all([
+    skyNetApi.listPoints({ per_page: 0 }),
+    skyNetApi.getSkyNetsAll(),
+    memoApi.list({ per_page: 0 })
+  ]).then(([pointsRes, skyNetsRes, memosRes]) => {
+    allPoints.value = pointsRes.data
+    allSkyNets.value = skyNetsRes.data || []
+    allMemos.value = memosRes.data || []
     loading.value = false
   }).catch(() => {
     loading.value = false
   })
+}
+
+function hasProject(pointId: number): boolean {
+  return allSkyNets.value.some(sn => sn.point_id === pointId && sn.project_id)
+}
+
+function hasAttachment(pointId: number): boolean {
+  return allMemos.value.some(m => m.sky_net_id === pointId && m.attachments && m.attachments.length > 0)
 }
 
 onMounted(() => {
@@ -230,5 +257,20 @@ onMounted(() => {
 
 .filter-bar {
   margin-bottom: 16px;
+}
+
+.status-dot {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+}
+
+.status-dot.green {
+  background-color: #67c23a;
+}
+
+.status-dot.gray {
+  background-color: #909399;
 }
 </style>

@@ -53,6 +53,16 @@
         </el-table-column>
         <el-table-column prop="construction_unit" label="建设单位" />
         <el-table-column prop="construction_company" label="施工单位" />
+        <el-table-column label="关联项目" width="100" align="center">
+          <template #default="{ row }">
+            <span :class="hasProject(row.id) ? 'status-dot green' : 'status-dot gray'" />
+          </template>
+        </el-table-column>
+        <el-table-column label="附件" width="80" align="center">
+          <template #default="{ row }">
+            <span :class="hasAttachment(row.id) ? 'status-dot green' : 'status-dot gray'" />
+          </template>
+        </el-table-column>
         <el-table-column label="操作" width="200">
           <template #default="{ row }">
             <el-button type="primary" size="small" @click.stop="openDialog(row)">编辑</el-button>
@@ -266,6 +276,7 @@ import { backendDeviceApi } from '@/api/points'
 import { projectApi } from '@/api/projects'
 import { maintenanceApi } from '@/api/maintenance'
 import { attachmentApi, type Attachment } from '@/api/attachments'
+import { memoApi } from '@/api/memos'
 import type { BackendDevice, Project } from '@/types'
 import { formatDateTime } from '@/utils/date'
 
@@ -274,6 +285,7 @@ const loading = ref(false)
 const backendDevices = ref<BackendDevice[]>([])
 const projects = ref<Project[]>([])
 const attachments = ref<Attachment[]>([])
+const allMemos = ref<any[]>([])
 const showDialog = ref(false)
 const fileInputRef = ref<HTMLInputElement | null>(null)
 const previewVisible = ref(false)
@@ -362,13 +374,26 @@ const editForm = ref<any>({
 async function fetchData() {
   loading.value = true
   try {
-    const res = await backendDeviceApi.list({ per_page: 0 })
-    backendDevices.value = res.data
+    const [devicesRes, memosRes] = await Promise.all([
+      backendDeviceApi.list({ per_page: 0 }),
+      memoApi.list({ per_page: 0 })
+    ])
+    backendDevices.value = devicesRes.data
+    allMemos.value = memosRes.data || []
   } catch (error) {
     ElMessage.error('获取后端设备列表失败')
   } finally {
     loading.value = false
   }
+}
+
+function hasProject(deviceId: number): boolean {
+  const device = backendDevices.value.find(d => d.id === deviceId)
+  return device ? !!device.project_id : false
+}
+
+function hasAttachment(deviceId: number): boolean {
+  return allMemos.value.some(m => m.backend_device_id === deviceId && m.attachments && m.attachments.length > 0)
 }
 
 async function fetchProjects() {
@@ -669,5 +694,20 @@ onMounted(() => {
   .filter-bar {
     margin-bottom: 16px;
   }
+}
+
+.status-dot {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+}
+
+.status-dot.green {
+  background-color: #67c23a;
+}
+
+.status-dot.gray {
+  background-color: #909399;
 }
 </style>
