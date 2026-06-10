@@ -64,6 +64,49 @@
     </div>
 
     <el-tabs v-model="activeTab" @tab-change="handleTabChange">
+      <el-tab-pane label="项目概览" name="project_overview">
+        <div class="filter-bar" style="margin-bottom: 16px;">
+          <el-row :gutter="12">
+            <el-col :span="10">
+              <el-select v-model="filterProjectOverviewWarranty" placeholder="质保状态" clearable>
+                <el-option label="全部" value="" />
+                <el-option label="在保" value="在保" />
+                <el-option label="过保" value="过保" />
+              </el-select>
+            </el-col>
+            <el-col :span="14">
+              <el-input v-model="searchProjectOverviewKeyword" placeholder="搜索项目名称、建设单位..." clearable>
+                <template #prefix><el-icon><Search /></el-icon></template>
+              </el-input>
+            </el-col>
+          </el-row>
+        </div>
+        <el-table :data="pagedData.project_overview" stripe v-loading="loading" border size="small">
+          <el-table-column label="序号" width="55" fixed>
+            <template #default="{ $index }">{{ (currentPage - 1) * pageSize + $index + 1 }}</template>
+          </el-table-column>
+          <el-table-column prop="name" label="项目名称" min-width="140" fixed />
+          <el-table-column prop="builder" label="建设单位" min-width="100" />
+          <el-table-column prop="tl" label="信号灯" width="80" align="center" />
+          <el-table-column prop="ep" label="电子警察" width="80" align="center" />
+          <el-table-column prop="pe" label="违停球" width="80" align="center" />
+          <el-table-column prop="cp" label="卡口" width="80" align="center" />
+          <el-table-column prop="sn" label="结构化相机" width="100" align="center" />
+          <el-table-column prop="bd" label="后端设备" width="80" align="center" />
+          <el-table-column prop="total" label="合计" width="70" align="center">
+            <template #default="{ row }">
+              <b>{{ row.total }}</b>
+            </template>
+          </el-table-column>
+          <el-table-column prop="warranty_expire_date" label="质保到期" width="110" />
+          <el-table-column prop="warranty_status" label="质保状态" width="90">
+            <template #default="{ row }">
+              <el-tag :type="tagType(row.warranty_status)" size="small">{{ row.warranty_status }}</el-tag>
+            </template>
+          </el-table-column>
+        </el-table>
+      </el-tab-pane>
+
       <el-tab-pane label="信号灯" name="traffic_light">
         <el-table :data="pagedData.traffic_light" stripe v-loading="loading" border size="small">
           <el-table-column label="序号" width="55" fixed>
@@ -259,49 +302,6 @@
           <el-table-column prop="construction_unit" label="建设单位" min-width="110" />
           <el-table-column prop="construction_company" label="施工单位" min-width="110" />
           <el-table-column prop="usage_days" label="使用时长（天）" width="120" align="center" />
-        </el-table>
-      </el-tab-pane>
-
-      <el-tab-pane label="项目概览" name="project_overview">
-        <div class="filter-bar" style="margin-bottom: 16px;">
-          <el-row :gutter="12">
-            <el-col :span="10">
-              <el-select v-model="filterProjectOverviewWarranty" placeholder="质保状态" clearable>
-                <el-option label="全部" value="" />
-                <el-option label="在保" value="在保" />
-                <el-option label="过保" value="过保" />
-              </el-select>
-            </el-col>
-            <el-col :span="14">
-              <el-input v-model="searchProjectOverviewKeyword" placeholder="搜索项目名称、建设单位..." clearable>
-                <template #prefix><el-icon><Search /></el-icon></template>
-              </el-input>
-            </el-col>
-          </el-row>
-        </div>
-        <el-table :data="pagedData.project_overview" stripe v-loading="loading" border size="small">
-          <el-table-column label="序号" width="55" fixed>
-            <template #default="{ $index }">{{ (currentPage - 1) * pageSize + $index + 1 }}</template>
-          </el-table-column>
-          <el-table-column prop="name" label="项目名称" min-width="140" fixed />
-          <el-table-column prop="builder" label="建设单位" min-width="100" />
-          <el-table-column prop="tl" label="信号灯" width="80" align="center" />
-          <el-table-column prop="ep" label="电子警察" width="80" align="center" />
-          <el-table-column prop="pe" label="违停球" width="80" align="center" />
-          <el-table-column prop="cp" label="卡口" width="80" align="center" />
-          <el-table-column prop="sn" label="结构化相机" width="100" align="center" />
-          <el-table-column prop="bd" label="后端设备" width="80" align="center" />
-          <el-table-column prop="total" label="合计" width="70" align="center">
-            <template #default="{ row }">
-              <b>{{ row.total }}</b>
-            </template>
-          </el-table-column>
-          <el-table-column prop="warranty_expire_date" label="质保到期" width="110" />
-          <el-table-column prop="warranty_status" label="质保状态" width="90">
-            <template #default="{ row }">
-              <el-tag :type="tagType(row.warranty_status)" size="small">{{ row.warranty_status }}</el-tag>
-            </template>
-          </el-table-column>
         </el-table>
       </el-tab-pane>
     </el-tabs>
@@ -563,6 +563,12 @@ async function fetchData() {
 
 async function exportData() {
   try {
+    if (activeTab.value === 'project_overview') {
+      // 导出项目概览数据
+      exportProjectOverview()
+      return
+    }
+    
     ElMessage.info('正在导出数据...')
     const response = await apiClient.get('/export/statistics', { responseType: 'blob' }) as unknown as Blob
     const url = window.URL.createObjectURL(new Blob([response]))
@@ -578,6 +584,43 @@ async function exportData() {
     console.error('导出失败', error)
     ElMessage.error('导出失败')
   }
+}
+
+function exportProjectOverview() {
+  const data = filteredProjectSummary.value
+  if (data.length === 0) {
+    ElMessage.warning('没有数据可导出')
+    return
+  }
+  
+  const headers = ['序号', '项目名称', '建设单位', '信号灯', '电子警察', '违停球', '卡口', '结构化相机', '后端设备', '合计', '质保到期', '质保状态']
+  
+  const rows = data.map((item, index) => [
+    index + 1,
+    item.name,
+    item.builder,
+    item.tl,
+    item.ep,
+    item.pe,
+    item.cp,
+    item.sn,
+    item.bd,
+    item.total,
+    item.warranty_expire_date,
+    item.warranty_status
+  ])
+  
+  const csvContent = [headers.join(','), ...rows.map(row => row.join(','))].join('\n')
+  const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = `项目概览统计_${new Date().toISOString().split('T')[0]}.csv`
+  document.body.appendChild(a)
+  a.click()
+  document.body.removeChild(a)
+  URL.revokeObjectURL(url)
+  ElMessage.success('导出成功')
 }
 
 onMounted(fetchData)
