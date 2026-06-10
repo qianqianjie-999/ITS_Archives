@@ -619,18 +619,20 @@ onMounted(fetchData)
 
 .component-summary {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
-  gap: 10px;
+  grid-template-columns: repeat(12, 1fr);
+  gap: 8px;
   margin-bottom: 16px;
+  overflow-x: auto;
 
   .comp-card {
     background: $bg-card;
     border: 1px solid $border-color;
     border-radius: $radius-md;
-    padding: 14px 16px;
+    padding: 12px 8px;
     text-align: center;
     transition: all $transition-fast;
     box-shadow: $shadow-md;
+    min-width: 90px;
     &:hover {
       border-color: rgba($primary-color, 0.3);
       transform: translateY(-2px);
