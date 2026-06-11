@@ -312,16 +312,16 @@ function getDeviceStatus(intersectionId: number, deviceType: 'tl' | 'ep'): strin
 
 function getTlColor(intersectionId: number): string {
   const status = getDeviceStatus(intersectionId, 'tl')
-  if (status === '在保') return '#67c23a' // 绿色
-  if (status === '过保') return '#f56c6c' // 红色
-  return '#909399' // 灰色
+  if (status === '在保') return '#22c55e' // 鲜艳绿色
+  if (status === '过保') return '#ef4444' // 鲜艳红色
+  return '#6b7280' // 灰色
 }
 
 function getEpColor(intersectionId: number): string {
   const status = getDeviceStatus(intersectionId, 'ep')
-  if (status === '在保') return '#67c23a' // 绿色
-  if (status === '过保') return '#f56c6c' // 红色
-  return '#909399' // 灰色
+  if (status === '在保') return '#22c55e' // 鲜艳绿色
+  if (status === '过保') return '#ef4444' // 鲜艳红色
+  return '#6b7280' // 灰色
 }
 
 function handleDataUpdated() {
@@ -365,8 +365,8 @@ onUnmounted(() => {
 }
 
 .warranty-circle {
-  width: 16px;
-  height: 16px;
+  width: 10px;
+  height: 10px;
   border-radius: 50%;
   position: relative;
   overflow: hidden;
@@ -374,15 +374,15 @@ onUnmounted(() => {
 }
 
 .half-circle {
-  width: 8px;
-  height: 16px;
+  width: 5px;
+  height: 10px;
 }
 
 .half-circle.left {
-  border-radius: 8px 0 0 8px;
+  border-radius: 5px 0 0 5px;
 }
 
 .half-circle.right {
-  border-radius: 0 8px 8px 0;
+  border-radius: 0 5px 5px 0;
 }
 </style>
