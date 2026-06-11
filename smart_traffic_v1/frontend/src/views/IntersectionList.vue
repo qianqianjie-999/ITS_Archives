@@ -249,7 +249,7 @@ function getIntersectionWarranty(intersectionId: number) {
   let tlStatus = '点位无关联项目'
   if (trafficLights.length > 0) {
     const validDates = trafficLights
-      .map(tl => tl.effective_warranty_expire_date)
+      .map(tl => tl.warranty_expire_date)
       .filter(d => d)
     if (validDates.length > 0) {
       const latestDate = new Date(Math.max(...validDates.map(d => new Date(d).getTime())))
@@ -263,7 +263,7 @@ function getIntersectionWarranty(intersectionId: number) {
   let epStatus = '点位无关联项目'
   if (electronicPolices.length > 0) {
     const validDates = electronicPolices
-      .map(ep => ep.effective_warranty_expire_date)
+      .map(ep => ep.warranty_expire_date)
       .filter(d => d)
     if (validDates.length > 0) {
       const latestDate = new Date(Math.max(...validDates.map(d => new Date(d).getTime())))

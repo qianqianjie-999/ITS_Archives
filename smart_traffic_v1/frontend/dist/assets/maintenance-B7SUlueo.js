@@ -1,0 +1,1 @@
+import{b as n}from"./index-BkFSdPbl.js";const c={getMaintenanceRecords:(e,a)=>n.get(`/maintenance/${e}/${a}`),createMaintenanceRecord:e=>n.post("/maintenance/",e),deleteMaintenanceRecord:e=>n.delete("/maintenance/",{params:{id:e}})};export{c as m};
