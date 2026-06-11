@@ -44,13 +44,6 @@
           </template>
         </el-table-column>
         <el-table-column prop="warranty_expire_date" label="项目质保到期时间" width="160" />
-        <el-table-column prop="warranty_status" label="质保状态" width="100">
-          <template #default="{ row }">
-            <el-tag :type="getStatusType(row.warranty_status)">
-              {{ row.warranty_status }}
-            </el-tag>
-          </template>
-        </el-table-column>
         <el-table-column prop="construction_unit" label="建设单位" />
         <el-table-column prop="construction_company" label="施工单位" />
         <el-table-column label="质保状态" width="80" align="center">
