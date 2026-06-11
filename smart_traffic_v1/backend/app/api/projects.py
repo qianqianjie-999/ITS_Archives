@@ -19,6 +19,21 @@ project_model = ns.model('Project', {
     'construction_unit': fields.String()
 })
 
+def check_project_referenced(project_id):
+    from ..models.intersection import TrafficLight, ElectronicPolice
+    from ..models.point import ParkingEnforcement, Checkpoint
+    from ..models.backend_device import BackendDevice
+    from ..models.warranty_extension import WarrantyExtension
+
+    return (
+        db.session.query(TrafficLight).filter_by(project_id=project_id).count() > 0 or
+        db.session.query(ElectronicPolice).filter_by(project_id=project_id).count() > 0 or
+        db.session.query(ParkingEnforcement).filter_by(project_id=project_id).count() > 0 or
+        db.session.query(Checkpoint).filter_by(project_id=project_id).count() > 0 or
+        db.session.query(BackendDevice).filter_by(project_id=project_id).count() > 0 or
+        db.session.query(WarrantyExtension).filter_by(project_id=project_id).count() > 0
+    )
+
 @ns.route('/')
 class ProjectList(Resource):
     def get(self):
@@ -32,19 +47,34 @@ class ProjectList(Resource):
             ).all()
             project_ids = [ext.project_id for ext in extensions]
             projects = db.session.query(Project).filter(Project.id.in_(project_ids)).all()
-            return {'data': [p.to_dict() for p in projects]}
+            result = []
+            for p in projects:
+                data = p.to_dict()
+                data['is_referenced'] = check_project_referenced(p.id)
+                result.append(data)
+            return {'data': result}
 
         page = request.args.get('page', 1, type=int)
         per_page = request.args.get('per_page', 20, type=int)
         if per_page == 0:
             projects = db.session.query(Project).order_by(Project.id.desc()).all()
-            return {'data': [p.to_dict() for p in projects]}
+            result = []
+            for p in projects:
+                data = p.to_dict()
+                data['is_referenced'] = check_project_referenced(p.id)
+                result.append(data)
+            return {'data': result}
         per_page = min(per_page, 100)
         paginated = db.session.query(Project).order_by(Project.id.desc()).paginate(
             page=page, per_page=per_page, error_out=False
         )
+        result = []
+        for p in paginated.items:
+            data = p.to_dict()
+            data['is_referenced'] = check_project_referenced(p.id)
+            result.append(data)
         return {
-            'data': [p.to_dict() for p in paginated.items],
+            'data': result,
             'page': paginated.page,
             'per_page': paginated.per_page,
             'total': paginated.total,

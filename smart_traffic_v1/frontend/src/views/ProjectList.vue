@@ -53,6 +53,11 @@
         </el-table-column>
         <el-table-column prop="builder" label="建设单位" />
         <el-table-column prop="construction_unit" label="施工单位" />
+        <el-table-column label="关联项目" width="80" align="center">
+          <template #default="{ row }">
+            <span :class="row.is_referenced ? 'status-dot green' : 'status-dot gray'" :title="row.is_referenced ? '已被引用' : '未被引用'" />
+          </template>
+        </el-table-column>
         <el-table-column v-if="userStore.isEditor" label="操作" width="150">
           <template #default="{ row }">
             <el-button type="primary" size="small" @click="editProject(row)">编辑</el-button>
@@ -255,5 +260,20 @@ onUnmounted(() => {
 
 .filter-bar {
   margin-bottom: 16px;
+}
+
+.status-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.status-dot.green {
+  background-color: #67c23a;
+}
+
+.status-dot.gray {
+  background-color: #909399;
 }
 </style>
