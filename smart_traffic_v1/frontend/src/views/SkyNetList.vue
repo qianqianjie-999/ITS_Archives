@@ -240,10 +240,6 @@ function loadPoints() {
   })
 }
 
-function hasProject(pointId: number): boolean {
-  return allSkyNets.value.some(sn => sn.point_id === pointId && sn.project_id)
-}
-
 function hasAttachment(pointId: number): boolean {
   return allAttachments.value.some(a => a.related_entity_id === pointId)
 }

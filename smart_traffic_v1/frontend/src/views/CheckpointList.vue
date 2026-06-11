@@ -246,10 +246,6 @@ function loadPoints() {
   })
 }
 
-function hasProject(pointId: number): boolean {
-  return allCheckpoints.value.some(cp => cp.point_id === pointId && cp.project_id)
-}
-
 function hasAttachment(pointId: number): boolean {
   return allAttachments.value.some(a => a.related_entity_id === pointId)
 }

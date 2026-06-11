@@ -237,12 +237,6 @@ async function fetchData() {
   }
 }
 
-function hasProject(intersectionId: number): boolean {
-  const hasTrafficLight = allTrafficLights.value.some(tl => tl.intersection_id === intersectionId && tl.project_id)
-  const hasElectronicPolice = allElectronicPolices.value.some(ep => ep.intersection_id === intersectionId && ep.project_id)
-  return hasTrafficLight || hasElectronicPolice
-}
-
 function hasAttachment(intersectionId: number): boolean {
   return allAttachments.value.some(a => a.related_entity_id === intersectionId)
 }
@@ -296,19 +290,6 @@ function getIntersectionWarranty(intersectionId: number) {
 
 function getWarrantyStatus(intersectionId: number): string {
   return getIntersectionWarranty(intersectionId)
-}
-
-function getWarrantyColor(intersectionId: number): string {
-  const status = getIntersectionWarranty(intersectionId)
-  if (status === '在保') return '#67c23a' // 绿色
-  if (status === '过保') return '#f56c6c' // 红色
-  if (status === '混合状态') return '#e6a23c' // 橙色/混合
-  return 'gray'
-}
-
-function getTransform(type: 'tl' | 'ep'): string {
-  // 左半圆：从12点钟方向顺时针到6点钟方向
-  return type === 'tl' ? 'rotate(0 18 18)' : 'rotate(180 18 18)'
 }
 
 function getDeviceStatus(intersectionId: number, deviceType: 'tl' | 'ep'): string {

@@ -391,11 +391,6 @@ async function fetchData() {
   }
 }
 
-function hasProject(deviceId: number): boolean {
-  const device = backendDevices.value.find(d => d.id === deviceId)
-  return device ? !!device.project_id : false
-}
-
 function hasAttachment(deviceId: number): boolean {
   return allDeviceAttachments.value.some(a => a.related_entity_id === deviceId)
 }

@@ -514,7 +514,7 @@ async function fetchStats() {
 
     // 建设单位排名：按设备→项目→建设单位统计（按点位去重）
     const builderMap: Record<string, number> = {}
-    const builderPoints: Record<string, Set<number>> = {}
+    const builderPoints: Record<string, Set<string>> = {}
     
     // 创建项目到建设单位的映射
     const projectToBuilder: Record<number | string, string> = {}

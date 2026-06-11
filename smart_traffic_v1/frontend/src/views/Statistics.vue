@@ -534,7 +534,6 @@ function handleFilter() { currentPage.value = 1 }
 function handleTabChange() { currentPage.value = 1 }
 function handleSizeChange() { currentPage.value = 1 }
 function handleCurrentChange() {}
-function handleProjectOverviewFilter() { currentPage.value = 1 }
 
 async function fetchData() {
   loading.value = true

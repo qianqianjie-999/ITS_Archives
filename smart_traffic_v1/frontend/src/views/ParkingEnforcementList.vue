@@ -240,10 +240,6 @@ function loadPoints() {
   })
 }
 
-function hasProject(pointId: number): boolean {
-  return allParkingEnforcements.value.some(pe => pe.point_id === pointId && pe.project_id)
-}
-
 function hasAttachment(pointId: number): boolean {
   return allAttachments.value.some(a => a.related_entity_id === pointId)
 }
