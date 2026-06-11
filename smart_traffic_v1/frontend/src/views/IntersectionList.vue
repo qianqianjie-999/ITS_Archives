@@ -365,8 +365,8 @@ onUnmounted(() => {
 }
 
 .warranty-circle {
-  width: 10px;
-  height: 10px;
+  width: 13px;
+  height: 13px;
   border-radius: 50%;
   position: relative;
   overflow: hidden;
@@ -374,15 +374,15 @@ onUnmounted(() => {
 }
 
 .half-circle {
-  width: 5px;
-  height: 10px;
+  width: 6.5px;
+  height: 13px;
 }
 
 .half-circle.left {
-  border-radius: 5px 0 0 5px;
+  border-radius: 6.5px 0 0 6.5px;
 }
 
 .half-circle.right {
-  border-radius: 0 5px 5px 0;
+  border-radius: 0 6.5px 6.5px 0;
 }
 </style>
