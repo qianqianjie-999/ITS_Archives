@@ -300,7 +300,7 @@ function getDeviceStatus(intersectionId: number, deviceType: 'tl' | 'ep'): strin
   if (devices.length === 0) return '无项目'
 
   const validDates = devices
-    .map(d => d.effective_warranty_expire_date)
+    .map(d => d.warranty_expire_date)
     .filter(d => d)
   if (validDates.length === 0) return '无项目'
 
@@ -365,8 +365,8 @@ onUnmounted(() => {
 }
 
 .warranty-circle {
-  width: 20px;
-  height: 20px;
+  width: 16px;
+  height: 16px;
   border-radius: 50%;
   position: relative;
   overflow: hidden;
@@ -374,15 +374,15 @@ onUnmounted(() => {
 }
 
 .half-circle {
-  width: 10px;
-  height: 20px;
+  width: 8px;
+  height: 16px;
 }
 
 .half-circle.left {
-  border-radius: 10px 0 0 10px;
+  border-radius: 8px 0 0 8px;
 }
 
 .half-circle.right {
-  border-radius: 0 10px 10px 0;
+  border-radius: 0 8px 8px 0;
 }
 </style>
