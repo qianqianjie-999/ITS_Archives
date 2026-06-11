@@ -53,9 +53,13 @@
         </el-table-column>
         <el-table-column prop="construction_unit" label="建设单位" />
         <el-table-column prop="construction_company" label="施工单位" />
-        <el-table-column label="关联项目" width="100" align="center">
+        <el-table-column label="质保状态" width="80" align="center">
           <template #default="{ row }">
-            <span :class="hasProject(row.id) ? 'status-dot green' : 'status-dot gray'" />
+            <span
+              class="warranty-dot"
+              :class="getWarrantyClass(row)"
+              :title="row.warranty_status || '点位无关联项目'"
+            />
           </template>
         </el-table-column>
         <el-table-column label="附件" width="80" align="center">
@@ -582,6 +586,13 @@ function getStatusType(status?: string) {
   return 'info'
 }
 
+function getWarrantyClass(row: any): string {
+  const status = row.warranty_status
+  if (status === '在保') return 'warranty-green'
+  if (status === '过保') return 'warranty-red'
+  return 'warranty-gray'
+}
+
 function getFaultLevelType(level?: string) {
   switch (level) {
     case 'high': return 'danger'
@@ -718,6 +729,25 @@ onUnmounted(() => {
 }
 
 .status-dot.gray {
+  background-color: #909399;
+}
+
+.warranty-dot {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+}
+
+.warranty-green {
+  background-color: #67c23a;
+}
+
+.warranty-red {
+  background-color: #f56c6c;
+}
+
+.warranty-gray {
   background-color: #909399;
 }
 </style>

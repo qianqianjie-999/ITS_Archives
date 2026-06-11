@@ -15,6 +15,7 @@
               <el-option label="全部" value="" />
               <el-option label="在保" value="在保" />
               <el-option label="过保" value="过保" />
+              <el-option label="混合状态" value="混合状态" />
               <el-option label="点位无关联项目" value="点位无关联项目" />
             </el-select>
           </el-col>
@@ -38,9 +39,12 @@
         <el-table-column prop="north_south_road" label="南北路" />
         <el-table-column prop="latitude" label="纬度" width="120" />
         <el-table-column prop="longitude" label="经度" width="120" />
-        <el-table-column label="关联项目" width="100" align="center">
+        <el-table-column label="质保状态" width="100" align="center">
           <template #default="{ row }">
-            <span :class="hasProject(row.id) ? 'status-dot green' : 'status-dot gray'" />
+            <div class="warranty-circle" :title="getWarrantyStatus(row.id)">
+              <div class="half-circle left" :style="{ backgroundColor: getTlColor(row.id) }"></div>
+              <div class="half-circle right" :style="{ backgroundColor: getEpColor(row.id) }"></div>
+            </div>
           </template>
         </el-table-column>
         <el-table-column label="附件" width="80" align="center">
@@ -243,6 +247,102 @@ function hasAttachment(intersectionId: number): boolean {
   return allAttachments.value.some(a => a.related_entity_id === intersectionId)
 }
 
+function getIntersectionWarranty(intersectionId: number) {
+  const trafficLights = allTrafficLights.value.filter(tl => tl.intersection_id === intersectionId)
+  const electronicPolices = allElectronicPolices.value.filter(ep => ep.intersection_id === intersectionId)
+
+  // 获取信号灯质保状态（取最晚日期）
+  let tlStatus = '点位无关联项目'
+  if (trafficLights.length > 0) {
+    const validDates = trafficLights
+      .map(tl => tl.effective_warranty_expire_date)
+      .filter(d => d)
+    if (validDates.length > 0) {
+      const latestDate = new Date(Math.max(...validDates.map(d => new Date(d).getTime())))
+      const today = new Date()
+      today.setHours(0, 0, 0, 0)
+      tlStatus = latestDate >= today ? '在保' : '过保'
+    }
+  }
+
+  // 获取电子警察质保状态（取最晚日期）
+  let epStatus = '点位无关联项目'
+  if (electronicPolices.length > 0) {
+    const validDates = electronicPolices
+      .map(ep => ep.effective_warranty_expire_date)
+      .filter(d => d)
+    if (validDates.length > 0) {
+      const latestDate = new Date(Math.max(...validDates.map(d => new Date(d).getTime())))
+      const today = new Date()
+      today.setHours(0, 0, 0, 0)
+      epStatus = latestDate >= today ? '在保' : '过保'
+    }
+  }
+
+  // 判断路口整体状态
+  if ((tlStatus === '过保' && epStatus === '在保') || (tlStatus === '在保' && epStatus === '过保')) {
+    return '混合状态'
+  } else if (tlStatus === '在保' && epStatus === '在保') {
+    return '在保'
+  } else if (tlStatus === '过保' && epStatus === '过保') {
+    return '过保'
+  } else if (tlStatus === '点位无关联项目') {
+    return '点位无关联项目'
+  } else if (epStatus === '点位无关联项目' && (tlStatus === '在保' || tlStatus === '过保')) {
+    return tlStatus
+  }
+  return '点位无关联项目'
+}
+
+function getWarrantyStatus(intersectionId: number): string {
+  return getIntersectionWarranty(intersectionId)
+}
+
+function getWarrantyColor(intersectionId: number): string {
+  const status = getIntersectionWarranty(intersectionId)
+  if (status === '在保') return '#67c23a' // 绿色
+  if (status === '过保') return '#f56c6c' // 红色
+  if (status === '混合状态') return '#e6a23c' // 橙色/混合
+  return 'gray'
+}
+
+function getTransform(type: 'tl' | 'ep'): string {
+  // 左半圆：从12点钟方向顺时针到6点钟方向
+  return type === 'tl' ? 'rotate(0 18 18)' : 'rotate(180 18 18)'
+}
+
+function getDeviceStatus(intersectionId: number, deviceType: 'tl' | 'ep'): string {
+  const devices = deviceType === 'tl'
+    ? allTrafficLights.value.filter(tl => tl.intersection_id === intersectionId)
+    : allElectronicPolices.value.filter(ep => ep.intersection_id === intersectionId)
+
+  if (devices.length === 0) return '无项目'
+
+  const validDates = devices
+    .map(d => d.effective_warranty_expire_date)
+    .filter(d => d)
+  if (validDates.length === 0) return '无项目'
+
+  const latestDate = new Date(Math.max(...validDates.map(d => new Date(d).getTime())))
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  return latestDate >= today ? '在保' : '过保'
+}
+
+function getTlColor(intersectionId: number): string {
+  const status = getDeviceStatus(intersectionId, 'tl')
+  if (status === '在保') return '#67c23a' // 绿色
+  if (status === '过保') return '#f56c6c' // 红色
+  return '#909399' // 灰色
+}
+
+function getEpColor(intersectionId: number): string {
+  const status = getDeviceStatus(intersectionId, 'ep')
+  if (status === '在保') return '#67c23a' // 绿色
+  if (status === '过保') return '#f56c6c' // 红色
+  return '#909399' // 灰色
+}
+
 function handleDataUpdated() {
   fetchData()
 }
@@ -281,5 +381,27 @@ onUnmounted(() => {
 
 .status-dot.gray {
   background-color: #909399;
+}
+
+.warranty-circle {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  position: relative;
+  overflow: hidden;
+  display: inline-flex;
+}
+
+.half-circle {
+  width: 10px;
+  height: 20px;
+}
+
+.half-circle.left {
+  border-radius: 10px 0 0 10px;
+}
+
+.half-circle.right {
+  border-radius: 0 10px 10px 0;
 }
 </style>

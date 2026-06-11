@@ -56,11 +56,21 @@ class Intersection(db.Model):
         tl_status = tl_warranty['warranty_status']
         ep_status = ep_warranty['warranty_status']
 
-        # 只要信号灯或电警有1个过保，路口就是过保
-        if tl_status == '过保' or ep_status == '过保':
-            combined = '过保'
-        elif tl_status == '在保' or ep_status == '在保':
+        # 混合状态：一个过保，一个在保
+        if (tl_status == '过保' and ep_status == '在保') or (tl_status == '在保' and ep_status == '过保'):
+            combined = '混合状态'
+        # 双方都在保
+        elif tl_status == '在保' and ep_status == '在保':
             combined = '在保'
+        # 双方都过保
+        elif tl_status == '过保' and ep_status == '过保':
+            combined = '过保'
+        # 信号灯无项目，即使电子警察有状态，路口状态也是无关联项目
+        elif tl_status == '点位无关联项目':
+            combined = '点位无关联项目'
+        # 电子警察无项目，沿用信号灯状态
+        elif ep_status == '点位无关联项目' and tl_status in ('在保', '过保'):
+            combined = tl_status
         else:
             combined = '点位无关联项目'
         

@@ -37,9 +37,13 @@
         <el-table-column prop="type" label="安装位置" width="120" />
         <el-table-column prop="latitude" label="纬度" width="120" />
         <el-table-column prop="longitude" label="经度" width="120" />
-        <el-table-column label="关联项目" width="100" align="center">
+        <el-table-column label="质保状态" width="80" align="center">
           <template #default="{ row }">
-            <span :class="hasProject(row.id) ? 'status-dot green' : 'status-dot gray'" />
+            <span
+              class="warranty-dot"
+              :class="getWarrantyClass(row)"
+              :title="row.status || '点位无关联项目'"
+            />
           </template>
         </el-table-column>
         <el-table-column label="附件" width="80" align="center">
@@ -244,6 +248,13 @@ function hasAttachment(pointId: number): boolean {
   return allAttachments.value.some(a => a.related_entity_id === pointId)
 }
 
+function getWarrantyClass(row: any): string {
+  const status = row.status
+  if (status === '在保') return 'warranty-green'
+  if (status === '过保') return 'warranty-red'
+  return 'warranty-gray'
+}
+
 function handleDataUpdated() {
   loadPoints()
 }
@@ -281,6 +292,25 @@ onUnmounted(() => {
 }
 
 .status-dot.gray {
+  background-color: #909399;
+}
+
+.warranty-dot {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+}
+
+.warranty-green {
+  background-color: #67c23a;
+}
+
+.warranty-red {
+  background-color: #f56c6c;
+}
+
+.warranty-gray {
   background-color: #909399;
 }
 </style>

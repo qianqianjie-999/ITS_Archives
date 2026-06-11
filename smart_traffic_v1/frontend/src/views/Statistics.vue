@@ -353,6 +353,7 @@ const backendDevices = ref<any[]>([])
 function tagType(status: string) {
   if (status === '在保') return 'success'
   if (status === '过保') return 'danger'
+  if (status === '混合状态') return 'warning'
   return 'info'
 }
 

@@ -167,8 +167,13 @@ class TrafficLightListAll(Resource):
         grouped = {}
         for tl in traffic_lights:
             key = tl.intersection_id
-            if key not in grouped or tl.id > grouped[key].id:
+            if key not in grouped:
                 grouped[key] = tl
+            else:
+                current_expire = grouped[key].effective_warranty_expire_date
+                new_expire = tl.effective_warranty_expire_date
+                if new_expire and (not current_expire or new_expire > current_expire):
+                    grouped[key] = tl
         
         return {'data': [tl.to_dict() for tl in grouped.values()]}
 
@@ -180,8 +185,13 @@ class ElectronicPoliceListAll(Resource):
         grouped = {}
         for ep in electronic_polices:
             key = ep.intersection_id
-            if key not in grouped or ep.id > grouped[key].id:
+            if key not in grouped:
                 grouped[key] = ep
+            else:
+                current_expire = grouped[key].effective_warranty_expire_date
+                new_expire = ep.effective_warranty_expire_date
+                if new_expire and (not current_expire or new_expire > current_expire):
+                    grouped[key] = ep
         
         return {'data': [ep.to_dict() for ep in grouped.values()]}
 
