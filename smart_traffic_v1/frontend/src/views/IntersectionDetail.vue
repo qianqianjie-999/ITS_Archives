@@ -43,6 +43,15 @@
                 {{ (trafficLightPage - 1) * perPage + $index + 1 }}
               </template>
             </el-table-column>
+            <el-table-column label="选择" width="60">
+              <template #default="{ row }">
+                <el-radio 
+                  :value="row.id" 
+                  :label="row.id"
+                  v-model="selectedTrafficLight"
+                ></el-radio>
+              </template>
+            </el-table-column>
             <el-table-column prop="project_name" label="归属项目" />
             <el-table-column prop="acceptance_date" label="项目验收日期" width="140" />
             <el-table-column prop="warranty_period" label="项目质保期" width="120">
@@ -481,6 +490,7 @@ const showElectronicPoliceDialog = ref(false)
 const showWarrantyDialog = ref(false)
 const showMaintenanceDialog = ref(false)
 const fileInputRef = ref<HTMLInputElement | null>(null)
+const selectedTrafficLight = ref<number | undefined>(undefined)
 
 const pagedTrafficLights = computed(() => {
   const start = (trafficLightPage.value - 1) * perPage.value
@@ -938,6 +948,19 @@ async function fetchData() {
     intersection.value = data.intersection
     trafficLights.value = data.traffic_lights
     electronicPolices.value = data.electronic_polices
+    
+    if (trafficLights.value.length > 0) {
+      let defaultItem = trafficLights.value[0]
+      trafficLights.value.forEach(item => {
+        if (item.acceptance_date && (!defaultItem.acceptance_date || item.acceptance_date < defaultItem.acceptance_date)) {
+          defaultItem = item
+        }
+      })
+      selectedTrafficLight.value = defaultItem.id
+    } else {
+      selectedTrafficLight.value = undefined
+    }
+    
     await fetchAttachments()
     await fetchWarrantyRecords()
     await fetchMaintenanceRecords()
