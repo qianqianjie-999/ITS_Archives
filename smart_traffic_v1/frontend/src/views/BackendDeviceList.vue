@@ -251,7 +251,7 @@
           <el-input-number v-model="editForm.quantity" :min="1" style="width: 100%" />
         </el-form-item>
         <el-form-item label="归属项目">
-          <el-select v-model="editForm.project_id" placeholder="请选择项目" style="width: 100%">
+          <el-select v-model="editForm.project_id" placeholder="请选择项目" filterable style="width: 100%">
             <el-option v-for="p in projects" :key="p.id" :label="p.name" :value="p.id" />
           </el-select>
         </el-form-item>

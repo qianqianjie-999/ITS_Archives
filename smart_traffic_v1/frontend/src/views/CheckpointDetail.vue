@@ -246,7 +246,7 @@
     <el-dialog v-model="showAddDialog" :title="editForm.id ? '编辑详情信息' : '添加卡口详情信息'" width="500px">
       <el-form :model="editForm" label-width="100px">
         <el-form-item label="归属项目" required>
-          <el-select v-model="editForm.project_id" placeholder="请选择项目">
+          <el-select v-model="editForm.project_id" placeholder="请选择项目" filterable>
             <el-option v-for="project in projects" :key="project.id" :label="project.name" :value="project.id" />
           </el-select>
         </el-form-item>
