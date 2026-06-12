@@ -14,6 +14,8 @@ class Intersection(db.Model):
     north_south_road: Mapped[Optional[str]] = mapped_column(String(100))
     latitude: Mapped[Optional[float]] = mapped_column(nullable=True)
     longitude: Mapped[Optional[float]] = mapped_column(nullable=True)
+    selected_traffic_light_id: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+    selected_electronic_police_id: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
 
     traffic_lights: Mapped[List["TrafficLight"]] = relationship(back_populates="intersection", cascade="all, delete-orphan")
     electronic_polices: Mapped[List["ElectronicPolice"]] = relationship(back_populates="intersection", cascade="all, delete-orphan")
@@ -26,7 +28,9 @@ class Intersection(db.Model):
             'east_west_road': self.east_west_road,
             'north_south_road': self.north_south_road,
             'latitude': self.latitude,
-            'longitude': self.longitude
+            'longitude': self.longitude,
+            'selected_traffic_light_id': self.selected_traffic_light_id,
+            'selected_electronic_police_id': self.selected_electronic_police_id
         }
 
     def _get_device_warranty(self, devices):

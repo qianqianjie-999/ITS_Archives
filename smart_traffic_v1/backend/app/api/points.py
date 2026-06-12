@@ -195,6 +195,8 @@ class ParkingPointDetail(Resource):
             point.area = data['area']
         if 'type' in data:
             point.type = data['type']
+        if 'selected_project_id' in data:
+            point.selected_project_id = data['selected_project_id']
 
         db.session.commit()
         return {'status': 'success', 'data': point.to_dict()}
@@ -292,6 +294,8 @@ class SkyNetPointDetail(Resource):
             point.monitor_area = data['monitor_area']
         if 'location' in data:
             point.location = data['location']
+        if 'selected_project_id' in data:
+            point.selected_project_id = data['selected_project_id']
 
         db.session.commit()
         return {'status': 'success', 'data': point.to_dict()}
@@ -538,6 +542,8 @@ class CheckpointPointDetail(Resource):
             point.area = data['area']
         if 'type' in data:
             point.type = data['type']
+        if 'selected_project_id' in data:
+            point.selected_project_id = data['selected_project_id']
 
         db.session.commit()
         return {'status': 'success', 'data': point.to_dict()}

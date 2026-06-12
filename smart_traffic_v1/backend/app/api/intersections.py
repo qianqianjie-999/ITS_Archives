@@ -144,6 +144,10 @@ class IntersectionDetail(Resource):
             intersection.east_west_road = data['east_west_road']
         if 'north_south_road' in data:
             intersection.north_south_road = data['north_south_road']
+        if 'selected_traffic_light_id' in data:
+            intersection.selected_traffic_light_id = data['selected_traffic_light_id']
+        if 'selected_electronic_police_id' in data:
+            intersection.selected_electronic_police_id = data['selected_electronic_police_id']
 
         db.session.commit()
         return {'status': 'success', 'data': intersection.to_dict()}

@@ -34,6 +34,15 @@
             {{ (currentPage - 1) * perPage + $index + 1 }}
           </template>
         </el-table-column>
+        <el-table-column label="选择计算服役时长项目" width="80">
+          <template #default="{ row }">
+            <el-radio
+              :value="row.id"
+              :label="row.id"
+              v-model="selectedProject"
+            >&nbsp;</el-radio>
+          </template>
+        </el-table-column>
         <el-table-column prop="project_name" label="归属项目" />
         <el-table-column prop="acceptance_date" label="项目验收日期" width="140" />
         <el-table-column prop="warranty_period" label="项目质保期" width="120">
@@ -270,7 +279,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted, computed } from 'vue'
+import { ref, reactive, onMounted, computed, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Files } from '@element-plus/icons-vue'
@@ -303,6 +312,7 @@ const previewVisible = ref(false)
 const previewUrl = ref('')
 const previewType = ref<'image' | 'pdf' | 'other'>('other')
 const previewFilename = ref('')
+const selectedProject = ref<number | undefined>(undefined)
 
 const pagedCheckpoints = computed(() => {
   const start = (currentPage.value - 1) * perPage.value
@@ -455,6 +465,35 @@ function loadData() {
     checkpoints.value = pointDetail.data.checkpoints || []
     warrantyExtensions.value = pointDetail.data.warranty_extensions || []
     projects.value = projectList.data
+    
+    // 设置选中项目
+    if (checkpoints.value.length > 0) {
+      if (point.value?.selected_project_id) {
+        const savedItem = checkpoints.value.find(item => item.id === point.value?.selected_project_id)
+        if (savedItem) {
+          selectedProject.value = savedItem.id
+        } else {
+          let defaultItem = checkpoints.value[0]
+          checkpoints.value.forEach(item => {
+            if (item.acceptance_date && (!defaultItem.acceptance_date || item.acceptance_date < defaultItem.acceptance_date)) {
+              defaultItem = item
+            }
+          })
+          selectedProject.value = defaultItem.id
+        }
+      } else {
+        let defaultItem = checkpoints.value[0]
+        checkpoints.value.forEach(item => {
+          if (item.acceptance_date && (!defaultItem.acceptance_date || item.acceptance_date < defaultItem.acceptance_date)) {
+            defaultItem = item
+          }
+        })
+        selectedProject.value = defaultItem.id
+      }
+    } else {
+      selectedProject.value = undefined
+    }
+    
     loading.value = false
   }).catch(() => {
     loading.value = false
@@ -635,5 +674,18 @@ onMounted(() => {
   loadData()
   fetchMaintenanceRecords()
   fetchAttachments()
+})
+
+// 监听选择变化并自动保存
+watch(selectedProject, async (newVal) => {
+  if (newVal && point.value && !loading.value) {
+    try {
+      await checkpointPointApi.update(Number(route.params.id), {
+        selected_project_id: newVal
+      })
+    } catch (error) {
+      console.error('保存选择失败', error)
+    }
+  }
 })
 </script>

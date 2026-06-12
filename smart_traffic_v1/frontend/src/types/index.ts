@@ -30,6 +30,8 @@ export interface Intersection {
   traffic_light_warranty_expire?: string
   electronic_police_warranty_status?: string
   electronic_police_warranty_expire?: string
+  selected_traffic_light_id?: number
+  selected_electronic_police_id?: number
 }
 
 export interface TrafficLight {
@@ -88,6 +90,7 @@ export interface ParkingEnforcementPoint {
     longitude?: number
     status?: string
     latest_expire_date?: string
+    selected_project_id?: number
 }
 
 export interface CheckpointPoint {
@@ -99,6 +102,7 @@ export interface CheckpointPoint {
     longitude?: number
     status?: string
     latest_expire_date?: string
+    selected_project_id?: number
 }
 
 export interface SkyNetPoint {
@@ -110,6 +114,7 @@ export interface SkyNetPoint {
     longitude?: number
     status?: string
     latest_expire_date?: string
+    selected_project_id?: number
 }
 
 export interface SkyNet {

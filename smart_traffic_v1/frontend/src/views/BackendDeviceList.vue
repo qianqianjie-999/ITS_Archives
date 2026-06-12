@@ -32,6 +32,15 @@
             {{ (currentPage - 1) * perPage + $index + 1 }}
           </template>
         </el-table-column>
+        <el-table-column label="选择计算服役时长项目" width="80">
+          <template #default="{ row }">
+            <el-radio
+              :value="row.id"
+              :label="row.id"
+              v-model="selectedDeviceId"
+            >&nbsp;</el-radio>
+          </template>
+        </el-table-column>
         <el-table-column prop="name" label="设备名称" />
         <el-table-column prop="model" label="品牌型号" width="140" />
         <el-table-column prop="type" label="设备类型" width="140" />
@@ -298,6 +307,7 @@ const currentPage = ref(1)
 const perPage = ref(20)
 const searchKeyword = ref('')
 const filterWarranty = ref('')
+const selectedDeviceId = ref<number | undefined>(undefined)
 
 const filteredBackendDevices = computed(() => {
   return backendDevices.value.filter(d => {

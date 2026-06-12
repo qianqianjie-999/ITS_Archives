@@ -108,6 +108,15 @@
                 {{ (electronicPolicePage - 1) * perPage + $index + 1 }}
               </template>
             </el-table-column>
+            <el-table-column label="选择计算服役时长项目" width="80">
+              <template #default="{ row }">
+                <el-radio
+                  :value="row.id"
+                  :label="row.id"
+                  v-model="selectedElectronicPolice"
+                >&nbsp;</el-radio>
+              </template>
+            </el-table-column>
             <el-table-column prop="project_name" label="归属项目" />
             <el-table-column prop="acceptance_date" label="项目验收日期" width="140" />
             <el-table-column prop="warranty_period" label="项目质保期" width="120">
@@ -451,7 +460,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, reactive, computed } from 'vue'
+import { ref, onMounted, reactive, computed, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Files } from '@element-plus/icons-vue'
@@ -491,6 +500,7 @@ const showWarrantyDialog = ref(false)
 const showMaintenanceDialog = ref(false)
 const fileInputRef = ref<HTMLInputElement | null>(null)
 const selectedTrafficLight = ref<number | undefined>(undefined)
+const selectedElectronicPolice = ref<number | undefined>(undefined)
 
 const pagedTrafficLights = computed(() => {
   const start = (trafficLightPage.value - 1) * perPage.value
@@ -948,19 +958,66 @@ async function fetchData() {
     intersection.value = data.intersection
     trafficLights.value = data.traffic_lights
     electronicPolices.value = data.electronic_polices
-    
+
+    // 优先使用后端保存的选择，否则选择验收日期最早的项目
     if (trafficLights.value.length > 0) {
-      let defaultItem = trafficLights.value[0]
-      trafficLights.value.forEach(item => {
-        if (item.acceptance_date && (!defaultItem.acceptance_date || item.acceptance_date < defaultItem.acceptance_date)) {
-          defaultItem = item
+      if (intersection.value?.selected_traffic_light_id) {
+        // 检查保存的ID是否在当前信号灯列表中
+        const savedItem = trafficLights.value.find(item => item.id === intersection.value?.selected_traffic_light_id)
+        if (savedItem) {
+          selectedTrafficLight.value = savedItem.id
+        } else {
+          // 如果保存的ID不存在，选择验收日期最早的
+          let defaultItem = trafficLights.value[0]
+          trafficLights.value.forEach(item => {
+            if (item.acceptance_date && (!defaultItem.acceptance_date || item.acceptance_date < defaultItem.acceptance_date)) {
+              defaultItem = item
+            }
+          })
+          selectedTrafficLight.value = defaultItem.id
         }
-      })
-      selectedTrafficLight.value = defaultItem.id
+      } else {
+        // 没有保存的选择，选择验收日期最早的
+        let defaultItem = trafficLights.value[0]
+        trafficLights.value.forEach(item => {
+          if (item.acceptance_date && (!defaultItem.acceptance_date || item.acceptance_date < defaultItem.acceptance_date)) {
+            defaultItem = item
+          }
+        })
+        selectedTrafficLight.value = defaultItem.id
+      }
     } else {
       selectedTrafficLight.value = undefined
     }
-    
+
+    // 电子警察选择逻辑
+    if (electronicPolices.value.length > 0) {
+      if (intersection.value?.selected_electronic_police_id) {
+        const savedItem = electronicPolices.value.find(item => item.id === intersection.value?.selected_electronic_police_id)
+        if (savedItem) {
+          selectedElectronicPolice.value = savedItem.id
+        } else {
+          let defaultItem = electronicPolices.value[0]
+          electronicPolices.value.forEach(item => {
+            if (item.acceptance_date && (!defaultItem.acceptance_date || item.acceptance_date < defaultItem.acceptance_date)) {
+              defaultItem = item
+            }
+          })
+          selectedElectronicPolice.value = defaultItem.id
+        }
+      } else {
+        let defaultItem = electronicPolices.value[0]
+        electronicPolices.value.forEach(item => {
+          if (item.acceptance_date && (!defaultItem.acceptance_date || item.acceptance_date < defaultItem.acceptance_date)) {
+            defaultItem = item
+          }
+        })
+        selectedElectronicPolice.value = defaultItem.id
+      }
+    } else {
+      selectedElectronicPolice.value = undefined
+    }
+
     await fetchAttachments()
     await fetchWarrantyRecords()
     await fetchMaintenanceRecords()
@@ -972,6 +1029,32 @@ async function fetchData() {
 }
 
 onMounted(fetchData)
+
+// 监听选择变化并自动保存
+watch(selectedTrafficLight, async (newVal) => {
+  if (newVal && intersection.value && !loading.value) {
+    try {
+      await intersectionApi.update(intersection.value.id, {
+        selected_traffic_light_id: newVal
+      })
+    } catch (error) {
+      console.error('保存选择失败', error)
+    }
+  }
+})
+
+// 监听电子警察选择变化并自动保存
+watch(selectedElectronicPolice, async (newVal) => {
+  if (newVal && intersection.value && !loading.value) {
+    try {
+      await intersectionApi.update(intersection.value.id, {
+        selected_electronic_police_id: newVal
+      })
+    } catch (error) {
+      console.error('保存选择失败', error)
+    }
+  }
+})
 </script>
 
 <style scoped>

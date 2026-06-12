@@ -14,6 +14,7 @@ class ParkingEnforcementPoint(db.Model):
     type: Mapped[Optional[str]] = mapped_column(String(50))
     latitude: Mapped[Optional[float]] = mapped_column(nullable=True)
     longitude: Mapped[Optional[float]] = mapped_column(nullable=True)
+    selected_project_id: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
 
     parking_enforcements: Mapped[List["ParkingEnforcement"]] = relationship(back_populates="point", cascade="all, delete-orphan")
 
@@ -24,7 +25,8 @@ class ParkingEnforcementPoint(db.Model):
             'area': self.area,
             'type': self.type,
             'latitude': self.latitude,
-            'longitude': self.longitude
+            'longitude': self.longitude,
+            'selected_project_id': self.selected_project_id
         }
 
     @property
@@ -59,6 +61,7 @@ class CheckpointPoint(db.Model):
     type: Mapped[Optional[str]] = mapped_column(String(50))
     latitude: Mapped[Optional[float]] = mapped_column(nullable=True)
     longitude: Mapped[Optional[float]] = mapped_column(nullable=True)
+    selected_project_id: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
 
     checkpoints: Mapped[List["Checkpoint"]] = relationship(back_populates="point", cascade="all, delete-orphan")
 
@@ -69,7 +72,8 @@ class CheckpointPoint(db.Model):
             'area': self.area,
             'type': self.type,
             'latitude': self.latitude,
-            'longitude': self.longitude
+            'longitude': self.longitude,
+            'selected_project_id': self.selected_project_id
         }
 
     @property
@@ -161,6 +165,7 @@ class SkyNetPoint(db.Model):
     location: Mapped[Optional[str]] = mapped_column(String(100))
     latitude: Mapped[Optional[float]] = mapped_column(nullable=True)
     longitude: Mapped[Optional[float]] = mapped_column(nullable=True)
+    selected_project_id: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
 
     sky_nets: Mapped[List["SkyNet"]] = relationship(back_populates="point", cascade="all, delete-orphan")
 
@@ -171,7 +176,8 @@ class SkyNetPoint(db.Model):
             'monitor_area': self.monitor_area,
             'location': self.location,
             'latitude': self.latitude,
-            'longitude': self.longitude
+            'longitude': self.longitude,
+            'selected_project_id': self.selected_project_id
         }
 
     @property
