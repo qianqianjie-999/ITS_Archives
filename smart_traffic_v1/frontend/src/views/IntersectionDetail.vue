@@ -264,7 +264,7 @@
     <el-dialog v-model="showWarrantyDialog" title="申请质保延期" width="500px">
       <el-form :model="warrantyForm" label-width="100px">
         <el-form-item label="归属项目" required>
-          <el-select v-model="warrantyForm.project_id" placeholder="请选择项目" filterable style="width: 100%" @change="onProjectChange">
+          <el-select v-model="warrantyForm.project_id" placeholder="选择归属项目或搜索添加" filterable style="width: 100%" @change="onProjectChange">
             <el-option v-for="p in projectOptions" :key="p.id" :label="p.name" :value="p.id" />
           </el-select>
         </el-form-item>
@@ -313,7 +313,7 @@
     <el-dialog v-model="showTrafficLightDialog" :title="trafficLightForm.id ? '编辑信号灯' : '新增信号灯'" width="700px">
       <el-form :model="trafficLightForm" label-width="120px">
         <el-form-item label="归属项目" required>
-          <el-select v-model="trafficLightForm.project_id" placeholder="请选择项目" filterable>
+          <el-select v-model="trafficLightForm.project_id" placeholder="选择归属项目或搜索添加" filterable>
             <el-option v-for="project in projectOptions" :key="project.id" :label="project.name" :value="project.id" />
           </el-select>
         </el-form-item>
@@ -396,7 +396,7 @@
     <el-dialog v-model="showElectronicPoliceDialog" :title="electronicPoliceForm.id ? '编辑电子警察' : '新增电子警察'" width="700px">
       <el-form :model="electronicPoliceForm" label-width="120px">
         <el-form-item label="归属项目" required>
-          <el-select v-model="electronicPoliceForm.project_id" placeholder="请选择项目" filterable>
+          <el-select v-model="electronicPoliceForm.project_id" placeholder="选择归属项目或搜索添加" filterable>
             <el-option v-for="project in projectOptions" :key="project.id" :label="project.name" :value="project.id" />
           </el-select>
         </el-form-item>
