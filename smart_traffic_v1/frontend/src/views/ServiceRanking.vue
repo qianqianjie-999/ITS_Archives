@@ -154,12 +154,18 @@ async function fetchAllData() {
       backendDeviceApi.list({ per_page: 0 })
     ])
     
+    // 去重处理：按路口ID或点位ID去重，保留质保到期日期最靠近现在的记录
+    const tlData = deduplicateByIntersection(trafficLights.data || [])
+    const epData = deduplicateByIntersection(electronicPolices.data || [])
+    const peData = deduplicateByPoint(parkingEnforcements.data || [])
+    const cpData = deduplicateByPoint(checkpoints.data || [])
+    const snData = deduplicateByPoint(skyNetPoints.data || [])
+    
     const data: any[] = []
     const today = new Date()
     
     // 处理信号灯
-    const tl = trafficLights.data || []
-    tl.forEach((item: any) => {
+    tlData.forEach((item: any) => {
       const acceptDate = item.acceptance_date || (item.project_info?.acceptance_date)
       if (!acceptDate) return
       const d = new Date(acceptDate)
@@ -177,8 +183,7 @@ async function fetchAllData() {
     })
     
     // 处理电子警察
-    const ep = electronicPolices.data || []
-    ep.forEach((item: any) => {
+    epData.forEach((item: any) => {
       const acceptDate = item.acceptance_date || (item.project_info?.acceptance_date)
       if (!acceptDate) return
       const d = new Date(acceptDate)
@@ -196,8 +201,7 @@ async function fetchAllData() {
     })
     
     // 处理违停球
-    const pe = parkingEnforcements.data || []
-    pe.forEach((item: any) => {
+    peData.forEach((item: any) => {
       const acceptDate = item.acceptance_date || (item.project_info?.acceptance_date)
       if (!acceptDate) return
       const d = new Date(acceptDate)
@@ -215,8 +219,7 @@ async function fetchAllData() {
     })
     
     // 处理卡口
-    const cp = checkpoints.data || []
-    cp.forEach((item: any) => {
+    cpData.forEach((item: any) => {
       const acceptDate = item.acceptance_date || (item.project_info?.acceptance_date)
       if (!acceptDate) return
       const d = new Date(acceptDate)
@@ -234,8 +237,7 @@ async function fetchAllData() {
     })
     
     // 处理结构化相机
-    const sn = skyNetPoints.data || []
-    sn.forEach((item: any) => {
+    snData.forEach((item: any) => {
       const acceptDate = item.acceptance_date || (item.project_info?.acceptance_date)
       if (!acceptDate) return
       const d = new Date(acceptDate)
@@ -253,8 +255,8 @@ async function fetchAllData() {
     })
     
     // 处理后端设备
-    const bd = backendDevices.data || []
-    bd.forEach((item: any) => {
+    const bdData = backendDevices.data || []
+    bdData.forEach((item: any) => {
       const acceptDate = item.acceptance_date || (item.project_info?.acceptance_date)
       if (!acceptDate) return
       const d = new Date(acceptDate)
@@ -280,6 +282,57 @@ async function fetchAllData() {
   } finally {
     loading.value = false
   }
+}
+
+function deduplicateByIntersection(items: any[]): any[] {
+  const map = new Map<number, any>()
+  items.forEach(item => {
+    const id = item.intersection_id
+    if (!id) return
+    if (!map.has(id)) {
+      map.set(id, item)
+    } else {
+      const existing = map.get(id)
+      if (shouldReplace(existing, item)) {
+        map.set(id, item)
+      }
+    }
+  })
+  return Array.from(map.values())
+}
+
+function deduplicateByPoint(items: any[]): any[] {
+  const map = new Map<number, any>()
+  items.forEach(item => {
+    const id = item.point_id || item.id
+    if (!id) return
+    if (!map.has(id)) {
+      map.set(id, item)
+    } else {
+      const existing = map.get(id)
+      if (shouldReplace(existing, item)) {
+        map.set(id, item)
+      }
+    }
+  })
+  return Array.from(map.values())
+}
+
+function shouldReplace(existing: any, newItem: any): boolean {
+  const existingDate = existing.warranty_expire_date
+  const newDate = newItem.warranty_expire_date
+  
+  if (!existingDate) return !!newDate
+  if (!newDate) return false
+  
+  const now = new Date().getTime()
+  const existingTime = new Date(existingDate).getTime()
+  const newTime = new Date(newDate).getTime()
+  
+  const existingDiff = Math.abs(existingTime - now)
+  const newDiff = Math.abs(newTime - now)
+  
+  return newDiff < existingDiff
 }
 
 onMounted(() => {
