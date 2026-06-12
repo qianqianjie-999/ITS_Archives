@@ -336,7 +336,7 @@ const activeTab = ref('traffic_light')
 const currentPage = ref(1)
 const pageSize = ref(20)
 
-const filterWarranty = ref('在保')
+const filterWarranty = ref('')
 const filterProject = ref('')
 const searchKeyword = ref('')
 const filterProjectOverviewWarranty = ref('')
@@ -380,56 +380,29 @@ function calculateUsageDays(acceptanceDate: string): string {
   return diffDays.toString();
 }
 
-function processDeviceData(data: any[], groupKey: string) {
-  const grouped: Record<number, any[]> = {}
-  data.forEach(item => {
-    const key = item[groupKey]
-    if (key && !grouped[key]) {
-      grouped[key] = []
-    }
-    if (key) {
-      grouped[key].push(item)
-    }
-  })
-  
-  const defaultAcceptanceDates: Record<number, string> = {}
-  Object.keys(grouped).forEach(key => {
-    const groupId = parseInt(key)
-    const items = grouped[groupId]
-    let defaultItem = items[0]
-    items.forEach(item => {
-      if (item.acceptance_date && (!defaultItem.acceptance_date || item.acceptance_date < defaultItem.acceptance_date)) {
-        defaultItem = item
-      }
-    })
-    defaultAcceptanceDates[groupId] = defaultItem.acceptance_date
-  })
-  
-  return data.map(item => {
-    const groupId = item[groupKey]
-    const useAcceptanceDate = groupId ? defaultAcceptanceDates[groupId] : item.acceptance_date
-    return {
-      ...item,
-      usage_days: calculateUsageDays(useAcceptanceDate)
-    }
-  })
-}
-
 const filteredData = computed(() => {
-  const tlData = applyFilter(trafficLights.value)
-  const epData = applyFilter(electronicPolices.value)
-  const peData = applyFilter(parkingEnforcements.value)
-  const cpData = applyFilter(checkpoints.value)
-  const snData = applyFilter(skyNetPoints.value)
-  const bdData = applyFilter(backendDevices.value)
-  
   return {
-    traffic_light: processDeviceData(tlData, 'intersection_id'),
-    electronic_police: processDeviceData(epData, 'intersection_id'),
-    parking_enforcement: processDeviceData(peData, 'point_id'),
-    checkpoint: processDeviceData(cpData, 'point_id'),
-    sky_net: processDeviceData(snData, 'point_id'),
-    backend_device: bdData.map(item => ({
+    traffic_light: applyFilter(trafficLights.value).map(item => ({
+      ...item,
+      usage_days: calculateUsageDays(item.acceptance_date)
+    })),
+    electronic_police: applyFilter(electronicPolices.value).map(item => ({
+      ...item,
+      usage_days: calculateUsageDays(item.acceptance_date)
+    })),
+    parking_enforcement: applyFilter(parkingEnforcements.value).map(item => ({
+      ...item,
+      usage_days: calculateUsageDays(item.acceptance_date)
+    })),
+    checkpoint: applyFilter(checkpoints.value).map(item => ({
+      ...item,
+      usage_days: calculateUsageDays(item.acceptance_date)
+    })),
+    sky_net: applyFilter(skyNetPoints.value).map(item => ({
+      ...item,
+      usage_days: calculateUsageDays(item.acceptance_date)
+    })),
+    backend_device: applyFilter(backendDevices.value).map(item => ({
       ...item,
       usage_days: calculateUsageDays(item.acceptance_date)
     }))
