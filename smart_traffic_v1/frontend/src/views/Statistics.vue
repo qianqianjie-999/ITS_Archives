@@ -336,7 +336,7 @@ const activeTab = ref('traffic_light')
 const currentPage = ref(1)
 const pageSize = ref(20)
 
-const filterWarranty = ref('')
+const filterWarranty = ref('在保')
 const filterProject = ref('')
 const searchKeyword = ref('')
 const filterProjectOverviewWarranty = ref('')
