@@ -550,11 +550,22 @@ async function fetchData() {
       backendDeviceApi.list({ per_page: 0 })
     ])
     projects.value = p.data || []
-    trafficLights.value = tl.data || []
-    electronicPolices.value = ep.data || []
-    parkingEnforcements.value = pe.data || []
-    checkpoints.value = cp.data || []
-    skyNetPoints.value = sn.data || []
+    
+    // 处理信号灯：按路口分组，优先保留在保记录
+    trafficLights.value = deduplicateByIntersection(tl.data || [])
+    
+    // 处理电子警察：按路口分组，优先保留在保记录
+    electronicPolices.value = deduplicateByIntersection(ep.data || [])
+    
+    // 处理违停球：按点位分组，优先保留在保记录
+    parkingEnforcements.value = deduplicateByPoint(pe.data || [])
+    
+    // 处理卡口：按点位分组，优先保留在保记录
+    checkpoints.value = deduplicateByPoint(cp.data || [])
+    
+    // 处理结构化相机：按点位分组，优先保留在保记录
+    skyNetPoints.value = deduplicateByPoint(sn.data || [])
+    
     backendDevices.value = bd.data || []
   } catch (error) {
     console.error('获取数据失败', error)
@@ -562,6 +573,40 @@ async function fetchData() {
   } finally {
     loading.value = false
   }
+}
+
+function deduplicateByIntersection(items: any[]): any[] {
+  const map = new Map<number, any>()
+  items.forEach(item => {
+    const id = item.intersection_id
+    if (!id) return
+    if (!map.has(id)) {
+      map.set(id, item)
+    } else {
+      const existing = map.get(id)
+      if (item.warranty_status === '在保' && existing.warranty_status !== '在保') {
+        map.set(id, item)
+      }
+    }
+  })
+  return Array.from(map.values())
+}
+
+function deduplicateByPoint(items: any[]): any[] {
+  const map = new Map<number, any>()
+  items.forEach(item => {
+    const id = item.point_id || item.id
+    if (!id) return
+    if (!map.has(id)) {
+      map.set(id, item)
+    } else {
+      const existing = map.get(id)
+      if (item.warranty_status === '在保' && existing.warranty_status !== '在保') {
+        map.set(id, item)
+      }
+    }
+  })
+  return Array.from(map.values())
 }
 
 async function exportData() {
