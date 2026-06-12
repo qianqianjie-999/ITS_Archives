@@ -584,7 +584,7 @@ function deduplicateByIntersection(items: any[]): any[] {
       map.set(id, item)
     } else {
       const existing = map.get(id)
-      if (item.warranty_status === '在保' && existing.warranty_status !== '在保') {
+      if (shouldReplace(existing, item)) {
         map.set(id, item)
       }
     }
@@ -601,12 +601,29 @@ function deduplicateByPoint(items: any[]): any[] {
       map.set(id, item)
     } else {
       const existing = map.get(id)
-      if (item.warranty_status === '在保' && existing.warranty_status !== '在保') {
+      if (shouldReplace(existing, item)) {
         map.set(id, item)
       }
     }
   })
   return Array.from(map.values())
+}
+
+function shouldReplace(existing: any, newItem: any): boolean {
+  const existingDate = existing.warranty_expire_date
+  const newDate = newItem.warranty_expire_date
+  
+  if (!existingDate) return !!newDate
+  if (!newDate) return false
+  
+  const now = new Date().getTime()
+  const existingTime = new Date(existingDate).getTime()
+  const newTime = new Date(newDate).getTime()
+  
+  const existingDiff = Math.abs(existingTime - now)
+  const newDiff = Math.abs(newTime - now)
+  
+  return newDiff < existingDiff
 }
 
 async function exportData() {
