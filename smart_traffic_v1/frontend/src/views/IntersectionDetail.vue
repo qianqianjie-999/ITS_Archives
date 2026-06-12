@@ -43,13 +43,13 @@
                 {{ (trafficLightPage - 1) * perPage + $index + 1 }}
               </template>
             </el-table-column>
-            <el-table-column label="选择" width="60">
+            <el-table-column label="选择计算服役时长项目" width="80">
               <template #default="{ row }">
-                <el-radio 
-                  :value="row.id" 
+                <el-radio
+                  :value="row.id"
                   :label="row.id"
                   v-model="selectedTrafficLight"
-                ></el-radio>
+                >&nbsp;</el-radio>
               </template>
             </el-table-column>
             <el-table-column prop="project_name" label="归属项目" />
