@@ -145,21 +145,52 @@ function handleCurrentChange(val: number) {
 async function fetchAllData() {
   loading.value = true
   try {
-    const [trafficLights, electronicPolices, parkingEnforcements, checkpoints, skyNetPoints, backendDevices] = await Promise.all([
+    const [trafficLights, electronicPolices, parkingEnforcements, checkpoints, skyNetPoints, backendDevices, intersections, parkingEnforcementPoints, checkpointPoints, skyNetPointsList] = await Promise.all([
       intersectionApi.getTrafficLightsAll(),
       intersectionApi.getElectronicPolicesAll(),
       pointApi.getParkingEnforcementsAll(),
       checkpointPointApi.getCheckpointsAll(),
       skyNetApi.getSkyNetsAll(),
-      backendDeviceApi.list({ per_page: 0 })
+      backendDeviceApi.list({ per_page: 0 }),
+      intersectionApi.list({ per_page: 0 }),
+      pointApi.list({ per_page: 0 }),
+      checkpointPointApi.list({ per_page: 0 }),
+      skyNetApi.listPoints({ per_page: 0 })
     ])
     
-    // 去重处理：按路口ID或点位ID去重，保留质保到期日期最靠近现在的记录
-    const tlData = deduplicateByIntersection(trafficLights.data || [])
-    const epData = deduplicateByIntersection(electronicPolices.data || [])
-    const peData = deduplicateByPoint(parkingEnforcements.data || [])
-    const cpData = deduplicateByPoint(checkpoints.data || [])
-    const snData = deduplicateByPoint(skyNetPoints.data || [])
+    // 构建路口选中状态映射
+    const intersectionSelectedMap = new Map<number, any>()
+    ;(intersections.data || []).forEach((item: any) => {
+      intersectionSelectedMap.set(item.id, item)
+    })
+    
+    // 构建点位选中状态映射
+    const pointSelectedMap = new Map<number, any>()
+    ;[...(parkingEnforcementPoints.data || []), ...(checkpointPoints.data || []), ...(skyNetPointsList.data || [])].forEach((item: any) => {
+      pointSelectedMap.set(item.id, item)
+    })
+    
+    // 去重处理：按路口ID或点位ID去重，优先保留选中项目和质保到期日期最靠近现在的记录
+    const tlData = deduplicateByIntersection((trafficLights.data || []).map((item: any) => {
+      const intersection = intersectionSelectedMap.get(item.intersection_id)
+      return { ...item, is_selected: item.intersection_id && intersection?.selected_traffic_light_id === item.id }
+    }))
+    const epData = deduplicateByIntersection((electronicPolices.data || []).map((item: any) => {
+      const intersection = intersectionSelectedMap.get(item.intersection_id)
+      return { ...item, is_selected: item.intersection_id && intersection?.selected_electronic_police_id === item.id }
+    }))
+    const peData = deduplicateByPoint((parkingEnforcements.data || []).map((item: any) => {
+      const point = pointSelectedMap.get(item.point_id)
+      return { ...item, is_selected: item.point_id && point?.selected_project_id === item.id }
+    }))
+    const cpData = deduplicateByPoint((checkpoints.data || []).map((item: any) => {
+      const point = pointSelectedMap.get(item.point_id)
+      return { ...item, is_selected: item.point_id && point?.selected_project_id === item.id }
+    }))
+    const snData = deduplicateByPoint((skyNetPoints.data || []).map((item: any) => {
+      const point = pointSelectedMap.get(item.point_id)
+      return { ...item, is_selected: item.point_id && point?.selected_project_id === item.id }
+    }))
     
     const data: any[] = []
     const today = new Date()

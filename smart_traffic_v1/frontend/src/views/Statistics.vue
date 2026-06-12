@@ -539,7 +539,7 @@ async function fetchData() {
   loading.value = true
   try {
     const [
-      p, tl, ep, pe, cp, sn, bd
+      p, tl, ep, pe, cp, sn, bd, intersections, parkingEnforcementPoints, checkpointPoints, skyNetPointsList
     ] = await Promise.all([
       projectApi.list({ per_page: 0 }),
       intersectionApi.getTrafficLightsAll(),
@@ -547,24 +547,75 @@ async function fetchData() {
       pointApi.getParkingEnforcementsAll(),
       checkpointPointApi.getCheckpointsAll(),
       skyNetApi.getSkyNetsAll(),
-      backendDeviceApi.list({ per_page: 0 })
+      backendDeviceApi.list({ per_page: 0 }),
+      intersectionApi.list({ per_page: 0 }),
+      pointApi.list({ per_page: 0 }),
+      checkpointPointApi.list({ per_page: 0 }),
+      skyNetApi.listPoints({ per_page: 0 })
     ])
     projects.value = p.data || []
     
-    // 处理信号灯：按路口分组，优先保留在保记录
-    trafficLights.value = deduplicateByIntersection(tl.data || [])
+    // 构建路口选中状态映射
+    const intersectionSelectedMap = new Map<number, any>()
+    ;(intersections.data || []).forEach((item: any) => {
+      intersectionSelectedMap.set(item.id, item)
+    })
     
-    // 处理电子警察：按路口分组，优先保留在保记录
-    electronicPolices.value = deduplicateByIntersection(ep.data || [])
+    // 构建点位选中状态映射
+    const pointSelectedMap = new Map<number, any>()
+    ;[...(parkingEnforcementPoints.data || []), ...(checkpointPoints.data || []), ...(skyNetPointsList.data || [])].forEach((item: any) => {
+      pointSelectedMap.set(item.id, item)
+    })
     
-    // 处理违停球：按点位分组，优先保留在保记录
-    parkingEnforcements.value = deduplicateByPoint(pe.data || [])
+    // 处理信号灯：按路口分组，优先保留选中项目和质保到期靠近的记录
+    const tlData = (tl.data || []).map((item: any) => {
+      const intersection = intersectionSelectedMap.get(item.intersection_id)
+      return {
+        ...item,
+        is_selected: item.intersection_id && intersection?.selected_traffic_light_id === item.id
+      }
+    })
+    trafficLights.value = deduplicateByIntersection(tlData)
     
-    // 处理卡口：按点位分组，优先保留在保记录
-    checkpoints.value = deduplicateByPoint(cp.data || [])
+    // 处理电子警察：按路口分组，优先保留选中项目和质保到期靠近的记录
+    const epData = (ep.data || []).map((item: any) => {
+      const intersection = intersectionSelectedMap.get(item.intersection_id)
+      return {
+        ...item,
+        is_selected: item.intersection_id && intersection?.selected_electronic_police_id === item.id
+      }
+    })
+    electronicPolices.value = deduplicateByIntersection(epData)
     
-    // 处理结构化相机：按点位分组，优先保留在保记录
-    skyNetPoints.value = deduplicateByPoint(sn.data || [])
+    // 处理违停球：按点位分组，优先保留选中项目和质保到期靠近的记录
+    const peData = (pe.data || []).map((item: any) => {
+      const point = pointSelectedMap.get(item.point_id)
+      return {
+        ...item,
+        is_selected: item.point_id && point?.selected_project_id === item.id
+      }
+    })
+    parkingEnforcements.value = deduplicateByPoint(peData)
+    
+    // 处理卡口：按点位分组，优先保留选中项目和质保到期靠近的记录
+    const cpData = (cp.data || []).map((item: any) => {
+      const point = pointSelectedMap.get(item.point_id)
+      return {
+        ...item,
+        is_selected: item.point_id && point?.selected_project_id === item.id
+      }
+    })
+    checkpoints.value = deduplicateByPoint(cpData)
+    
+    // 处理结构化相机：按点位分组，优先保留选中项目和质保到期靠近的记录
+    const snData = (sn.data || []).map((item: any) => {
+      const point = pointSelectedMap.get(item.point_id)
+      return {
+        ...item,
+        is_selected: item.point_id && point?.selected_project_id === item.id
+      }
+    })
+    skyNetPoints.value = deduplicateByPoint(snData)
     
     backendDevices.value = bd.data || []
   } catch (error) {
@@ -612,6 +663,10 @@ function deduplicateByPoint(items: any[]): any[] {
 function shouldReplace(existing: any, newItem: any): boolean {
   const existingDate = existing.warranty_expire_date
   const newDate = newItem.warranty_expire_date
+  
+  // 优先保留有选中标记的记录
+  if (newItem.is_selected && !existing.is_selected) return true
+  if (existing.is_selected && !newItem.is_selected) return false
   
   if (!existingDate) return !!newDate
   if (!newDate) return false
