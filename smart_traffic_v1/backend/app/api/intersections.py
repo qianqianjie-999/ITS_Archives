@@ -236,7 +236,7 @@ class TrafficLightUpdate(Resource):
             return {'status': 'error', 'message': '信号灯不存在'}, 404
 
         data = request.json
-        for key in ['project_name', 'signal_type', 'signal_count', 'left_arrow_count', 'straight_arrow_count',
+        for key in ['project_id', 'project_name', 'signal_type', 'signal_count', 'left_arrow_count', 'straight_arrow_count',
                     'right_arrow_count', 'full_screen_count', 'non_motor_count', 'pedestrian_count',
                     'radar_count', 'guide_screen_count', 'power_source']:
             if key in data:
