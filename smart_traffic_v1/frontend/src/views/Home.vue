@@ -463,8 +463,8 @@ async function fetchStats() {
 
     stats.value = {
       intersections: intersections.data?.length || 0,
-      trafficLights: tl.length,
-      electronicPolices: ep.length,
+      trafficLights: new Set(tl.map(t => t.intersection_id)).size,
+      electronicPolices: new Set(ep.map(e => e.intersection_id)).size,
       parkingEnforcements: pe.length,
       checkpoints: cp.length,
       skyNetPoints: sn.length,
