@@ -350,6 +350,10 @@ function deduplicateByPoint(items: any[]): any[] {
 }
 
 function shouldReplace(existing: any, newItem: any): boolean {
+  // 优先保留"选择计算服役时长项目"选中的记录
+  if (newItem.is_selected && !existing.is_selected) return true
+  if (existing.is_selected && !newItem.is_selected) return false
+  
   const existingDate = existing.warranty_expire_date
   const newDate = newItem.warranty_expire_date
   
