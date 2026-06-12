@@ -163,37 +163,13 @@ class IntersectionDetail(Resource):
 class TrafficLightListAll(Resource):
     def get(self):
         traffic_lights = db.session.query(TrafficLight).all()
-        
-        grouped = {}
-        for tl in traffic_lights:
-            key = tl.intersection_id
-            if key not in grouped:
-                grouped[key] = tl
-            else:
-                current_expire = grouped[key].effective_warranty_expire_date
-                new_expire = tl.effective_warranty_expire_date
-                if new_expire and (not current_expire or new_expire > current_expire):
-                    grouped[key] = tl
-        
-        return {'data': [tl.to_dict() for tl in grouped.values()]}
+        return {'data': [tl.to_dict() for tl in traffic_lights]}
 
 @ns.route('/electronic-polices')
 class ElectronicPoliceListAll(Resource):
     def get(self):
         electronic_polices = db.session.query(ElectronicPolice).all()
-        
-        grouped = {}
-        for ep in electronic_polices:
-            key = ep.intersection_id
-            if key not in grouped:
-                grouped[key] = ep
-            else:
-                current_expire = grouped[key].effective_warranty_expire_date
-                new_expire = ep.effective_warranty_expire_date
-                if new_expire and (not current_expire or new_expire > current_expire):
-                    grouped[key] = ep
-        
-        return {'data': [ep.to_dict() for ep in grouped.values()]}
+        return {'data': [ep.to_dict() for ep in electronic_polices]}
 
 @ns.route('/<int:intersection_id>/traffic-light')
 class TrafficLightCreate(Resource):

@@ -114,6 +114,15 @@
               {{ (currentPage - 1) * pageSize + $index + 1 }}
             </template>
           </el-table-column>
+          <el-table-column label="选择" width="60" fixed>
+            <template #default="{ row }">
+              <el-radio 
+                :value="row.id" 
+                :label="row.id"
+                v-model="selectedTrafficLight[row.intersection_id]"
+              ></el-radio>
+            </template>
+          </el-table-column>
           <el-table-column prop="intersection_name" label="路口名称" min-width="130" fixed />
           <el-table-column prop="intersection_type" label="路口类型" width="100" />
           <el-table-column prop="project_name" label="归属项目" min-width="130" />
@@ -152,6 +161,15 @@
               {{ (currentPage - 1) * pageSize + $index + 1 }}
             </template>
           </el-table-column>
+          <el-table-column label="选择" width="60" fixed>
+            <template #default="{ row }">
+              <el-radio 
+                :value="row.id" 
+                :label="row.id"
+                v-model="selectedElectronicPolice[row.intersection_id]"
+              ></el-radio>
+            </template>
+          </el-table-column>
           <el-table-column prop="intersection_name" label="路口名称" min-width="130" fixed />
           <el-table-column prop="intersection_type" label="路口类型" width="100" />
           <el-table-column prop="project_name" label="归属项目" min-width="130" />
@@ -187,6 +205,15 @@
               {{ (currentPage - 1) * pageSize + $index + 1 }}
             </template>
           </el-table-column>
+          <el-table-column label="选择" width="60" fixed>
+            <template #default="{ row }">
+              <el-radio 
+                :value="row.id" 
+                :label="row.id"
+                v-model="selectedParkingEnforcement[row.point_id]"
+              ></el-radio>
+            </template>
+          </el-table-column>
           <el-table-column prop="point_name" label="点位名称" min-width="130" fixed />
           <el-table-column prop="camera_area" label="抓拍区域" min-width="120" />
           <el-table-column prop="project_name" label="归属项目" min-width="130" />
@@ -216,6 +243,15 @@
           <el-table-column label="序号" width="55" fixed>
             <template #default="{ $index }">
               {{ (currentPage - 1) * pageSize + $index + 1 }}
+            </template>
+          </el-table-column>
+          <el-table-column label="选择" width="60" fixed>
+            <template #default="{ row }">
+              <el-radio 
+                :value="row.id" 
+                :label="row.id"
+                v-model="selectedCheckpoint[row.point_id]"
+              ></el-radio>
             </template>
           </el-table-column>
           <el-table-column prop="point_name" label="点位名称" min-width="130" fixed />
@@ -248,6 +284,15 @@
           <el-table-column label="序号" width="55" fixed>
             <template #default="{ $index }">
               {{ (currentPage - 1) * pageSize + $index + 1 }}
+            </template>
+          </el-table-column>
+          <el-table-column label="选择" width="60" fixed>
+            <template #default="{ row }">
+              <el-radio 
+                :value="row.id" 
+                :label="row.id"
+                v-model="selectedSkyNet[row.point_id]"
+              ></el-radio>
             </template>
           </el-table-column>
           <el-table-column prop="point_name" label="点位名称" min-width="130" fixed />
@@ -345,6 +390,11 @@ const searchProjectOverviewKeyword = ref('')
 const projects = ref<any[]>([])
 const trafficLights = ref<any[]>([])
 const electronicPolices = ref<any[]>([])
+const selectedTrafficLight = ref<Record<number, number>>({})
+const selectedElectronicPolice = ref<Record<number, number>>({})
+const selectedParkingEnforcement = ref<Record<number, number>>({})
+const selectedCheckpoint = ref<Record<number, number>>({})
+const selectedSkyNet = ref<Record<number, number>>({})
 const parkingEnforcements = ref<any[]>([])
 const checkpoints = ref<any[]>([])
 const skyNetPoints = ref<any[]>([])
@@ -380,29 +430,59 @@ function calculateUsageDays(acceptanceDate: string): string {
   return diffDays.toString();
 }
 
+function processDeviceData(data: any[], selected: Record<number, number>, groupKey: string) {
+  const grouped: Record<number, any[]> = {}
+  data.forEach(item => {
+    const key = item[groupKey]
+    if (key && !grouped[key]) {
+      grouped[key] = []
+    }
+    if (key) {
+      grouped[key].push(item)
+    }
+  })
+  
+  Object.keys(grouped).forEach(key => {
+    const groupId = parseInt(key)
+    const items = grouped[groupId]
+    let defaultItem = items[0]
+    items.forEach(item => {
+      if (item.acceptance_date && (!defaultItem.acceptance_date || item.acceptance_date < defaultItem.acceptance_date)) {
+        defaultItem = item
+      }
+    })
+    if (!selected[groupId]) {
+      selected[groupId] = defaultItem.id
+    }
+  })
+  
+  return data.map(item => {
+    const groupId = item[groupKey]
+    const selectedId = groupId ? selected[groupId] : item.id
+    const selectedItem = data.find(t => t.id === selectedId)
+    const useAcceptanceDate = selectedItem ? selectedItem.acceptance_date : item.acceptance_date
+    return {
+      ...item,
+      usage_days: calculateUsageDays(useAcceptanceDate)
+    }
+  })
+}
+
 const filteredData = computed(() => {
+  const tlData = applyFilter(trafficLights.value)
+  const epData = applyFilter(electronicPolices.value)
+  const peData = applyFilter(parkingEnforcements.value)
+  const cpData = applyFilter(checkpoints.value)
+  const snData = applyFilter(skyNetPoints.value)
+  const bdData = applyFilter(backendDevices.value)
+  
   return {
-    traffic_light: applyFilter(trafficLights.value).map(item => ({
-      ...item,
-      usage_days: calculateUsageDays(item.acceptance_date)
-    })),
-    electronic_police: applyFilter(electronicPolices.value).map(item => ({
-      ...item,
-      usage_days: calculateUsageDays(item.acceptance_date)
-    })),
-    parking_enforcement: applyFilter(parkingEnforcements.value).map(item => ({
-      ...item,
-      usage_days: calculateUsageDays(item.acceptance_date)
-    })),
-    checkpoint: applyFilter(checkpoints.value).map(item => ({
-      ...item,
-      usage_days: calculateUsageDays(item.acceptance_date)
-    })),
-    sky_net: applyFilter(skyNetPoints.value).map(item => ({
-      ...item,
-      usage_days: calculateUsageDays(item.acceptance_date)
-    })),
-    backend_device: applyFilter(backendDevices.value).map(item => ({
+    traffic_light: processDeviceData(tlData, selectedTrafficLight.value, 'intersection_id'),
+    electronic_police: processDeviceData(epData, selectedElectronicPolice.value, 'intersection_id'),
+    parking_enforcement: processDeviceData(peData, selectedParkingEnforcement.value, 'point_id'),
+    checkpoint: processDeviceData(cpData, selectedCheckpoint.value, 'point_id'),
+    sky_net: processDeviceData(snData, selectedSkyNet.value, 'point_id'),
+    backend_device: bdData.map(item => ({
       ...item,
       usage_days: calculateUsageDays(item.acceptance_date)
     }))
