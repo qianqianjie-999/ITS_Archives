@@ -380,32 +380,43 @@ function calculateUsageDays(acceptanceDate: string): string {
   return diffDays.toString();
 }
 
+function sortByProjectAndWarranty(list: any[]) {
+  const statusOrder: Record<string, number> = { '过保': 0, '在保': 1, '混合状态': 2 }
+  return list.sort((a, b) => {
+    // 先按归属项目排序
+    const projectCompare = (a.project_name || '').localeCompare(b.project_name || '', 'zh-CN')
+    if (projectCompare !== 0) return projectCompare
+    // 再按质保状态排序（过保 > 在保 > 混合状态 > 其他）
+    return (statusOrder[a.warranty_status] ?? 3) - (statusOrder[b.warranty_status] ?? 3)
+  })
+}
+
 const filteredData = computed(() => {
   return {
-    traffic_light: applyFilter(trafficLights.value).map(item => ({
+    traffic_light: sortByProjectAndWarranty(applyFilter(trafficLights.value).map(item => ({
       ...item,
       usage_days: calculateUsageDays(item.acceptance_date)
-    })),
-    electronic_police: applyFilter(electronicPolices.value).map(item => ({
+    }))),
+    electronic_police: sortByProjectAndWarranty(applyFilter(electronicPolices.value).map(item => ({
       ...item,
       usage_days: calculateUsageDays(item.acceptance_date)
-    })),
-    parking_enforcement: applyFilter(parkingEnforcements.value).map(item => ({
+    }))),
+    parking_enforcement: sortByProjectAndWarranty(applyFilter(parkingEnforcements.value).map(item => ({
       ...item,
       usage_days: calculateUsageDays(item.acceptance_date)
-    })),
-    checkpoint: applyFilter(checkpoints.value).map(item => ({
+    }))),
+    checkpoint: sortByProjectAndWarranty(applyFilter(checkpoints.value).map(item => ({
       ...item,
       usage_days: calculateUsageDays(item.acceptance_date)
-    })),
-    sky_net: applyFilter(skyNetPoints.value).map(item => ({
+    }))),
+    sky_net: sortByProjectAndWarranty(applyFilter(skyNetPoints.value).map(item => ({
       ...item,
       usage_days: calculateUsageDays(item.acceptance_date)
-    })),
-    backend_device: applyFilter(backendDevices.value).map(item => ({
+    }))),
+    backend_device: sortByProjectAndWarranty(applyFilter(backendDevices.value).map(item => ({
       ...item,
       usage_days: calculateUsageDays(item.acceptance_date)
-    }))
+    })))
   };
 })
 
@@ -487,7 +498,15 @@ const projectSummary = computed(() => {
 
   const result = Array.from(projects.values())
   result.forEach(p => { p.total = p.tl + p.ep + p.pe + p.cp + p.sn + p.bd })
-  return result.sort((a, b) => b.total - a.total)
+  // 按建设单位 + 质保状态排序
+  return result.sort((a, b) => {
+    // 先按建设单位排序
+    const builderCompare = (a.builder || '').localeCompare(b.builder || '', 'zh-CN')
+    if (builderCompare !== 0) return builderCompare
+    // 再按质保状态排序（过保 > 在保 > 混合状态 > 其他）
+    const statusOrder: Record<string, number> = { '过保': 0, '在保': 1, '混合状态': 2 }
+    return (statusOrder[a.warranty_status] ?? 3) - (statusOrder[b.warranty_status] ?? 3)
+  })
 })
 
 const filteredProjectSummary = computed(() => {
