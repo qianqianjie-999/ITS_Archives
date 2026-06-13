@@ -461,20 +461,35 @@ async function fetchStats() {
     const bd = backendDevices.data || []
     const pr = projects.data || []
 
-    // 去重：按路口/点位ID分组，保留质保到期最靠近现在的记录
+    // 通用去重：按路口/点位ID分组，保留质保到期最靠近现在的记录
     const tlDeduped = deduplicateByIntersection(tl)
     const epDeduped = deduplicateByIntersection(ep)
     const peDeduped = deduplicateByPoint(pe)
     const cpDeduped = deduplicateByPoint(cp)
     const snDeduped = deduplicateByPoint(sn)
 
+    // 服役期限专用去重：优先保留选择了项目的记录
+    const tlServiceDeduped = deduplicateForServiceByIntersection(tl)
+    const epServiceDeduped = deduplicateForServiceByIntersection(ep)
+    const peServiceDeduped = deduplicateForServiceByPoint(pe)
+    const cpServiceDeduped = deduplicateForServiceByPoint(cp)
+    const snServiceDeduped = deduplicateForServiceByPoint(sn)
+    const bdServiceDeduped = deduplicateForServiceByPoint(bd)
+
+    // 计算去重后的路口/点位数量（与统计卡片保持一致，统一使用原始数据去重）
+    const trafficLightsCount = new Set(tl.map(t => t.intersection_id)).size
+    const electronicPolicesCount = new Set(ep.map(e => e.intersection_id)).size
+    const parkingEnforcementsCount = new Set(pe.map(p => p.point_id)).size
+    const checkpointsCount = new Set(cp.map(c => c.point_id)).size
+    const skyNetPointsCount = new Set(sn.map(s => s.point_id)).size
+
     stats.value = {
       intersections: intersections.data?.length || 0,
-      trafficLights: new Set(tl.map(t => t.intersection_id)).size,
-      electronicPolices: new Set(ep.map(e => e.intersection_id)).size,
-      parkingEnforcements: new Set(peDeduped.map(p => p.point_id)).size,
-      checkpoints: new Set(cpDeduped.map(c => c.point_id)).size,
-      skyNetPoints: new Set(snDeduped.map(s => s.point_id)).size,
+      trafficLights: trafficLightsCount,
+      electronicPolices: electronicPolicesCount,
+      parkingEnforcements: parkingEnforcementsCount,
+      checkpoints: checkpointsCount,
+      skyNetPoints: skyNetPointsCount,
       projects: pr.length,
       backendDevices: bd.length
     }
@@ -487,11 +502,11 @@ async function fetchStats() {
     const t6 = countWarranty(bd)
 
     warrantyByType.value = [
-      { label: '信号灯', inCoverage: t1.inCoverage, expired: t1.expired, total: tlDeduped.length },
-      { label: '电子警察', inCoverage: t2.inCoverage, expired: t2.expired, total: epDeduped.length },
-      { label: '违停球', inCoverage: t3.inCoverage, expired: t3.expired, total: peDeduped.length },
-      { label: '卡口', inCoverage: t4.inCoverage, expired: t4.expired, total: cpDeduped.length },
-      { label: '结构化相机', inCoverage: t5.inCoverage, expired: t5.expired, total: snDeduped.length },
+      { label: '信号灯', inCoverage: t1.inCoverage, expired: t1.expired, total: trafficLightsCount },
+      { label: '电子警察', inCoverage: t2.inCoverage, expired: t2.expired, total: electronicPolicesCount },
+      { label: '违停球', inCoverage: t3.inCoverage, expired: t3.expired, total: parkingEnforcementsCount },
+      { label: '卡口', inCoverage: t4.inCoverage, expired: t4.expired, total: checkpointsCount },
+      { label: '结构化相机', inCoverage: t5.inCoverage, expired: t5.expired, total: skyNetPointsCount },
       { label: '后端设备', inCoverage: t6.inCoverage, expired: t6.expired, total: bd.length }
     ]
 
@@ -511,12 +526,12 @@ async function fetchStats() {
     expiringDevices.value.sort((a, b) => (a.expire > b.expire ? 1 : -1))
 
     serviceRanking.value = []
-    collectServiceDuration(tlDeduped, 'intersection_name', '信号灯')
-    collectServiceDuration(epDeduped, 'intersection_name', '电子警察')
-    collectServiceDuration(peDeduped, 'point_name', '违停球')
-    collectServiceDuration(cpDeduped, 'point_name', '卡口')
-    collectServiceDuration(snDeduped, 'point_name', '结构化相机')
-    collectServiceDuration(bd, 'name', '后端设备')
+    collectServiceDuration(tlServiceDeduped, 'intersection_name', '信号灯')
+    collectServiceDuration(epServiceDeduped, 'intersection_name', '电子警察')
+    collectServiceDuration(peServiceDeduped, 'point_name', '违停球')
+    collectServiceDuration(cpServiceDeduped, 'point_name', '卡口')
+    collectServiceDuration(snServiceDeduped, 'point_name', '结构化相机')
+    collectServiceDuration(bdServiceDeduped, 'name', '后端设备')
     serviceRanking.value.sort((a, b) => (parseFloat(b.duration) - parseFloat(a.duration)))
 
     // 建设单位排名：按设备→项目→建设单位统计（按点位去重）
@@ -605,6 +620,7 @@ async function fetchStats() {
   }
 }
 
+// ========== 通用去重：按质保到期日期更靠近当前的记录 ==========
 function deduplicateByIntersection(items: any[]): any[] {
   const map = new Map<number, any>()
   items.forEach(item => {
@@ -637,6 +653,50 @@ function deduplicateByPoint(items: any[]): any[] {
     }
   })
   return Array.from(map.values())
+}
+
+// ========== 服役期限专用去重：优先保留选择了项目的记录 ==========
+function deduplicateForServiceByIntersection(items: any[]): any[] {
+  const map = new Map<number, any>()
+  items.forEach(item => {
+    const id = item.intersection_id
+    if (!id) return
+    if (!map.has(id)) {
+      map.set(id, item)
+    } else {
+      const existing = map.get(id)
+      if (shouldReplaceForProject(existing, item)) {
+        map.set(id, item)
+      }
+    }
+  })
+  return Array.from(map.values())
+}
+
+function deduplicateForServiceByPoint(items: any[]): any[] {
+  const map = new Map<number, any>()
+  items.forEach(item => {
+    const id = item.point_id || item.id
+    if (!id) return
+    if (!map.has(id)) {
+      map.set(id, item)
+    } else {
+      const existing = map.get(id)
+      if (shouldReplaceForProject(existing, item)) {
+        map.set(id, item)
+      }
+    }
+  })
+  return Array.from(map.values())
+}
+
+function shouldReplaceForProject(existing: any, item: any): boolean {
+  // 新记录有项目，旧记录没有项目 → 替换
+  if (item.project_id && !existing.project_id) return true
+  // 新记录没有项目，旧记录有项目 → 不替换
+  if (!item.project_id && existing.project_id) return false
+  // 两者都有项目或都没有项目 → 按质保到期日期判断
+  return warrantyCloserToNow(existing.warranty_expire_date, item.warranty_expire_date)
 }
 
 function warrantyCloserToNow(existingDate: string | undefined, newDate: string | undefined): boolean {
