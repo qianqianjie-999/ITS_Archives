@@ -383,11 +383,11 @@ function calculateUsageDays(acceptanceDate: string): string {
 function sortByProjectAndWarranty(list: any[]) {
   const statusOrder: Record<string, number> = { '过保': 0, '在保': 1, '混合状态': 2 }
   return list.sort((a, b) => {
-    // 先按归属项目排序
-    const projectCompare = (a.project_name || '').localeCompare(b.project_name || '', 'zh-CN')
-    if (projectCompare !== 0) return projectCompare
-    // 再按质保状态排序（过保 > 在保 > 混合状态 > 其他）
-    return (statusOrder[a.warranty_status] ?? 3) - (statusOrder[b.warranty_status] ?? 3)
+    // 先按质保状态排序（过保 > 在保 > 混合状态 > 其他）
+    const statusCompare = (statusOrder[a.warranty_status] ?? 3) - (statusOrder[b.warranty_status] ?? 3)
+    if (statusCompare !== 0) return statusCompare
+    // 再按归属项目排序
+    return (a.project_name || '').localeCompare(b.project_name || '', 'zh-CN')
   })
 }
 
@@ -498,14 +498,14 @@ const projectSummary = computed(() => {
 
   const result = Array.from(projects.values())
   result.forEach(p => { p.total = p.tl + p.ep + p.pe + p.cp + p.sn + p.bd })
-  // 按建设单位 + 质保状态排序
+  // 按质保状态 + 建设单位排序
   return result.sort((a, b) => {
-    // 先按建设单位排序
-    const builderCompare = (a.builder || '').localeCompare(b.builder || '', 'zh-CN')
-    if (builderCompare !== 0) return builderCompare
-    // 再按质保状态排序（过保 > 在保 > 混合状态 > 其他）
+    // 先按质保状态排序（过保 > 在保 > 混合状态 > 其他）
     const statusOrder: Record<string, number> = { '过保': 0, '在保': 1, '混合状态': 2 }
-    return (statusOrder[a.warranty_status] ?? 3) - (statusOrder[b.warranty_status] ?? 3)
+    const statusCompare = (statusOrder[a.warranty_status] ?? 3) - (statusOrder[b.warranty_status] ?? 3)
+    if (statusCompare !== 0) return statusCompare
+    // 再按建设单位排序
+    return (a.builder || '').localeCompare(b.builder || '', 'zh-CN')
   })
 })
 
