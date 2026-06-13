@@ -141,7 +141,7 @@
           <el-table-column prop="radar_count" label="车流量雷达" width="100" align="center" />
           <el-table-column prop="guide_screen_count" label="诱导屏" width="80" align="center" />
           <el-table-column prop="power_source" label="取电说明" min-width="120" show-overflow-tooltip />
-          <el-table-column prop="usage_days" label="使用时长（天）" width="120" align="center" />
+          <el-table-column prop="usage_days" label="使用时长（年）" width="120" align="center" />
         </el-table>
       </el-tab-pane>
 
@@ -176,7 +176,7 @@
           <el-table-column prop="ptz_count" label="监控球机" width="90" align="center" />
           <el-table-column prop="signal_detector_count" label="信号检测器" width="100" align="center" />
           <el-table-column prop="network_source" label="取网说明" min-width="120" show-overflow-tooltip />
-          <el-table-column prop="usage_days" label="使用时长（天）" width="120" align="center" />
+          <el-table-column prop="usage_days" label="使用时长（年）" width="120" align="center" />
         </el-table>
       </el-tab-pane>
 
@@ -207,7 +207,7 @@
           <el-table-column prop="monitor_sign_count" label="监控标牌" width="90" align="center" />
           <el-table-column prop="power_source" label="取电说明" min-width="120" show-overflow-tooltip />
           <el-table-column prop="network_source" label="取网说明" min-width="120" show-overflow-tooltip />
-          <el-table-column prop="usage_days" label="使用时长（天）" width="120" align="center" />
+          <el-table-column prop="usage_days" label="使用时长（年）" width="120" align="center" />
         </el-table>
       </el-tab-pane>
 
@@ -239,7 +239,7 @@
           <el-table-column prop="sign_count" label="标牌数量" width="90" align="center" />
           <el-table-column prop="power_source" label="取电说明" min-width="120" show-overflow-tooltip />
           <el-table-column prop="network_source" label="取网说明" min-width="120" show-overflow-tooltip />
-          <el-table-column prop="usage_days" label="使用时长（天）" width="120" align="center" />
+          <el-table-column prop="usage_days" label="使用时长（年）" width="120" align="center" />
         </el-table>
       </el-tab-pane>
 
@@ -273,7 +273,7 @@
           <el-table-column prop="speaker_count" label="音箱数量" width="90" align="center" />
           <el-table-column prop="power_source" label="取电说明" min-width="120" show-overflow-tooltip />
           <el-table-column prop="network_source" label="取网说明" min-width="120" show-overflow-tooltip />
-          <el-table-column prop="usage_days" label="使用时长（天）" width="120" align="center" />
+          <el-table-column prop="usage_days" label="使用时长（年）" width="120" align="center" />
         </el-table>
       </el-tab-pane>
 
@@ -301,7 +301,7 @@
           </el-table-column>
           <el-table-column prop="construction_unit" label="建设单位" min-width="110" />
           <el-table-column prop="construction_company" label="施工单位" min-width="110" />
-          <el-table-column prop="usage_days" label="使用时长（天）" width="120" align="center" />
+          <el-table-column prop="usage_days" label="使用时长（年）" width="120" align="center" />
         </el-table>
       </el-tab-pane>
     </el-tabs>
@@ -371,13 +371,13 @@ function applyFilter(list: any[]) {
   });
 }
 
-function calculateUsageDays(acceptanceDate: string): string {
+function calculateUsageYears(acceptanceDate: string): string {
   if (!acceptanceDate) return '';
   const accDate = new Date(acceptanceDate);
   const today = new Date();
   const diffTime = Math.abs(today.getTime() - accDate.getTime());
-  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-  return diffDays.toString();
+  const diffYears = diffTime / (1000 * 60 * 60 * 24 * 365);
+  return diffYears.toFixed(1);
 }
 
 function sortByProjectAndWarranty(list: any[]) {
@@ -395,27 +395,27 @@ const filteredData = computed(() => {
   return {
     traffic_light: sortByProjectAndWarranty(applyFilter(trafficLights.value).map(item => ({
       ...item,
-      usage_days: calculateUsageDays(item.acceptance_date)
+      usage_days: calculateUsageYears(item.acceptance_date)
     }))),
     electronic_police: sortByProjectAndWarranty(applyFilter(electronicPolices.value).map(item => ({
       ...item,
-      usage_days: calculateUsageDays(item.acceptance_date)
+      usage_days: calculateUsageYears(item.acceptance_date)
     }))),
     parking_enforcement: sortByProjectAndWarranty(applyFilter(parkingEnforcements.value).map(item => ({
       ...item,
-      usage_days: calculateUsageDays(item.acceptance_date)
+      usage_days: calculateUsageYears(item.acceptance_date)
     }))),
     checkpoint: sortByProjectAndWarranty(applyFilter(checkpoints.value).map(item => ({
       ...item,
-      usage_days: calculateUsageDays(item.acceptance_date)
+      usage_days: calculateUsageYears(item.acceptance_date)
     }))),
     sky_net: sortByProjectAndWarranty(applyFilter(skyNetPoints.value).map(item => ({
       ...item,
-      usage_days: calculateUsageDays(item.acceptance_date)
+      usage_days: calculateUsageYears(item.acceptance_date)
     }))),
     backend_device: sortByProjectAndWarranty(applyFilter(backendDevices.value).map(item => ({
       ...item,
-      usage_days: calculateUsageDays(item.acceptance_date)
+      usage_days: calculateUsageYears(item.acceptance_date)
     })))
   };
 })
