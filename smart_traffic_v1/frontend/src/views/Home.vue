@@ -461,30 +461,37 @@ async function fetchStats() {
     const bd = backendDevices.data || []
     const pr = projects.data || []
 
+    // 去重：按路口/点位ID分组，保留质保到期最靠近现在的记录
+    const tlDeduped = deduplicateByIntersection(tl)
+    const epDeduped = deduplicateByIntersection(ep)
+    const peDeduped = deduplicateByPoint(pe)
+    const cpDeduped = deduplicateByPoint(cp)
+    const snDeduped = deduplicateByPoint(sn)
+
     stats.value = {
       intersections: intersections.data?.length || 0,
       trafficLights: new Set(tl.map(t => t.intersection_id)).size,
       electronicPolices: new Set(ep.map(e => e.intersection_id)).size,
-      parkingEnforcements: pe.length,
-      checkpoints: cp.length,
-      skyNetPoints: sn.length,
+      parkingEnforcements: new Set(peDeduped.map(p => p.point_id)).size,
+      checkpoints: new Set(cpDeduped.map(c => c.point_id)).size,
+      skyNetPoints: new Set(snDeduped.map(s => s.point_id)).size,
       projects: pr.length,
       backendDevices: bd.length
     }
 
-    const t1 = countWarranty(tl)
-    const t2 = countWarranty(ep)
-    const t3 = countWarranty(pe)
-    const t4 = countWarranty(cp)
-    const t5 = countWarranty(sn)
+    const t1 = countWarranty(tlDeduped)
+    const t2 = countWarranty(epDeduped)
+    const t3 = countWarranty(peDeduped)
+    const t4 = countWarranty(cpDeduped)
+    const t5 = countWarranty(snDeduped)
     const t6 = countWarranty(bd)
 
     warrantyByType.value = [
-      { label: '信号灯', inCoverage: t1.inCoverage, expired: t1.expired, total: tl.length },
-      { label: '电子警察', inCoverage: t2.inCoverage, expired: t2.expired, total: ep.length },
-      { label: '违停球', inCoverage: t3.inCoverage, expired: t3.expired, total: pe.length },
-      { label: '卡口', inCoverage: t4.inCoverage, expired: t4.expired, total: cp.length },
-      { label: '结构化相机', inCoverage: t5.inCoverage, expired: t5.expired, total: sn.length },
+      { label: '信号灯', inCoverage: t1.inCoverage, expired: t1.expired, total: tlDeduped.length },
+      { label: '电子警察', inCoverage: t2.inCoverage, expired: t2.expired, total: epDeduped.length },
+      { label: '违停球', inCoverage: t3.inCoverage, expired: t3.expired, total: peDeduped.length },
+      { label: '卡口', inCoverage: t4.inCoverage, expired: t4.expired, total: cpDeduped.length },
+      { label: '结构化相机', inCoverage: t5.inCoverage, expired: t5.expired, total: snDeduped.length },
       { label: '后端设备', inCoverage: t6.inCoverage, expired: t6.expired, total: bd.length }
     ]
 
@@ -495,20 +502,20 @@ async function fetchStats() {
     }
 
     expiringDevices.value = []
-    collectExpiring(tl, 'intersection_name', '信号灯')
-    collectExpiring(ep, 'intersection_name', '电子警察')
-    collectExpiring(pe, 'point_name', '违停球')
-    collectExpiring(cp, 'point_name', '卡口')
-    collectExpiring(sn, 'point_name', '结构化相机')
+    collectExpiring(tlDeduped, 'intersection_name', '信号灯')
+    collectExpiring(epDeduped, 'intersection_name', '电子警察')
+    collectExpiring(peDeduped, 'point_name', '违停球')
+    collectExpiring(cpDeduped, 'point_name', '卡口')
+    collectExpiring(snDeduped, 'point_name', '结构化相机')
     collectExpiring(bd, 'name', '后端设备')
     expiringDevices.value.sort((a, b) => (a.expire > b.expire ? 1 : -1))
 
     serviceRanking.value = []
-    collectServiceDuration(tl, 'intersection_name', '信号灯')
-    collectServiceDuration(ep, 'intersection_name', '电子警察')
-    collectServiceDuration(pe, 'point_name', '违停球')
-    collectServiceDuration(cp, 'point_name', '卡口')
-    collectServiceDuration(sn, 'point_name', '结构化相机')
+    collectServiceDuration(tlDeduped, 'intersection_name', '信号灯')
+    collectServiceDuration(epDeduped, 'intersection_name', '电子警察')
+    collectServiceDuration(peDeduped, 'point_name', '违停球')
+    collectServiceDuration(cpDeduped, 'point_name', '卡口')
+    collectServiceDuration(snDeduped, 'point_name', '结构化相机')
     collectServiceDuration(bd, 'name', '后端设备')
     serviceRanking.value.sort((a, b) => (parseFloat(b.duration) - parseFloat(a.duration)))
 
@@ -596,6 +603,49 @@ async function fetchStats() {
   } catch (error) {
     console.error('获取统计数据失败', error)
   }
+}
+
+function deduplicateByIntersection(items: any[]): any[] {
+  const map = new Map<number, any>()
+  items.forEach(item => {
+    const id = item.intersection_id
+    if (!id) return
+    if (!map.has(id)) {
+      map.set(id, item)
+    } else {
+      const existing = map.get(id)
+      if (warrantyCloserToNow(existing.warranty_expire_date, item.warranty_expire_date)) {
+        map.set(id, item)
+      }
+    }
+  })
+  return Array.from(map.values())
+}
+
+function deduplicateByPoint(items: any[]): any[] {
+  const map = new Map<number, any>()
+  items.forEach(item => {
+    const id = item.point_id || item.id
+    if (!id) return
+    if (!map.has(id)) {
+      map.set(id, item)
+    } else {
+      const existing = map.get(id)
+      if (warrantyCloserToNow(existing.warranty_expire_date, item.warranty_expire_date)) {
+        map.set(id, item)
+      }
+    }
+  })
+  return Array.from(map.values())
+}
+
+function warrantyCloserToNow(existingDate: string | undefined, newDate: string | undefined): boolean {
+  if (!existingDate) return !!newDate
+  if (!newDate) return false
+  const now = new Date().getTime()
+  const existingDiff = Math.abs(new Date(existingDate).getTime() - now)
+  const newDiff = Math.abs(new Date(newDate).getTime() - now)
+  return newDiff < existingDiff
 }
 
 function handleDataUpdated() {
