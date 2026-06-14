@@ -461,6 +461,7 @@ async function submitWarranty() {
     warrantyForm.value.warranty_expire_date = ''
     fetchData()
     fetchWarrantyRecords(selectedDevice.value!.id)
+    eventBus.emit('dataUpdated', 'backendDevice', 'update', selectedDevice.value!.id)
   } catch (error: any) {
     ElMessage.error(error?.response?.data?.message || '质保延期失败')
   }
@@ -487,9 +488,11 @@ async function submitBackendDevice() {
     if (editForm.value.id) {
       await backendDeviceApi.update(editForm.value.id, data)
       ElMessage.success('更新成功')
+      eventBus.emit('dataUpdated', 'backendDevice', 'update', editForm.value.id)
     } else {
       await backendDeviceApi.create(data)
       ElMessage.success('创建成功')
+      eventBus.emit('dataUpdated', 'backendDevice', 'create')
     }
     showDialog.value = false
     fetchData()
@@ -511,6 +514,7 @@ async function deleteBackendDevice(id: number) {
       maintenanceRecords.value = []
     }
     fetchData()
+    eventBus.emit('dataUpdated', 'backendDevice', 'delete', id)
   } catch (error: any) {
     if (error !== 'cancel') {
       ElMessage.error(error?.response?.data?.message || '删除失败')
@@ -547,6 +551,7 @@ async function submitMaintenance() {
     maintenanceForm.value.fault_description = ''
     maintenanceForm.value.solution = ''
     await fetchMaintenanceRecords(selectedDevice.value!.id)
+    eventBus.emit('dataUpdated', 'maintenance', 'create')
   } catch (error) {
     ElMessage.error('添加失败')
   }
@@ -558,6 +563,7 @@ async function deleteMaintenanceRecord(id: number) {
     await maintenanceApi.deleteMaintenanceRecord(id)
     ElMessage.success('删除成功')
     await fetchMaintenanceRecords(selectedDevice.value!.id)
+    eventBus.emit('dataUpdated', 'maintenance', 'delete', id)
   } catch (error: any) {
     if (error !== 'cancel') {
       ElMessage.error(error?.response?.data?.message || '删除失败')
@@ -609,6 +615,7 @@ async function handleFileUpload(event: Event) {
     await attachmentApi.upload(file, 'backend_device', selectedDevice.value.id)
     ElMessage.success('上传成功')
     await fetchAttachments(selectedDevice.value.id)
+    eventBus.emit('dataUpdated', 'attachment', 'create')
     target.value = ''
   } catch (error) {
     ElMessage.error('上传失败')
@@ -633,6 +640,7 @@ async function deleteAttachment(id: number) {
     if (selectedDevice.value) {
       await fetchAttachments(selectedDevice.value.id)
     }
+    eventBus.emit('dataUpdated', 'attachment', 'delete', id)
   } catch (error: any) {
     if (error !== 'cancel') {
       ElMessage.error(error?.response?.data?.message || '删除失败')

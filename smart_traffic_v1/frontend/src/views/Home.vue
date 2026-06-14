@@ -237,7 +237,7 @@ import { useRouter } from 'vue-router'
 import { intersectionApi } from '@/api/intersections'
 import { pointApi, checkpointPointApi, backendDeviceApi, skyNetApi } from '@/api/points'
 import { projectApi } from '@/api/projects'
-import { eventBus } from '@/utils/eventBus'
+import { eventBus, DataEventPayload } from '@/utils/eventBus'
 import {
   Location, Camera, Folder, Monitor, Clock, Bell,
   DocumentAdd, Plus, SuccessFilled, DataAnalysis, PieChart, ArrowRight
@@ -657,7 +657,7 @@ function warrantyCloserToNow(existingDate: string | undefined, newDate: string |
   return newDiff < existingDiff
 }
 
-function handleDataUpdated() {
+function handleDataUpdated(_payload: DataEventPayload) {
   fetchStats()
 }
 

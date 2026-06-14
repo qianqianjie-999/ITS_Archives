@@ -323,12 +323,12 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { ElMessage } from 'element-plus'
-import { Download, Search } from '@element-plus/icons-vue'
+import { Download, Search, Refresh } from '@element-plus/icons-vue'
 import { intersectionApi } from '@/api/intersections'
 import { pointApi, checkpointPointApi, backendDeviceApi, skyNetApi } from '@/api/points'
 import { projectApi } from '@/api/projects'
 import apiClient from '@/api'
-import { eventBus } from '@/utils/eventBus'
+import { eventBus, DataEventPayload, DataEventType } from '@/utils/eventBus'
 
 const loading = ref(false)
 const activeTab = ref('traffic_light')
@@ -724,10 +724,19 @@ async function exportData() {
   }
 }
 
+async function fetchProjectsData() {
+  try {
+    const p = await projectApi.list({ per_page: 0 })
+    projects.value = p.data || []
+  } catch (error) {
+    console.error('获取项目数据失败', error)
+  }
+}
+
 async function fetchTrafficLightData() {
   try {
     const tl = await intersectionApi.getTrafficLightsAll()
-    trafficLights.value = tl.data || []
+    trafficLights.value = deduplicateByIntersection(tl.data || [])
   } catch (error) {
     console.error('获取信号灯数据失败', error)
   }
@@ -736,27 +745,74 @@ async function fetchTrafficLightData() {
 async function fetchElectronicPoliceData() {
   try {
     const ep = await intersectionApi.getElectronicPolicesAll()
-    electronicPolices.value = ep.data || []
+    electronicPolices.value = deduplicateByIntersection(ep.data || [])
   } catch (error) {
     console.error('获取电子警察数据失败', error)
   }
 }
 
-function handleDataUpdated(type?: string) {
-  if (!type) {
-    fetchData()
-    return
+async function fetchParkingEnforcementData() {
+  try {
+    const pe = await pointApi.getParkingEnforcementsAll()
+    parkingEnforcements.value = deduplicateByPoint(pe.data || [])
+  } catch (error) {
+    console.error('获取违停球数据失败', error)
   }
-  
-  switch (type) {
-    case 'trafficLight':
-      fetchTrafficLightData()
-      break
-    case 'electronicPolice':
-      fetchElectronicPoliceData()
-      break
-    default:
-      fetchData()
+}
+
+async function fetchCheckpointData() {
+  try {
+    const cp = await checkpointPointApi.getCheckpointsAll()
+    checkpoints.value = deduplicateByPoint(cp.data || [])
+  } catch (error) {
+    console.error('获取卡口数据失败', error)
+  }
+}
+
+async function fetchSkyNetData() {
+  try {
+    const sn = await skyNetApi.getSkyNetsAll()
+    skyNetPoints.value = deduplicateByPoint(sn.data || [])
+  } catch (error) {
+    console.error('获取结构化相机数据失败', error)
+  }
+}
+
+async function fetchBackendDeviceData() {
+  try {
+    const bd = await backendDeviceApi.list({ per_page: 0 })
+    backendDevices.value = bd.data || []
+  } catch (error) {
+    console.error('获取后端设备数据失败', error)
+  }
+}
+
+function handleDataUpdated(payload: DataEventPayload) {
+  const type = payload.type
+
+  const typeToFetcher: Record<DataEventType, () => Promise<void>> = {
+    intersection: () => Promise.all([fetchTrafficLightData(), fetchElectronicPoliceData()]).then(),
+    trafficLight: fetchTrafficLightData,
+    electronicPolice: fetchElectronicPoliceData,
+    parkingEnforcement: fetchParkingEnforcementData,
+    parkingEnforcementPoint: fetchParkingEnforcementData,
+    checkpoint: fetchCheckpointData,
+    checkpointPoint: fetchCheckpointData,
+    skyNet: fetchSkyNetData,
+    skyNetPoint: fetchSkyNetData,
+    backendDevice: fetchBackendDeviceData,
+    project: () => Promise.all([fetchProjectsData(), fetchData()]).then(),
+    warrantyExtension: fetchData,
+    maintenance: fetchData,
+    attachment: fetchData,
+    all: fetchData
+  }
+
+  const fetcher = typeToFetcher[type]
+  if (fetcher) {
+    fetcher()
+  } else {
+    fetchData()
   }
 }
 

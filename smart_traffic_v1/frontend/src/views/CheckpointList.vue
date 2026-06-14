@@ -201,6 +201,7 @@ function submitPoint() {
       ElMessage.success('编辑成功')
       showDialog.value = false
       loadPoints()
+      eventBus.emit('dataUpdated', 'checkpointPoint', 'update', editPointForm.id)
     }).catch((err) => {
       ElMessage.error(err.response?.data?.message || '编辑失败')
     })
@@ -209,6 +210,7 @@ function submitPoint() {
       ElMessage.success('创建成功')
       showDialog.value = false
       loadPoints()
+      eventBus.emit('dataUpdated', 'checkpointPoint', 'create')
     }).catch((err) => {
       ElMessage.error(err.response?.data?.message || '创建失败')
     })
@@ -224,6 +226,7 @@ function deletePoint(id: number) {
     checkpointPointApi.delete(id).then(() => {
       ElMessage.success('删除成功')
       loadPoints()
+      eventBus.emit('dataUpdated', 'checkpointPoint', 'delete', id)
     }).catch((err) => {
       ElMessage.error(err.response?.data?.message || '删除失败')
     })

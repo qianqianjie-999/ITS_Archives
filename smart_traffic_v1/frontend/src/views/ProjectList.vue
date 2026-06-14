@@ -201,9 +201,11 @@ async function submitProject() {
     if (editProjectForm.id) {
       await projectApi.update(editProjectForm.id, data)
       ElMessage.success('更新成功')
+      eventBus.emit('dataUpdated', 'project', 'update', editProjectForm.id)
     } else {
       await projectApi.create(data)
       ElMessage.success('创建成功')
+      eventBus.emit('dataUpdated', 'project', 'create')
     }
     showDialog.value = false
     fetchData()
@@ -218,6 +220,7 @@ async function deleteProject(id: number) {
     await projectApi.delete(id)
     ElMessage.success('删除成功')
     fetchData()
+    eventBus.emit('dataUpdated', 'project', 'delete', id)
   } catch (error: any) {
     if (error !== 'cancel') {
       ElMessage.error(error?.response?.data?.message || '删除失败')

@@ -195,6 +195,7 @@ function submitPoint() {
       ElMessage.success('编辑成功')
       showDialog.value = false
       loadPoints()
+      eventBus.emit('dataUpdated', 'parkingEnforcementPoint', 'update', editPointForm.id)
     }).catch((err) => {
       ElMessage.error(err.response?.data?.message || '编辑失败')
     })
@@ -203,6 +204,7 @@ function submitPoint() {
       ElMessage.success('新增成功')
       showDialog.value = false
       loadPoints()
+      eventBus.emit('dataUpdated', 'parkingEnforcementPoint', 'create')
     }).catch((err) => {
       ElMessage.error(err.response?.data?.message || '新增失败')
     })
@@ -218,6 +220,7 @@ function deletePoint(id: number) {
     pointApi.delete(id).then(() => {
       ElMessage.success('删除成功')
       loadPoints()
+      eventBus.emit('dataUpdated', 'parkingEnforcementPoint', 'delete', id)
     }).catch((err) => {
       ElMessage.error(err.response?.data?.message || '删除失败')
     })

@@ -288,6 +288,7 @@ import { projectApi } from '@/api/projects'
 import { maintenanceApi } from '@/api/maintenance'
 import { attachmentApi, type Attachment } from '@/api/attachments'
 import { useUserStore } from '@/stores/user'
+import { eventBus } from '@/utils/eventBus'
 import type { CheckpointPoint, Checkpoint, Project, WarrantyExtension } from '@/types'
 import { formatDateTime } from '@/utils/date'
 
@@ -423,6 +424,7 @@ function submitDevice() {
       ElMessage.success('编辑成功')
       showAddDialog.value = false
       loadData()
+      eventBus.emit('dataUpdated', 'checkpoint', 'update', editForm.id)
     }).catch((err) => {
       ElMessage.error(err.response?.data?.message || '编辑失败')
     })
@@ -431,6 +433,7 @@ function submitDevice() {
       ElMessage.success('新增成功')
       showAddDialog.value = false
       loadData()
+      eventBus.emit('dataUpdated', 'checkpoint', 'create')
     }).catch((err) => {
       ElMessage.error(err.response?.data?.message || '新增失败')
     })
@@ -447,6 +450,7 @@ function deleteDevice(id: number) {
     checkpointPointApi.deleteCheckpoint(pointId, id).then(() => {
       ElMessage.success('删除成功')
       loadData()
+      eventBus.emit('dataUpdated', 'checkpoint', 'delete', id)
     }).catch((err) => {
       ElMessage.error(err.response?.data?.message || '删除失败')
     })
@@ -519,6 +523,7 @@ function submitExtendWarranty() {
     extendWarrantyForm.project_id = undefined
     extendWarrantyForm.warranty_expire_date = ''
     loadData()
+    eventBus.emit('dataUpdated', 'checkpoint', 'update')
   }).catch((err) => {
     ElMessage.error(err.response?.data?.message || '质保延期失败')
   })
@@ -533,6 +538,7 @@ function deleteWarrantyExtension(id: number) {
     projectApi.deleteWarrantyExtension(id).then(() => {
       ElMessage.success('删除成功')
       loadData()
+      eventBus.emit('dataUpdated', 'warrantyExtension', 'delete', id)
     }).catch((err) => {
       ElMessage.error(err.response?.data?.message || '删除失败')
     })
@@ -569,6 +575,7 @@ async function submitMaintenance() {
     maintenanceForm.fault_time = ''
     maintenanceForm.solution = ''
     await fetchMaintenanceRecords()
+    eventBus.emit('dataUpdated', 'maintenance', 'create')
   } catch (error) {
     ElMessage.error('添加失败')
   }
@@ -580,6 +587,7 @@ async function deleteMaintenanceRecord(id: number) {
     await maintenanceApi.deleteMaintenanceRecord(id)
     ElMessage.success('删除成功')
     await fetchMaintenanceRecords()
+    eventBus.emit('dataUpdated', 'maintenance', 'delete', id)
   } catch (error: any) {
     if (error !== 'cancel') {
       ElMessage.error(error?.response?.data?.message || '删除失败')

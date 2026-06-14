@@ -188,9 +188,11 @@ async function submitIntersection() {
     if (editIntersectionForm.id) {
       await intersectionApi.update(editIntersectionForm.id, editIntersectionForm)
       ElMessage.success('更新成功')
+      eventBus.emit('dataUpdated', 'intersection', 'update', editIntersectionForm.id)
     } else {
       await intersectionApi.create(editIntersectionForm)
       ElMessage.success('创建成功')
+      eventBus.emit('dataUpdated', 'intersection', 'create')
     }
     showDialog.value = false
     editIntersectionForm.id = undefined
@@ -210,6 +212,7 @@ async function deleteIntersection(id: number) {
     await intersectionApi.delete(id)
     ElMessage.success('删除成功')
     fetchData()
+    eventBus.emit('dataUpdated', 'intersection', 'delete', id)
   } catch (error: any) {
     if (error !== 'cancel') {
       ElMessage.error(error?.response?.data?.message || '删除失败')

@@ -747,6 +747,7 @@ async function deleteAttachment(id: number) {
     await attachmentApi.delete(id)
     ElMessage.success('删除成功')
     fetchAttachments()
+    eventBus.emit('dataUpdated', 'attachment', 'delete', id)
   } catch (error: any) {
     if (error !== 'cancel') {
       ElMessage.error(error?.response?.data?.message || '删除失败')
@@ -781,6 +782,7 @@ async function handleFileUpload(event: Event) {
       await attachmentApi.upload(file, 'intersection', Number(route.params.id))
       ElMessage.success('上传成功')
       fetchAttachments()
+      eventBus.emit('dataUpdated', 'attachment', 'create')
     } catch (error) {
       ElMessage.error('上传失败')
     }
@@ -865,6 +867,7 @@ async function deleteWarrantyRecord(id: number) {
     ElMessage.success('删除成功')
     fetchWarrantyRecords()
     fetchData()
+    eventBus.emit('dataUpdated', 'warrantyExtension', 'delete', id)
   } catch (error: any) {
     if (error !== 'cancel') {
       ElMessage.error(error?.response?.data?.message || '删除失败')
@@ -891,6 +894,8 @@ async function submitWarranty() {
     warrantyForm.expireDate = ''
     await fetchWarrantyRecords()
     await fetchData()
+    eventBus.emit('dataUpdated', 'trafficLight', 'update')
+    eventBus.emit('dataUpdated', 'electronicPolice', 'update')
   } catch (error) {
     ElMessage.error('申请失败')
   }
@@ -917,6 +922,7 @@ async function submitMaintenance() {
     maintenanceForm.fault_time = ''
     maintenanceForm.solution = ''
     await fetchMaintenanceRecords()
+    eventBus.emit('dataUpdated', 'maintenance', 'create')
   } catch (error) {
     ElMessage.error('添加失败')
   }
@@ -928,6 +934,7 @@ async function deleteMaintenanceRecord(id: number) {
     await maintenanceApi.deleteMaintenanceRecord(id)
     ElMessage.success('删除成功')
     await fetchMaintenanceRecords()
+    eventBus.emit('dataUpdated', 'maintenance', 'delete', id)
   } catch (error: any) {
     if (error !== 'cancel') {
       ElMessage.error(error?.response?.data?.message || '删除失败')
