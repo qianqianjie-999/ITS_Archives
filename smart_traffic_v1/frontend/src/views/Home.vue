@@ -539,18 +539,35 @@ async function fetchStats() {
     pr.forEach((p: any) => {
       if (p.id && p.builder) projectToBuilder[p.id] = p.builder
     })
-    const countByBuilder = (items: any[]) => {
-      items.forEach((item: any) => {
+    const countByBuilderWithDedup = (items: any[], getId: (item: any) => number | string | undefined) => {
+      const kept = new Map<number | string, any>()
+      items.forEach(item => {
+        const id = getId(item)
+        if (!id) return
+        const existing = kept.get(id)
+        if (!existing) {
+          kept.set(id, item)
+        } else {
+          if (item.project_id && !existing.project_id) {
+            kept.set(id, item)
+          } else if (!item.project_id && existing.project_id) {
+            return
+          } else if (warrantyCloserToNow(existing.warranty_expire_date, item.warranty_expire_date)) {
+            kept.set(id, item)
+          }
+        }
+      })
+      kept.forEach(item => {
         const unit = projectToBuilder[item.project_id]
         if (unit) builderMap[unit] = (builderMap[unit] || 0) + 1
       })
     }
-    countByBuilder(tlDeduped)
-    countByBuilder(epDeduped)
-    countByBuilder(peDeduped)
-    countByBuilder(cpDeduped)
-    countByBuilder(snDeduped)
-    countByBuilder(deduplicateByPoint(bd))
+    countByBuilderWithDedup(tl, item => item.intersection_id)
+    countByBuilderWithDedup(ep, item => item.intersection_id)
+    countByBuilderWithDedup(pe, item => item.point_id)
+    countByBuilderWithDedup(cp, item => item.point_id)
+    countByBuilderWithDedup(sn, item => item.point_id)
+    countByBuilderWithDedup(bd, item => item.point_id || item.id)
     builderRanking.value = Object.entries(builderMap)
       .map(([name, count]) => ({ name, count }))
       .sort((a, b) => b.count - a.count)
