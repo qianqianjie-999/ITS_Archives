@@ -46,16 +46,21 @@
             <el-option label="全部" value="" />
             <el-option label="在保" value="在保" />
             <el-option label="过保" value="过保" />
-            <el-option label="点位无关联项目" value="点位无关联项目" />
+            <el-option v-if="activeTab !== 'project_overview'" label="点位无关联项目" value="点位无关联项目" />
           </el-select>
         </el-col>
-        <el-col :span="8">
+        <el-col :span="8" v-if="activeTab !== 'project_overview'">
           <el-select v-model="filterProject" placeholder="归属项目" clearable filterable @change="handleFilter">
             <el-option label="全部" value="" />
             <el-option v-for="p in projects" :key="p.id" :label="p.name" :value="p.id" />
           </el-select>
         </el-col>
-        <el-col :span="10">
+        <el-col :span="10" v-if="activeTab === 'project_overview'">
+          <el-input v-model="searchKeyword" placeholder="搜索项目名称、建设单位..." clearable @input="handleFilter">
+            <template #prefix><el-icon><Search /></el-icon></template>
+          </el-input>
+        </el-col>
+        <el-col :span="10" v-else>
           <el-input v-model="searchKeyword" placeholder="搜索设备名称、路口名称..." clearable @input="handleFilter">
             <template #prefix><el-icon><Search /></el-icon></template>
           </el-input>
@@ -65,22 +70,6 @@
 
     <el-tabs v-model="activeTab" @tab-change="handleTabChange">
       <el-tab-pane label="项目概览" name="project_overview">
-        <div class="filter-bar" style="margin-bottom: 16px;">
-          <el-row :gutter="12">
-            <el-col :span="10">
-              <el-select v-model="filterProjectOverviewWarranty" placeholder="质保状态" clearable>
-                <el-option label="全部" value="" />
-                <el-option label="在保" value="在保" />
-                <el-option label="过保" value="过保" />
-              </el-select>
-            </el-col>
-            <el-col :span="14">
-              <el-input v-model="searchProjectOverviewKeyword" placeholder="搜索项目名称、建设单位..." clearable>
-                <template #prefix><el-icon><Search /></el-icon></template>
-              </el-input>
-            </el-col>
-          </el-row>
-        </div>
         <el-table :data="pagedData.project_overview" stripe v-loading="loading" border size="small">
           <el-table-column label="序号" width="55" fixed>
             <template #default="{ $index }">{{ (currentPage - 1) * pageSize + $index + 1 }}</template>
@@ -339,8 +328,6 @@ const pageSize = ref(20)
 const filterWarranty = ref('')
 const filterProject = ref('')
 const searchKeyword = ref('')
-const filterProjectOverviewWarranty = ref('')
-const searchProjectOverviewKeyword = ref('')
 
 const projects = ref<any[]>([])
 const trafficLights = ref<any[]>([])
@@ -511,14 +498,14 @@ const projectSummary = computed(() => {
 
 const filteredProjectSummary = computed(() => {
   return projectSummary.value.filter(p => {
-    if (searchProjectOverviewKeyword.value) {
-      const kw = searchProjectOverviewKeyword.value.toLowerCase()
+    if (searchKeyword.value) {
+      const kw = searchKeyword.value.toLowerCase()
       const haystack = [p.name, p.builder].filter(Boolean).join(' ').toLowerCase()
       if (!haystack.includes(kw)) return false
     }
-    if (filterProjectOverviewWarranty.value) {
-      if (filterProjectOverviewWarranty.value === '在保' && p.warranty_status !== '在保') return false
-      if (filterProjectOverviewWarranty.value === '过保' && p.warranty_status !== '过保') return false
+    if (filterWarranty.value) {
+      if (filterWarranty.value === '在保' && p.warranty_status !== '在保') return false
+      if (filterWarranty.value === '过保' && p.warranty_status !== '过保') return false
     }
     return true
   })
@@ -550,7 +537,12 @@ const projectCount = computed(() => {
 })
 
 function handleFilter() { currentPage.value = 1 }
-function handleTabChange() { currentPage.value = 1 }
+function handleTabChange() {
+  currentPage.value = 1
+  filterWarranty.value = ''
+  filterProject.value = ''
+  searchKeyword.value = ''
+}
 function handleSizeChange() { currentPage.value = 1 }
 function handleCurrentChange() {}
 
