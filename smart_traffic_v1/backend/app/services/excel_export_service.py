@@ -57,8 +57,17 @@ class ExcelExportService:
         return ExcelExportService._warranty_closer_to_now(existing_date, new_date)
 
     @staticmethod
-    def _should_keep_for_service(existing_item, new_item):
+    def _should_keep_for_service(existing_item, new_item, selected_map=None):
         """服役期限去重：优先保留选择了项目的记录"""
+        # 优先保留选中状态（与前端 ServiceRanking 的 is_selected 对齐）
+        if selected_map is not None:
+            existing_selected = selected_map.get(existing_item.id, False)
+            new_selected = selected_map.get(new_item.id, False)
+            if new_selected and not existing_selected:
+                return True
+            if existing_selected and not new_selected:
+                return False
+        # 其次优先保留有 project_id 的记录
         if new_item.project_id and not existing_item.project_id:
             return True
         if not new_item.project_id and existing_item.project_id:
@@ -274,13 +283,20 @@ class ExcelExportService:
         ws.append(headers)
 
         traffic_lights = db.session.query(TrafficLight).all()
+        intersections = db.session.query(Intersection).all()
+        
+        # 构建选中状态映射：selected_traffic_light_id 指向的设备即为选中
+        tl_selected_map = {}
+        for inter in intersections:
+            if inter.selected_traffic_light_id:
+                tl_selected_map[inter.selected_traffic_light_id] = True
         
         grouped = {}
         for tl in traffic_lights:
             key = tl.intersection_id
             if key not in grouped:
                 grouped[key] = tl
-            elif ExcelExportService._should_keep_for_service(grouped[key], tl):
+            elif ExcelExportService._should_keep_for_service(grouped[key], tl, tl_selected_map):
                 grouped[key] = tl
 
         # 排序：质保状态优先（过保 > 在保 > 其他），再按归属项目
@@ -301,7 +317,7 @@ class ExcelExportService:
                 usage_years = ''
                 if project_info['acceptance_date']:
                     acc_date = date.fromisoformat(project_info['acceptance_date'])
-                    usage_years = round((date.today() - acc_date).days / 365, 2)
+                    usage_years = round((date.today() - acc_date).days / 365, 1)
 
                 row = [
                     row_idx,
@@ -345,13 +361,20 @@ class ExcelExportService:
         ws.append(headers)
 
         ep_list = db.session.query(ElectronicPolice).all()
+        ep_intersections = db.session.query(Intersection).all()
+        
+        # 构建选中状态映射
+        ep_selected_map = {}
+        for inter in ep_intersections:
+            if inter.selected_electronic_police_id:
+                ep_selected_map[inter.selected_electronic_police_id] = True
         
         grouped = {}
         for ep in ep_list:
             key = ep.intersection_id
             if key not in grouped:
                 grouped[key] = ep
-            elif ExcelExportService._should_keep_for_service(grouped[key], ep):
+            elif ExcelExportService._should_keep_for_service(grouped[key], ep, ep_selected_map):
                 grouped[key] = ep
 
         # 排序：质保状态优先（过保 > 在保 > 其他），再按归属项目
@@ -372,7 +395,7 @@ class ExcelExportService:
                 usage_years = ''
                 if project_info['acceptance_date']:
                     acc_date = date.fromisoformat(project_info['acceptance_date'])
-                    usage_years = round((date.today() - acc_date).days / 365, 2)
+                    usage_years = round((date.today() - acc_date).days / 365, 1)
 
                 row = [
                     row_idx,
@@ -412,13 +435,20 @@ class ExcelExportService:
         ws.append(headers)
 
         pe_list = db.session.query(ParkingEnforcement).all()
+        pe_points = db.session.query(ParkingEnforcementPoint).all()
+        
+        # 构建选中状态映射
+        pe_selected_map = {}
+        for pt in pe_points:
+            if pt.selected_project_id:
+                pe_selected_map[pt.selected_project_id] = True
         
         grouped = {}
         for pe in pe_list:
             key = pe.point_id
             if key not in grouped:
                 grouped[key] = pe
-            elif ExcelExportService._should_keep_for_service(grouped[key], pe):
+            elif ExcelExportService._should_keep_for_service(grouped[key], pe, pe_selected_map):
                 grouped[key] = pe
 
         # 排序：质保状态优先（过保 > 在保 > 其他），再按归属项目
@@ -438,7 +468,7 @@ class ExcelExportService:
                 usage_years = ''
                 if project_info['acceptance_date']:
                     acc_date = date.fromisoformat(project_info['acceptance_date'])
-                    usage_years = round((date.today() - acc_date).days / 365, 2)
+                    usage_years = round((date.today() - acc_date).days / 365, 1)
 
                 row = [
                     row_idx,
@@ -474,13 +504,20 @@ class ExcelExportService:
         ws.append(headers)
 
         cp_list = db.session.query(Checkpoint).all()
+        cp_points = db.session.query(CheckpointPoint).all()
+        
+        # 构建选中状态映射
+        cp_selected_map = {}
+        for pt in cp_points:
+            if pt.selected_project_id:
+                cp_selected_map[pt.selected_project_id] = True
         
         grouped = {}
         for cp in cp_list:
             key = cp.point_id
             if key not in grouped:
                 grouped[key] = cp
-            elif ExcelExportService._should_keep_for_service(grouped[key], cp):
+            elif ExcelExportService._should_keep_for_service(grouped[key], cp, cp_selected_map):
                 grouped[key] = cp
 
         # 排序：质保状态优先（过保 > 在保 > 其他），再按归属项目
@@ -501,7 +538,7 @@ class ExcelExportService:
             usage_years = ''
             if project_info['acceptance_date']:
                 acc_date = date.fromisoformat(project_info['acceptance_date'])
-                usage_years = round((date.today() - acc_date).days / 365, 2)
+                usage_years = round((date.today() - acc_date).days / 365, 1)
 
             row = [
                 row_idx,
@@ -538,13 +575,20 @@ class ExcelExportService:
         ws.append(headers)
 
         sn_list = db.session.query(SkyNet).all()
+        sn_points = db.session.query(SkyNetPoint).all()
+        
+        # 构建选中状态映射
+        sn_selected_map = {}
+        for pt in sn_points:
+            if pt.selected_project_id:
+                sn_selected_map[pt.selected_project_id] = True
         
         grouped = {}
         for sn in sn_list:
             key = sn.point_id
             if key not in grouped:
                 grouped[key] = sn
-            elif ExcelExportService._should_keep_for_service(grouped[key], sn):
+            elif ExcelExportService._should_keep_for_service(grouped[key], sn, sn_selected_map):
                 grouped[key] = sn
         
         # 排序：质保状态优先（过保 > 在保 > 其他），再按归属项目
@@ -565,7 +609,7 @@ class ExcelExportService:
             usage_years = ''
             if project_info['acceptance_date']:
                 acc_date = date.fromisoformat(project_info['acceptance_date'])
-                usage_years = round((date.today() - acc_date).days / 365, 2)
+                usage_years = round((date.today() - acc_date).days / 365, 1)
 
             row = [
                 row_idx,
@@ -632,7 +676,7 @@ class ExcelExportService:
             usage_years = ''
             if project_info['acceptance_date']:
                 acc_date = date.fromisoformat(project_info['acceptance_date'])
-                usage_years = round((date.today() - acc_date).days / 365, 2)
+                usage_years = round((date.today() - acc_date).days / 365, 1)
 
             row = [
                 row_idx,
