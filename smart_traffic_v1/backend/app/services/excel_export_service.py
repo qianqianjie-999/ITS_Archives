@@ -471,15 +471,25 @@ class ExcelExportService:
             if pt.selected_project_id:
                 pe_selected_map[pt.selected_project_id] = True
         
+        # 通用去重（质保日期优先）
         grouped = {}
         for pe in pe_list:
             key = pe.point_id
             if key not in grouped:
                 grouped[key] = pe
-            elif ExcelExportService._should_keep_for_service(grouped[key], pe, pe_selected_map):
+            elif ExcelExportService._should_keep_new_item(grouped[key], pe):
                 grouped[key] = pe
 
-        # 排序：质保状态优先（过保 > 在保 > 其他），再按归属项目
+        # 服役期限去重（选中状态优先）：仅用于设备服役时长
+        grouped_service = {}
+        for pe in pe_list:
+            key = pe.point_id
+            if key not in grouped_service:
+                grouped_service[key] = pe
+            elif ExcelExportService._should_keep_for_service(grouped_service[key], pe, pe_selected_map):
+                grouped_service[key] = pe
+
+        # 排序：基于通用去重结果
         status_order = {'过保': 0, '在保': 1}
         sorted_pes = sorted(grouped.values(), key=lambda pe: (
             status_order.get(ExcelExportService._get_warranty_status(pe.project_id), 2),
