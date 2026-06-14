@@ -66,7 +66,7 @@
           </el-select>
         </el-col>
         <el-col :span="5" v-if="activeTab !== 'project_overview'">
-          <el-input v-model="searchKeyword" placeholder="搜索设备/路口/类型/取电..." clearable @input="handleFilter">
+          <el-input v-model="searchKeyword" placeholder="搜索设备/路口/项目/型号/数量..." clearable @input="handleFilter">
             <template #prefix><el-icon><Search /></el-icon></template>
           </el-input>
         </el-col>
@@ -364,27 +364,14 @@ function applyFilter(list: any[]) {
     if (filterConstructionCompany.value && (item.construction_company || '') !== filterConstructionCompany.value) return false;
     if (searchKeyword.value) {
       const kw = searchKeyword.value.toLowerCase();
-      const haystack = [
-        item.name, item.intersection_name, item.point_name, item.project_name,
-        item.intersection_type, item.type, item.point_type, item.camera_area,
-        item.signal_type, item.capture_type, item.power_source, item.network_source,
-        item.construction_unit, item.construction_company,
-        String(item.signal_count || ''), String(item.radar_count || ''),
-        String(item.guide_screen_count || ''), String(item.countdown_timer_count || ''),
-        String(item.camera_count || ''), String(item.forward_capture_count || ''),
-        String(item.reverse_capture_count || ''), String(item.led_light_count || ''),
-        String(item.strobe_light_count || ''), String(item.ptz_count || ''),
-        String(item.terminal_server_count || ''), String(item.signal_detector_count || ''),
-        String(item.bracket_count || ''), String(item.pole_count || ''),
-        String(item.box_count || ''), String(item.fill_light_count || ''),
-        String(item.speaker_count || ''), String(item.sign_count || ''),
-        String(item.parking_sign_count || ''), String(item.monitor_sign_count || ''),
-        String(item.server_count || ''), String(item.switch_count || ''),
-        String(item.storage_count || ''), String(item.non_motor_count || ''),
-        String(item.pedestrian_count || ''), String(item.full_screen_count || ''),
-        String(item.left_arrow_count || ''), String(item.straight_arrow_count || ''),
-        String(item.right_arrow_count || '')
-      ].filter(Boolean).join(' ').toLowerCase();
+      const haystack = Object.values(item)
+        .map(v => {
+          if (v === null || v === undefined) return '';
+          if (typeof v === 'object') return '';
+          return String(v);
+        })
+        .filter(Boolean)
+        .join(' ').toLowerCase();
       if (!haystack.includes(kw)) return false;
     }
     return true;
