@@ -250,7 +250,7 @@
         <el-form-item label="设备数量">
           <el-input-number v-model="editForm.quantity" :min="1" style="width: 100%" />
         </el-form-item>
-        <el-form-item label="归属项目">
+        <el-form-item label="归属项目" required>
           <el-select v-model="editForm.project_id" placeholder="选择归属项目或搜索添加" filterable style="width: 100%">
             <el-option v-for="p in projects" :key="p.id" :label="p.name" :value="p.id" />
           </el-select>

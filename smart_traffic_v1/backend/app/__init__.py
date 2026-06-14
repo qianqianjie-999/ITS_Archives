@@ -40,7 +40,28 @@ def create_app(config_name=None):
         error_msg = str(error.orig) if error.orig else str(error)
         if 'Duplicate entry' in error_msg:
             return {'status': 'error', 'message': '名称已存在，请使用不同的名称'}, 409
+        if 'cannot be null' in error_msg.lower() or 'NOT NULL' in error_msg:
+            return {'status': 'error', 'message': '必填字段不能为空'}, 400
+        if 'foreign key constraint' in error_msg.lower():
+            return {'status': 'error', 'message': '关联数据不存在，请检查关联项'}, 400
         return {'status': 'error', 'message': '数据冲突，操作失败'}, 409
+
+    @app.errorhandler(400)
+    def handle_bad_request(error):
+        return {'status': 'error', 'message': '请求参数有误'}, 400
+
+    @app.errorhandler(404)
+    def handle_not_found(error):
+        return {'status': 'error', 'message': '请求的资源不存在'}, 404
+
+    @app.errorhandler(405)
+    def handle_method_not_allowed(error):
+        return {'status': 'error', 'message': '请求方法不允许'}, 405
+
+    @app.errorhandler(500)
+    def handle_internal_error(error):
+        db.session.rollback()
+        return {'status': 'error', 'message': '服务器内部错误，请稍后重试'}, 500
 
     @app.route('/health')
     def health_check():

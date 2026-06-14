@@ -83,7 +83,7 @@
         <el-form-item label="路口名称" required>
           <el-input v-model="editIntersectionForm.name" />
         </el-form-item>
-        <el-form-item label="类型">
+        <el-form-item label="类型" required>
           <el-select v-model="editIntersectionForm.type" placeholder="请选择路口类型">
             <el-option label="十字路口" value="十字路口" />
             <el-option label="丁字路口" value="丁字路口" />

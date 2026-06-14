@@ -323,7 +323,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { ElMessage } from 'element-plus'
-import { Download, Search, Refresh } from '@element-plus/icons-vue'
+import { Download, Search } from '@element-plus/icons-vue'
 import { intersectionApi } from '@/api/intersections'
 import { pointApi, checkpointPointApi, backendDeviceApi, skyNetApi } from '@/api/points'
 import { projectApi } from '@/api/projects'
