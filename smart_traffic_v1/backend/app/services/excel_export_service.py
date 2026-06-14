@@ -227,19 +227,79 @@ class ExcelExportService:
         ]
         ws.append(headers)
 
-        projects = db.session.query(Project).all()
+        # 加载所有原始数据，按通用去重逻辑（质保日期优先）去重
+        all_tl = db.session.query(TrafficLight).all()
+        all_ep = db.session.query(ElectronicPolice).all()
+        all_pe = db.session.query(ParkingEnforcement).all()
+        all_cp = db.session.query(Checkpoint).all()
+        all_sn = db.session.query(SkyNet).all()
+        suffix_pattern = re.compile(r' \(\d+\)$')
+        all_bd_raw = db.session.query(BackendDevice).all()
+        all_bd = [d for d in all_bd_raw if not suffix_pattern.search(d.name)]
         
-        # 先收集所有项目数据
+        tl_grouped = {}
+        for item in all_tl:
+            key = item.intersection_id
+            if key not in tl_grouped:
+                tl_grouped[key] = item
+            elif ExcelExportService._should_keep_new_item(tl_grouped[key], item):
+                tl_grouped[key] = item
+        
+        ep_grouped = {}
+        for item in all_ep:
+            key = item.intersection_id
+            if key not in ep_grouped:
+                ep_grouped[key] = item
+            elif ExcelExportService._should_keep_new_item(ep_grouped[key], item):
+                ep_grouped[key] = item
+        
+        pe_grouped = {}
+        for item in all_pe:
+            key = item.point_id
+            if key not in pe_grouped:
+                pe_grouped[key] = item
+            elif ExcelExportService._should_keep_new_item(pe_grouped[key], item):
+                pe_grouped[key] = item
+        
+        cp_grouped = {}
+        for item in all_cp:
+            key = item.point_id
+            if key not in cp_grouped:
+                cp_grouped[key] = item
+            elif ExcelExportService._should_keep_new_item(cp_grouped[key], item):
+                cp_grouped[key] = item
+        
+        sn_grouped = {}
+        for item in all_sn:
+            key = item.point_id
+            if key not in sn_grouped:
+                sn_grouped[key] = item
+            elif ExcelExportService._should_keep_new_item(sn_grouped[key], item):
+                sn_grouped[key] = item
+        
+        bd_grouped = {}
+        for item in all_bd:
+            key = item.name
+            if key not in bd_grouped:
+                bd_grouped[key] = item
+            elif ExcelExportService._should_keep_new_item(bd_grouped[key], item):
+                bd_grouped[key] = item
+        
+        # 按项目统计去重后的设备数
+        projects = db.session.query(Project).all()
         rows = []
         for project in projects:
-            tl_count = db.session.query(TrafficLight).filter_by(project_id=project.id).count()
-            ep_count = db.session.query(ElectronicPolice).filter_by(project_id=project.id).count()
-            pe_count = db.session.query(ParkingEnforcement).filter_by(project_id=project.id).count()
-            cp_count = db.session.query(Checkpoint).filter_by(project_id=project.id).count()
-            sn_count = db.session.query(SkyNet).filter_by(project_id=project.id).count()
-            bd_count = db.session.query(BackendDevice).filter_by(project_id=project.id).count()
+            pid = project.id
+            tl_count = sum(1 for v in tl_grouped.values() if v.project_id == pid)
+            ep_count = sum(1 for v in ep_grouped.values() if v.project_id == pid)
+            pe_count = sum(1 for v in pe_grouped.values() if v.project_id == pid)
+            cp_count = sum(1 for v in cp_grouped.values() if v.project_id == pid)
+            sn_count = sum(1 for v in sn_grouped.values() if v.project_id == pid)
+            bd_count = sum(1 for v in bd_grouped.values() if v.project_id == pid)
             
             total = tl_count + ep_count + pe_count + cp_count + sn_count + bd_count
+            if total == 0:
+                continue
             
             warranty_expire_date = project.warranty_expire_date.isoformat() if project.warranty_expire_date else '-'
             warranty_status = '在保' if project.warranty_expire_date and project.warranty_expire_date >= date.today() else '过保' if project.warranty_expire_date else '-'
