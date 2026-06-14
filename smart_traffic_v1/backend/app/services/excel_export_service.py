@@ -285,21 +285,31 @@ class ExcelExportService:
         traffic_lights = db.session.query(TrafficLight).all()
         intersections = db.session.query(Intersection).all()
         
-        # 构建选中状态映射：selected_traffic_light_id 指向的设备即为选中
+        # 构建选中状态映射
         tl_selected_map = {}
         for inter in intersections:
             if inter.selected_traffic_light_id:
                 tl_selected_map[inter.selected_traffic_light_id] = True
         
+        # 通用去重（质保日期优先）：用于归属项目、质保状态等字段
         grouped = {}
         for tl in traffic_lights:
             key = tl.intersection_id
             if key not in grouped:
                 grouped[key] = tl
-            elif ExcelExportService._should_keep_for_service(grouped[key], tl, tl_selected_map):
+            elif ExcelExportService._should_keep_new_item(grouped[key], tl):
                 grouped[key] = tl
 
-        # 排序：质保状态优先（过保 > 在保 > 其他），再按归属项目
+        # 服役期限去重（选中状态优先）：仅用于设备服役时长计算
+        grouped_service = {}
+        for tl in traffic_lights:
+            key = tl.intersection_id
+            if key not in grouped_service:
+                grouped_service[key] = tl
+            elif ExcelExportService._should_keep_for_service(grouped_service[key], tl, tl_selected_map):
+                grouped_service[key] = tl
+
+        # 排序：基于通用去重结果，质保状态优先，再按归属项目
         status_order = {'过保': 0, '在保': 1}
         sorted_lights = sorted(grouped.values(), key=lambda tl: (
             status_order.get(ExcelExportService._get_warranty_status(tl.project_id), 2),
@@ -314,10 +324,14 @@ class ExcelExportService:
                 intersection_type = ExcelExportService._get_intersection_type_name(tl.intersection_id)
                 warranty_status = ExcelExportService._get_warranty_status(tl.project_id)
                 
+                # 设备服役时长：从服役期限去重结果计算
                 usage_years = ''
-                if project_info['acceptance_date']:
-                    acc_date = date.fromisoformat(project_info['acceptance_date'])
-                    usage_years = round((date.today() - acc_date).days / 365, 1)
+                tl_service = grouped_service.get(tl.intersection_id)
+                if tl_service:
+                    service_project_info = ExcelExportService._get_project_info(tl_service.project_id)
+                    if service_project_info['acceptance_date']:
+                        acc_date = date.fromisoformat(service_project_info['acceptance_date'])
+                        usage_years = round((date.today() - acc_date).days / 365, 1)
 
                 row = [
                     row_idx,
@@ -369,15 +383,25 @@ class ExcelExportService:
             if inter.selected_electronic_police_id:
                 ep_selected_map[inter.selected_electronic_police_id] = True
         
+        # 通用去重（质保日期优先）
         grouped = {}
         for ep in ep_list:
             key = ep.intersection_id
             if key not in grouped:
                 grouped[key] = ep
-            elif ExcelExportService._should_keep_for_service(grouped[key], ep, ep_selected_map):
+            elif ExcelExportService._should_keep_new_item(grouped[key], ep):
                 grouped[key] = ep
 
-        # 排序：质保状态优先（过保 > 在保 > 其他），再按归属项目
+        # 服役期限去重（选中状态优先）：仅用于设备服役时长
+        grouped_service = {}
+        for ep in ep_list:
+            key = ep.intersection_id
+            if key not in grouped_service:
+                grouped_service[key] = ep
+            elif ExcelExportService._should_keep_for_service(grouped_service[key], ep, ep_selected_map):
+                grouped_service[key] = ep
+
+        # 排序：基于通用去重结果
         status_order = {'过保': 0, '在保': 1}
         sorted_eps = sorted(grouped.values(), key=lambda ep: (
             status_order.get(ExcelExportService._get_warranty_status(ep.project_id), 2),
@@ -392,10 +416,14 @@ class ExcelExportService:
                 intersection_type = ExcelExportService._get_intersection_type_name(ep.intersection_id)
                 warranty_status = ExcelExportService._get_warranty_status(ep.project_id)
                 
+                # 设备服役时长：从服役期限去重结果计算
                 usage_years = ''
-                if project_info['acceptance_date']:
-                    acc_date = date.fromisoformat(project_info['acceptance_date'])
-                    usage_years = round((date.today() - acc_date).days / 365, 1)
+                ep_service = grouped_service.get(ep.intersection_id)
+                if ep_service:
+                    service_project_info = ExcelExportService._get_project_info(ep_service.project_id)
+                    if service_project_info['acceptance_date']:
+                        acc_date = date.fromisoformat(service_project_info['acceptance_date'])
+                        usage_years = round((date.today() - acc_date).days / 365, 1)
 
                 row = [
                     row_idx,
@@ -465,10 +493,14 @@ class ExcelExportService:
                 point_info = ExcelExportService._get_point_info(pe.point_id)
                 warranty_status = ExcelExportService._get_warranty_status(pe.project_id)
                 
+                # 设备服役时长：从服役期限去重结果计算
                 usage_years = ''
-                if project_info['acceptance_date']:
-                    acc_date = date.fromisoformat(project_info['acceptance_date'])
-                    usage_years = round((date.today() - acc_date).days / 365, 1)
+                pe_service = grouped_service.get(pe.point_id)
+                if pe_service:
+                    service_project_info = ExcelExportService._get_project_info(pe_service.project_id)
+                    if service_project_info['acceptance_date']:
+                        acc_date = date.fromisoformat(service_project_info['acceptance_date'])
+                        usage_years = round((date.today() - acc_date).days / 365, 1)
 
                 row = [
                     row_idx,
@@ -512,15 +544,25 @@ class ExcelExportService:
             if pt.selected_project_id:
                 cp_selected_map[pt.selected_project_id] = True
         
+        # 通用去重（质保日期优先）
         grouped = {}
         for cp in cp_list:
             key = cp.point_id
             if key not in grouped:
                 grouped[key] = cp
-            elif ExcelExportService._should_keep_for_service(grouped[key], cp, cp_selected_map):
+            elif ExcelExportService._should_keep_new_item(grouped[key], cp):
                 grouped[key] = cp
 
-        # 排序：质保状态优先（过保 > 在保 > 其他），再按归属项目
+        # 服役期限去重（选中状态优先）：仅用于设备服役时长
+        grouped_service = {}
+        for cp in cp_list:
+            key = cp.point_id
+            if key not in grouped_service:
+                grouped_service[key] = cp
+            elif ExcelExportService._should_keep_for_service(grouped_service[key], cp, cp_selected_map):
+                grouped_service[key] = cp
+
+        # 排序：基于通用去重结果
         status_order = {'过保': 0, '在保': 1}
         sorted_cps = sorted(grouped.values(), key=lambda cp: (
             status_order.get(ExcelExportService._get_warranty_status(cp.project_id), 2),
@@ -535,10 +577,14 @@ class ExcelExportService:
             warranty_status = ExcelExportService._get_warranty_status(cp.project_id)
             cp_type = point_info.get('area', '')
             
+            # 设备服役时长：从服役期限去重结果计算
             usage_years = ''
-            if project_info['acceptance_date']:
-                acc_date = date.fromisoformat(project_info['acceptance_date'])
-                usage_years = round((date.today() - acc_date).days / 365, 1)
+            cp_service = grouped_service.get(cp.point_id)
+            if cp_service:
+                service_project_info = ExcelExportService._get_project_info(cp_service.project_id)
+                if service_project_info['acceptance_date']:
+                    acc_date = date.fromisoformat(service_project_info['acceptance_date'])
+                    usage_years = round((date.today() - acc_date).days / 365, 1)
 
             row = [
                 row_idx,
@@ -583,15 +629,25 @@ class ExcelExportService:
             if pt.selected_project_id:
                 sn_selected_map[pt.selected_project_id] = True
         
+        # 通用去重（质保日期优先）
         grouped = {}
         for sn in sn_list:
             key = sn.point_id
             if key not in grouped:
                 grouped[key] = sn
-            elif ExcelExportService._should_keep_for_service(grouped[key], sn, sn_selected_map):
+            elif ExcelExportService._should_keep_new_item(grouped[key], sn):
                 grouped[key] = sn
         
-        # 排序：质保状态优先（过保 > 在保 > 其他），再按归属项目
+        # 服役期限去重（选中状态优先）：仅用于设备服役时长
+        grouped_service = {}
+        for sn in sn_list:
+            key = sn.point_id
+            if key not in grouped_service:
+                grouped_service[key] = sn
+            elif ExcelExportService._should_keep_for_service(grouped_service[key], sn, sn_selected_map):
+                grouped_service[key] = sn
+
+        # 排序：基于通用去重结果
         status_order = {'过保': 0, '在保': 1}
         sorted_sns = sorted(grouped.values(), key=lambda sn: (
             status_order.get(ExcelExportService._get_warranty_status(sn.project_id), 2),
@@ -606,10 +662,14 @@ class ExcelExportService:
             point_name = point.name if point else ''
             warranty_status = ExcelExportService._get_warranty_status(sn.project_id)
             
+            # 设备服役时长：从服役期限去重结果计算
             usage_years = ''
-            if project_info['acceptance_date']:
-                acc_date = date.fromisoformat(project_info['acceptance_date'])
-                usage_years = round((date.today() - acc_date).days / 365, 1)
+            sn_service = grouped_service.get(sn.point_id)
+            if sn_service:
+                service_project_info = ExcelExportService._get_project_info(sn_service.project_id)
+                if service_project_info['acceptance_date']:
+                    acc_date = date.fromisoformat(service_project_info['acceptance_date'])
+                    usage_years = round((date.today() - acc_date).days / 365, 1)
 
             row = [
                 row_idx,
@@ -649,6 +709,8 @@ class ExcelExportService:
         all_devices = db.session.query(BackendDevice).all()
         
         suffix_pattern = re.compile(r' \(\d+\)$')
+        
+        # 通用去重（质保日期优先）
         grouped = {}
         for d in all_devices:
             if suffix_pattern.search(d.name):
@@ -656,10 +718,21 @@ class ExcelExportService:
             key = d.name
             if key not in grouped:
                 grouped[key] = d
-            elif ExcelExportService._should_keep_for_service(grouped[key], d):
+            elif ExcelExportService._should_keep_new_item(grouped[key], d):
                 grouped[key] = d
         
-        # 排序：质保状态优先（过保 > 在保 > 其他），再按归属项目
+        # 服役期限去重（选中状态优先）：仅用于设备服役时长
+        grouped_service = {}
+        for d in all_devices:
+            if suffix_pattern.search(d.name):
+                continue
+            key = d.name
+            if key not in grouped_service:
+                grouped_service[key] = d
+            elif ExcelExportService._should_keep_for_service(grouped_service[key], d):
+                grouped_service[key] = d
+
+        # 排序：基于通用去重结果
         status_order = {'过保': 0, '在保': 1}
         sorted_devices = sorted(grouped.values(), key=lambda d: (
             status_order.get(ExcelExportService._get_warranty_status(d.project_id), 2),
@@ -673,10 +746,14 @@ class ExcelExportService:
             warranty_status = ExcelExportService._get_warranty_status(d.project_id)
             device_type = ExcelExportService._get_backend_device_type_name(d.id)
             
+            # 设备服役时长：从服役期限去重结果计算
             usage_years = ''
-            if project_info['acceptance_date']:
-                acc_date = date.fromisoformat(project_info['acceptance_date'])
-                usage_years = round((date.today() - acc_date).days / 365, 1)
+            bd_service = grouped_service.get(d.name)
+            if bd_service:
+                service_project_info = ExcelExportService._get_project_info(bd_service.project_id)
+                if service_project_info['acceptance_date']:
+                    acc_date = date.fromisoformat(service_project_info['acceptance_date'])
+                    usage_years = round((date.today() - acc_date).days / 365, 1)
 
             row = [
                 row_idx,
