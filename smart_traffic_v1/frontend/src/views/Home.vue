@@ -534,84 +534,23 @@ async function fetchStats() {
     collectServiceDuration(bdServiceDeduped, 'name', '后端设备')
     serviceRanking.value.sort((a, b) => (parseFloat(b.duration) - parseFloat(a.duration)))
 
-    // 建设单位排名：按设备→项目→建设单位统计（按点位去重）
     const builderMap: Record<string, number> = {}
-    const builderPoints: Record<string, Set<string>> = {}
-    
-    // 创建项目到建设单位的映射
     const projectToBuilder: Record<number | string, string> = {}
     pr.forEach((p: any) => {
-      if (p.id && p.builder) {
-        projectToBuilder[p.id] = p.builder
-      }
+      if (p.id && p.builder) projectToBuilder[p.id] = p.builder
     })
-    
-    // 信号灯 → 项目 → 建设单位
-    tl.forEach((item: any) => {
-      const projectId = item.project_id
-      const unit = projectToBuilder[projectId]
-      if (unit && item.intersection_id) {
-        if (!builderPoints[unit]) builderPoints[unit] = new Set()
-        builderPoints[unit].add('tl_' + item.intersection_id)
-      }
-    })
-    
-    // 电子警察 → 项目 → 建设单位
-    ep.forEach((item: any) => {
-      const projectId = item.project_id
-      const unit = projectToBuilder[projectId]
-      if (unit && item.intersection_id) {
-        if (!builderPoints[unit]) builderPoints[unit] = new Set()
-        builderPoints[unit].add('ep_' + item.intersection_id)
-      }
-    })
-    
-    // 违停球 → 项目 → 建设单位
-    pe.forEach((item: any) => {
-      const projectId = item.project_id
-      const unit = projectToBuilder[projectId]
-      if (unit && item.point_id) {
-        if (!builderPoints[unit]) builderPoints[unit] = new Set()
-        builderPoints[unit].add('pe_' + item.point_id)
-      }
-    })
-    
-    // 卡口 → 项目 → 建设单位
-    cp.forEach((item: any) => {
-      const projectId = item.project_id
-      const unit = projectToBuilder[projectId]
-      if (unit && item.point_id) {
-        if (!builderPoints[unit]) builderPoints[unit] = new Set()
-        builderPoints[unit].add('cp_' + item.point_id)
-      }
-    })
-    
-    // 结构化相机 → 项目 → 建设单位
-    sn.forEach((item: any) => {
-      const projectId = item.project_id
-      const unit = projectToBuilder[projectId]
-      if (unit && item.point_id) {
-        if (!builderPoints[unit]) builderPoints[unit] = new Set()
-        builderPoints[unit].add('sn_' + item.point_id)
-      }
-    })
-    
-    // 后端设备 → 项目 → 建设单位
-    bd.forEach((item: any) => {
-      const projectId = item.project_id
-      const unit = projectToBuilder[projectId]
-      if (unit) {
-        const pointKey = item.point_id ? 'bd_' + item.point_id : 'bd_' + item.id
-        if (!builderPoints[unit]) builderPoints[unit] = new Set()
-        builderPoints[unit].add(pointKey)
-      }
-    })
-    
-    // 统计各建设单位的点位数量
-    Object.entries(builderPoints).forEach(([name, pointSet]) => {
-      builderMap[name] = pointSet.size
-    })
-    
+    const countByBuilder = (items: any[]) => {
+      items.forEach((item: any) => {
+        const unit = projectToBuilder[item.project_id]
+        if (unit) builderMap[unit] = (builderMap[unit] || 0) + 1
+      })
+    }
+    countByBuilder(tlDeduped)
+    countByBuilder(epDeduped)
+    countByBuilder(peDeduped)
+    countByBuilder(cpDeduped)
+    countByBuilder(snDeduped)
+    countByBuilder(deduplicateByPoint(bd))
     builderRanking.value = Object.entries(builderMap)
       .map(([name, count]) => ({ name, count }))
       .sort((a, b) => b.count - a.count)
