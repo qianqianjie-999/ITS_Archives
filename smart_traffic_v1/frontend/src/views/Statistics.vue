@@ -41,7 +41,7 @@
 
     <div class="filter-bar">
       <el-row :gutter="12">
-        <el-col :span="6">
+        <el-col :span="4">
           <el-select v-model="filterWarranty" placeholder="质保状态" clearable @change="handleFilter">
             <el-option label="全部" value="" />
             <el-option label="在保" value="在保" />
@@ -49,19 +49,29 @@
             <el-option v-if="activeTab !== 'project_overview'" label="点位无关联项目" value="点位无关联项目" />
           </el-select>
         </el-col>
-        <el-col :span="8" v-if="activeTab !== 'project_overview'">
+        <el-col :span="5" v-if="activeTab !== 'project_overview'">
           <el-select v-model="filterProject" placeholder="归属项目" clearable filterable @change="handleFilter">
             <el-option label="全部" value="" />
             <el-option v-for="p in projects" :key="p.id" :label="p.name" :value="p.id" />
           </el-select>
         </el-col>
-        <el-col :span="10" v-if="activeTab === 'project_overview'">
-          <el-input v-model="searchKeyword" placeholder="搜索项目名称、建设单位..." clearable @input="handleFilter">
+        <el-col :span="5" v-if="activeTab !== 'project_overview'">
+          <el-select v-model="filterBuilder" placeholder="建设单位" clearable filterable @change="handleFilter">
+            <el-option v-for="b in uniqueBuilders" :key="b" :label="b" :value="b" />
+          </el-select>
+        </el-col>
+        <el-col :span="5" v-if="activeTab !== 'project_overview'">
+          <el-select v-model="filterConstructionCompany" placeholder="施工单位" clearable filterable @change="handleFilter">
+            <el-option v-for="c in uniqueConstructionCompanies" :key="c" :label="c" :value="c" />
+          </el-select>
+        </el-col>
+        <el-col :span="5" v-if="activeTab !== 'project_overview'">
+          <el-input v-model="searchKeyword" placeholder="搜索设备/路口/类型/取电..." clearable @input="handleFilter">
             <template #prefix><el-icon><Search /></el-icon></template>
           </el-input>
         </el-col>
-        <el-col :span="10" v-else>
-          <el-input v-model="searchKeyword" placeholder="搜索设备名称、路口名称..." clearable @input="handleFilter">
+        <el-col :span="20" v-else>
+          <el-input v-model="searchKeyword" placeholder="搜索项目名称、建设单位..." clearable @input="handleFilter">
             <template #prefix><el-icon><Search /></el-icon></template>
           </el-input>
         </el-col>
@@ -327,6 +337,8 @@ const pageSize = ref(20)
 
 const filterWarranty = ref('')
 const filterProject = ref('')
+const filterBuilder = ref('')
+const filterConstructionCompany = ref('')
 const searchKeyword = ref('')
 
 const projects = ref<any[]>([])
@@ -348,10 +360,31 @@ function applyFilter(list: any[]) {
   return list.filter(item => {
     if (filterWarranty.value && item.warranty_status !== filterWarranty.value) return false;
     if (filterProject.value && item.project_id !== filterProject.value) return false;
+    if (filterBuilder.value && (item.construction_unit || '') !== filterBuilder.value) return false;
+    if (filterConstructionCompany.value && (item.construction_company || '') !== filterConstructionCompany.value) return false;
     if (searchKeyword.value) {
       const kw = searchKeyword.value.toLowerCase();
-      const haystack = [item.name, item.intersection_name, item.point_name, item.project_name, item.intersection_type, item.type]
-        .filter(Boolean).join(' ').toLowerCase();
+      const haystack = [
+        item.name, item.intersection_name, item.point_name, item.project_name,
+        item.intersection_type, item.type, item.point_type, item.camera_area,
+        item.signal_type, item.capture_type, item.power_source, item.network_source,
+        item.construction_unit, item.construction_company,
+        String(item.signal_count || ''), String(item.radar_count || ''),
+        String(item.guide_screen_count || ''), String(item.countdown_timer_count || ''),
+        String(item.camera_count || ''), String(item.forward_capture_count || ''),
+        String(item.reverse_capture_count || ''), String(item.led_light_count || ''),
+        String(item.strobe_light_count || ''), String(item.ptz_count || ''),
+        String(item.terminal_server_count || ''), String(item.signal_detector_count || ''),
+        String(item.bracket_count || ''), String(item.pole_count || ''),
+        String(item.box_count || ''), String(item.fill_light_count || ''),
+        String(item.speaker_count || ''), String(item.sign_count || ''),
+        String(item.parking_sign_count || ''), String(item.monitor_sign_count || ''),
+        String(item.server_count || ''), String(item.switch_count || ''),
+        String(item.storage_count || ''), String(item.non_motor_count || ''),
+        String(item.pedestrian_count || ''), String(item.full_screen_count || ''),
+        String(item.left_arrow_count || ''), String(item.straight_arrow_count || ''),
+        String(item.right_arrow_count || '')
+      ].filter(Boolean).join(' ').toLowerCase();
       if (!haystack.includes(kw)) return false;
     }
     return true;
@@ -425,6 +458,22 @@ const currentTabTotal = computed(() => {
   const tab = activeTab.value
   if (tab === 'project_overview') return filteredProjectSummary.value.length
   return (filteredData.value as any)[tab]?.length || 0
+})
+
+const uniqueBuilders = computed(() => {
+  const items = [
+    ...trafficLights.value, ...electronicPolices.value, ...parkingEnforcements.value,
+    ...checkpoints.value, ...skyNetPoints.value, ...backendDevices.value
+  ]
+  return Array.from(new Set(items.map(i => i.construction_unit).filter(Boolean))).sort()
+})
+
+const uniqueConstructionCompanies = computed(() => {
+  const items = [
+    ...trafficLights.value, ...electronicPolices.value, ...parkingEnforcements.value,
+    ...checkpoints.value, ...skyNetPoints.value, ...backendDevices.value
+  ]
+  return Array.from(new Set(items.map(i => i.construction_company).filter(Boolean))).sort()
 })
 
 const componentTotals = computed(() => {
@@ -541,6 +590,8 @@ function handleTabChange() {
   currentPage.value = 1
   filterWarranty.value = ''
   filterProject.value = ''
+  filterBuilder.value = ''
+  filterConstructionCompany.value = ''
   searchKeyword.value = ''
 }
 function handleSizeChange() { currentPage.value = 1 }
