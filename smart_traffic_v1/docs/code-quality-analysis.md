@@ -150,18 +150,19 @@ PyJWT>=2.8.0
 
 ## 三、前端代码质量分析
 
-### 3.1 项目结构 (8/10)
+### 3.1 项目结构 (8.5/10)
 
 **优点：**
 - Vue 3 Composition API 组织清晰
 - TypeScript 类型定义完善
 - API 层统一封装
 - 组件分类合理（views/components）
+- ✅ **已实现 `composables/` 目录**：`useDataSync.ts` 标准化跨页面数据同步逻辑
+- ✅ **已实现 `utils/` 目录**：`eventBus.ts`（类型化事件总线 + 500ms 防抖）、`date.ts`（日期格式化工具）
 
 **改进建议：**
-- 可以考虑添加 `composables/` 目录复用逻辑
-- `utils/` 目录可能有助于工具函数组织
 - 国际化（i18n）可以提前规划
+- 可以考虑添加 `composables/` 中更多通用逻辑（如表格分页、表单验证）
 
 ### 3.2 代码风格 (8.5/10)
 
@@ -315,6 +316,65 @@ async function fetchData() {
 - 错误信息可以更具体
 - 可以添加重试机制
 
+### 3.8 前端数据同步机制 (9/10) ✅ 已实现
+
+**设计说明：**
+
+系统实现了完整的跨页面数据更新机制，确保数据操作后相关页面自动刷新。
+
+**核心组件：**
+
+1. **EventBus (`src/utils/eventBus.ts`)**
+   - 类型化事件：`DataEventType` 枚举涵盖所有数据类型
+   - 结构化负载：`DataEventPayload` 包含类型、操作、ID、时间戳
+   - 500ms 防抖：防止快速连续操作触发过多 API 请求
+   - 类型安全：TypeScript 严格类型检查
+
+2. **useDataSync Composable (`src/composables/useDataSync.ts`)**
+   - 标准化事件监听模式
+   - `onMounted` 注册监听，`onBeforeUnmount` 自动清理
+   - 提供 `triggerUpdate` 便捷方法
+
+3. **事件触发点**
+   - 4 个详情页（路口/违停/卡口/结构化相机）：设备 CRUD、质保延期、维修记录、附件操作
+   - 6 个列表页（路口/项目/违停/卡口/结构化相机/后端设备）：CRUD 操作
+   - 后端设备列表页：设备 CRUD、维修记录、附件操作
+
+4. **订阅与刷新策略**
+   - `Statistics.vue`：按事件类型部分刷新（信号灯/电子警察/违停/卡口/结构化相机/后端设备独立刷新）
+   - `Home.vue`：全量刷新统计数据
+   - 各列表页：本地操作后刷新自身数据
+
+**代码示例：**
+```typescript
+// 触发端（详情页/列表页）
+eventBus.emit('dataUpdated', 'parkingEnforcement', 'create')
+
+// 订阅端（Statistics 等页面）
+function handleDataUpdated(payload: DataEventPayload) {
+  const typeToFetcher: Record<DataEventType, () => Promise<void>> = {
+    intersection: () => Promise.all([
+      fetchTrafficLightData(),
+      fetchElectronicPoliceData()
+    ]).then(),
+    parkingEnforcement: fetchParkingEnforcementData,
+    // ... 其他类型
+  }
+  const fetcher = typeToFetcher[payload.type]
+  if (fetcher) fetcher()
+}
+```
+
+**优点：**
+- 解耦彻底：数据操作页面与展示页面无直接依赖
+- 性能优化：部分刷新避免不必要的网络请求
+- 防抖保护：防止操作风暴
+- 易于扩展：新增数据类型只需添加事件类型和刷新函数
+
+**改进建议：**
+- 可以考虑添加请求去重（相同请求在进行中时跳过）
+- 可以添加离线队列支持（操作失败时暂存，网络恢复时重试）
+
 ## 四、综合评分
 
 | 模块 | 评分 | 说明 |
@@ -324,10 +384,11 @@ async function fetchData() {
 | 后端代码风格 | 8.5/10 | Type Hints 使用规范 |
 | 数据库设计 | 9/10 | ORM 使用现代，关系设计合理 |
 | API 设计 | 8.5/10 | RESTful 规范，文档完善 |
-| 前端架构 | 8/10 | Vue 3 + Composition API |
+| 前端架构 | 8.5/10 | Vue 3 + Composition API + Composables |
 | 前端类型安全 | 8/10 | TypeScript 使用规范 |
+| 前端数据同步 | 9/10 | EventBus + 防抖 + 部分刷新，已实现 |
 | 状态管理 | 8/10 | Pinia 设计合理 |
-| 整体质量 | **8.3/10** | 良好的工程实践 |
+| 整体质量 | **8.5/10** | 良好的工程实践，数据同步机制完善 |
 
 ## 五、改进建议
 

@@ -10,13 +10,18 @@
 
 - **路口管理**：信号灯、电子警察设备配置与质保管理
 - **点位管理**：违停抓拍设备、卡口设备配置与质保管理
+- **结构化相机**：SkyNet 结构化相机点位与设备管理
 - **项目管理**：项目信息、验收日期、质保期限管理
 - **后端设备**：服务器、存储、网络设备管理
 - **质保延期**：设备质保状态追踪与延期操作
+- **维修记录**：设备故障记录与维修日志管理
 - **附件管理**：电子档案上传、下载与关联
-- **数据分析**：设备统计数据导出
+- **数据分析**：设备统计数据导出，按数据类型部分刷新
 - **操作日志**：用户操作行为审计追踪
+- **备忘录**：项目备注与待办事项管理
+- **服务排行**：项目服务质量评分与排名
 - **用户管理**：用户账户管理、角色权限控制（管理员专属）
+- **页面自动更新**：数据操作后通过事件总线触发相关页面实时刷新
 
 ### 技术栈
 
@@ -39,6 +44,7 @@
 - **状态**: Pinia
 - **UI组件**: Element Plus
 - **HTTP**: Axios
+- **状态同步**: EventBus + Composables (useDataSync) 实现跨页面数据实时更新
 
 ## 系统架构
 
@@ -72,19 +78,22 @@ smart_traffic_v1/
 │   │   │   ├── auth.py            # 认证接口
 │   │   │   ├── users.py           # 用户管理接口
 │   │   │   ├── intersections.py   # 路口管理接口
-│   │   │   ├── points.py          # 点位管理接口
+│   │   │   ├── points.py          # 点位管理接口（违停/卡口/结构化相机）
 │   │   │   ├── projects.py        # 项目管理接口
 │   │   │   ├── attachments.py     # 附件管理接口
 │   │   │   ├── logs.py            # 日志接口
+│   │   │   ├── maintenance.py     # 维修记录接口
+│   │   │   ├── memos.py           # 备忘录接口
 │   │   │   ├── export.py          # 导出接口
 │   │   │   └── import_api.py      # 导入接口
 │   │   ├── models/                # SQLAlchemy 模型
 │   │   │   ├── intersection.py    # 路口、信号灯、电子警察模型
-│   │   │   ├── point.py           # 违停、卡口设备模型
+│   │   │   ├── point.py           # 违停、卡口、结构化相机设备模型
 │   │   │   ├── project.py         # 项目模型
 │   │   │   ├── user.py            # 用户、日志模型
 │   │   │   ├── backend_device.py  # 后端设备模型
 │   │   │   ├── warranty_extension.py  # 质保延期模型
+│   │   │   ├── maintenance_record.py  # 维修记录模型
 │   │   │   └── attachment.py      # 附件模型
 │   │   ├── services/              # 业务逻辑层
 │   │   │   ├── auth_service.py    # 认证服务
@@ -106,26 +115,38 @@ smart_traffic_v1/
 │   │   │   ├── index.ts          # Axios 实例
 │   │   │   ├── users.ts          # 用户 API
 │   │   │   ├── intersections.ts  # 路口 API
-│   │   │   ├── points.ts         # 点位 API
+│   │   │   ├── points.ts         # 点位 API（违停/卡口/结构化相机）
 │   │   │   ├── projects.ts       # 项目 API
+│   │   │   ├── maintenance.ts    # 维修记录 API
+│   │   │   ├── memos.ts          # 备忘录 API
 │   │   │   └── attachments.ts    # 附件 API
+│   │   ├── composables/           # 组合式函数（逻辑复用）
+│   │   │   └── useDataSync.ts    # 数据同步事件监听 composable
+│   │   ├── utils/                 # 工具函数
+│   │   │   ├── date.ts           # 日期格式化工具
+│   │   │   └── eventBus.ts       # 事件总线（类型化 + 防抖）
 │   │   ├── components/            # 公共组件
 │   │   │   ├── AppHeader.vue     # 顶部导航
-│   │   │   └── AppSidebar.vue    # 侧边菜单
+│   │   │   ├── AppSidebar.vue    # 侧边菜单
+│   │   │   └── HelpDialog.vue    # 帮助对话框
 │   │   ├── views/                 # 页面组件
 │   │   │   ├── Login.vue         # 登录页
 │   │   │   ├── Dashboard.vue     # 仪表盘
+│   │   │   ├── Home.vue          # 首页概览（事件监听自动刷新）
+│   │   │   ├── Statistics.vue    # 统计分析（按数据类型部分刷新）
 │   │   │   ├── IntersectionList.vue    # 路口列表
 │   │   │   ├── IntersectionDetail.vue  # 路口详情
-│   │   │   ├── ParkingEnforcementList.vue  # 违停列表
-│   │   │   ├── ParkingEnforcementDetail.vue  # 违停详情
-│   │   │   ├── CheckpointList.vue     # 卡口列表
-│   │   │   ├── CheckpointDetail.vue    # 卡口详情
+│   │   │   ├── ParkingEnforcementList.vue  # 违停点位列表
+│   │   │   ├── ParkingEnforcementDetail.vue  # 违停点位详情
+│   │   │   ├── CheckpointList.vue     # 卡口点位列表
+│   │   │   ├── CheckpointDetail.vue    # 卡口点位详情
+│   │   │   ├── SkyNetList.vue         # 结构化相机点位列表
+│   │   │   ├── SkyNetDetail.vue        # 结构化相机点位详情
 │   │   │   ├── ProjectList.vue     # 项目列表
 │   │   │   ├── BackendDeviceList.vue   # 后端设备列表
-│   │   │   ├── UserList.vue         # 用户管理
-│   │   │   ├── Statistics.vue      # 统计分析
-│   │   │   └── Home.vue            # 首页
+│   │   │   ├── MemoList.vue          # 备忘录列表
+│   │   │   ├── ServiceRanking.vue    # 服务排行
+│   │   │   └── UserList.vue         # 用户管理
 │   │   ├── router/                # 路由配置
 │   │   │   └── index.ts
 │   │   ├── stores/                # Pinia 状态
@@ -137,9 +158,11 @@ smart_traffic_v1/
 │   │   │   └── global.scss
 │   │   ├── App.vue                # 根组件
 │   │   └── main.ts                # 入口文件
+│   ├── dist/                      # 生产构建输出（已提交到Git）
 │   ├── package.json
 │   ├── vite.config.ts
-│   └── tsconfig.json
+│   ├── tsconfig.json
+│   └── deploy.sh                  # 前端部署脚本
 │
 ├── ADR/                            # 架构决策记录
 │   ├── ADR-001-采用Flask+SQLAlchemy后端架构.md
@@ -154,9 +177,11 @@ smart_traffic_v1/
 ├── docs/                           # 技术文档
 │   ├── database-design.md         # 数据库设计文档
 │   ├── api-documentation.md       # API接口文档
+│   ├── code-quality-analysis.md   # 代码质量分析报告
 │   ├── specs/                      # 设计规格
 │   └── plans/                      # 实现计划
 │
+├── QUICK_START.md                 # 快速开始指南
 └── README.md                       # 项目说明文档
 ```
 
@@ -443,11 +468,33 @@ CMD ["gunicorn", "-w", "4", "-b", "0.0.0.0:5000", "app:create_app('production')"
 ├── 电子警察 (ElectronicPolice) ───> 路口 (Intersection)
 ├── 违停设备 (ParkingEnforcement) ─> 违停点位 (ParkingEnforcementPoint)
 ├── 卡口设备 (Checkpoint) ─────────> 卡口点位 (CheckpointPoint)
+├── 结构化相机 (SkyNet) ───────────> 结构化相机点位 (SkyNetPoint)
 └── 后端设备 (BackendDevice)
 
+所有设备 ──> 维修记录 (MaintenanceRecord)
 路口/点位 ──> 附件 (Attachment)
 用户 ──> 操作日志 (OperationLog)
+用户 ──> 备忘录 (Memo)
 ```
+
+### 页面自动更新机制
+
+```
+数据操作页面（Detail/List）
+    │ 调用 eventBus.emit('dataUpdated', type, action, id)
+    ▼
+EventBus（类型化事件 + 500ms 防抖）
+    │ 分发 DataEventPayload
+    ▼
+订阅页面（Statistics/Home）
+    │ 根据 type 执行对应刷新逻辑
+    ▼
+精准部分刷新（信号灯/违停/卡口/相机/后端设备独立刷新）
+```
+
+关键文件：
+- `src/utils/eventBus.ts` — 类型化事件总线
+- `src/composables/useDataSync.ts` — 标准化事件监听 composable
 
 ### 质保计算逻辑
 
