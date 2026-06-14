@@ -88,7 +88,7 @@ const allData = ref<any[]>([])
 const searchKeyword = ref('')
 const filterType = ref('')
 const currentPage = ref(1)
-const pageSize = ref(20)
+const pageSize = ref(15)
 
 const filteredList = computed(() => {
   let list = [...allData.value]

@@ -333,7 +333,7 @@ import { eventBus } from '@/utils/eventBus'
 const loading = ref(false)
 const activeTab = ref('traffic_light')
 const currentPage = ref(1)
-const pageSize = ref(20)
+const pageSize = ref(15)
 
 const filterWarranty = ref('')
 const filterProject = ref('')

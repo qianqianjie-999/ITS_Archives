@@ -132,7 +132,7 @@ const allAttachments = ref<Attachment[]>([])
 const loading = ref(false)
 const showDialog = ref(false)
 const currentPage = ref(1)
-const perPage = ref(20)
+const perPage = ref(15)
 const searchKeyword = ref('')
 const filterWarranty = ref('')
 

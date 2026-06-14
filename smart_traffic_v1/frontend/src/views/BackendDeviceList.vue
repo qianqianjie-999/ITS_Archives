@@ -295,7 +295,7 @@ const selectedDevice = ref<BackendDevice | null>(null)
 const warrantyRecords = ref<any[]>([])
 const maintenanceRecords = ref<MaintenanceRecord[]>([])
 const currentPage = ref(1)
-const perPage = ref(20)
+const perPage = ref(15)
 const searchKeyword = ref('')
 const filterWarranty = ref('')
 

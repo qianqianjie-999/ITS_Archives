@@ -492,7 +492,7 @@ const previewFilename = ref('')
 const activeTab = ref('trafficLights')
 const trafficLightPage = ref(1)
 const electronicPolicePage = ref(1)
-const perPage = ref(20)
+const perPage = ref(15)
 
 const showTrafficLightDialog = ref(false)
 const showElectronicPoliceDialog = ref(false)
