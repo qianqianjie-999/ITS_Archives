@@ -534,40 +534,33 @@ async function fetchStats() {
     collectServiceDuration(bdServiceDeduped, 'name', '后端设备')
     serviceRanking.value.sort((a, b) => (parseFloat(b.duration) - parseFloat(a.duration)))
 
-    const builderMap: Record<string, number> = {}
     const projectToBuilder: Record<number | string, string> = {}
     pr.forEach((p: any) => {
       if (p.id && p.builder) projectToBuilder[p.id] = p.builder
     })
-    const countByBuilderWithDedup = (items: any[], getId: (item: any) => number | string | undefined) => {
-      const kept = new Map<number | string, any>()
-      items.forEach(item => {
-        const id = getId(item)
-        if (!id) return
-        const existing = kept.get(id)
-        if (!existing) {
-          kept.set(id, item)
-        } else {
-          if (item.project_id && !existing.project_id) {
-            kept.set(id, item)
-          } else if (!item.project_id && existing.project_id) {
-            return
-          } else if (warrantyCloserToNow(existing.warranty_expire_date, item.warranty_expire_date)) {
-            kept.set(id, item)
-          }
-        }
-      })
-      kept.forEach(item => {
-        const unit = projectToBuilder[item.project_id]
-        if (unit) builderMap[unit] = (builderMap[unit] || 0) + 1
-      })
-    }
-    countByBuilderWithDedup(tl, item => item.intersection_id)
-    countByBuilderWithDedup(ep, item => item.intersection_id)
-    countByBuilderWithDedup(pe, item => item.point_id)
-    countByBuilderWithDedup(cp, item => item.point_id)
-    countByBuilderWithDedup(sn, item => item.point_id)
-    countByBuilderWithDedup(bd, item => item.point_id || item.id)
+
+    const projectCounts = new Map<number | string, { builder: string; total: number }>()
+    const allDeduped = [...tlDeduped, ...epDeduped, ...peDeduped, ...cpDeduped, ...snDeduped, ...bd]
+
+    allDeduped.forEach((item: any) => {
+      const pid = item.project_id
+      if (!pid) return
+      if (!projectCounts.has(pid)) {
+        projectCounts.set(pid, {
+          builder: item.construction_unit || projectToBuilder[pid] || '-',
+          total: 0
+        })
+      }
+      projectCounts.get(pid)!.total++
+    })
+
+    const builderMap: Record<string, number> = {}
+    projectCounts.forEach(p => {
+      if (p.builder && p.builder !== '-') {
+        builderMap[p.builder] = (builderMap[p.builder] || 0) + p.total
+      }
+    })
+
     builderRanking.value = Object.entries(builderMap)
       .map(([name, count]) => ({ name, count }))
       .sort((a, b) => b.count - a.count)
