@@ -364,15 +364,51 @@ function applyFilter(list: any[]) {
     if (filterConstructionCompany.value && (item.construction_company || '') !== filterConstructionCompany.value) return false;
     if (searchKeyword.value) {
       const kw = searchKeyword.value.toLowerCase();
-      const haystack = Object.values(item)
-        .map(v => {
-          if (v === null || v === undefined) return '';
-          if (typeof v === 'object') return '';
-          return String(v);
-        })
-        .filter(Boolean)
-        .join(' ').toLowerCase();
-      if (!haystack.includes(kw)) return false;
+      const fieldLabels: Record<string, string> = {
+        signal_count: '信号机',
+        radar_count: '车流量雷达 测速雷达',
+        guide_screen_count: '诱导屏',
+        countdown_timer_count: '倒计时器',
+        left_arrow_count: '左转箭头灯',
+        straight_arrow_count: '直行箭头灯',
+        right_arrow_count: '右转箭头灯',
+        full_screen_count: '满屏灯',
+        non_motor_count: '非机动灯',
+        pedestrian_count: '人行灯',
+        terminal_server_count: '终端服务器',
+        forward_capture_count: '正向抓拍',
+        reverse_capture_count: '反向抓拍',
+        led_light_count: 'LED灯',
+        strobe_light_count: '爆闪灯',
+        ptz_count: '监控球机 球机',
+        signal_detector_count: '信号检测器',
+        camera_count: '相机 抓拍机',
+        bracket_count: '支架',
+        pole_count: '立杆',
+        box_count: '挂箱',
+        fill_light_count: '补光灯',
+        speaker_count: '音箱',
+        sign_count: '标牌',
+        parking_sign_count: '违停标牌',
+        monitor_sign_count: '监控标牌',
+        server_count: '服务器',
+        switch_count: '交换机',
+        storage_count: '存储',
+      };
+      const parts: string[] = [];
+      Object.entries(item).forEach(([key, v]) => {
+        if (v === null || v === undefined) return;
+        if (typeof v === 'object') return;
+        if (typeof v === 'number') {
+          if (v > 0) {
+            if (fieldLabels[key]) parts.push(fieldLabels[key]);
+            parts.push(String(v));
+          }
+        } else {
+          parts.push(String(v));
+        }
+      });
+      if (!parts.join(' ').toLowerCase().includes(kw)) return false;
     }
     return true;
   });
