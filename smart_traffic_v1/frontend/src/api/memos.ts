@@ -63,7 +63,8 @@ export const deleteAttachment = (memoId: number, aid: number): Promise<any> => {
 }
 
 export const downloadAttachment = (filename: string, originalName: string) => {
-  const url = `/api/memos/attachments/${filename}`
+  const token = localStorage.getItem('token') || sessionStorage.getItem('token')
+  const url = `/api/memos/attachments/${filename}?token=${token}`
   const a = document.createElement('a')
   a.href = url
   a.download = originalName
@@ -73,6 +74,7 @@ export const downloadAttachment = (filename: string, originalName: string) => {
 }
 
 export const previewAttachment = (filename: string) => {
-  const url = `/api/memos/attachments/${filename}/preview`
+  const token = localStorage.getItem('token') || sessionStorage.getItem('token')
+  const url = `/api/memos/attachments/${filename}/preview?token=${token}`
   window.open(url, '_blank')
 }

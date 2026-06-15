@@ -63,14 +63,21 @@ def _decode_token(token: str) -> dict:
     )
 
 
+def _extract_token() -> str | None:
+    """从 Authorization 头或 ?token= 查询参数中提取 JWT 令牌。"""
+    auth_header = request.headers.get('Authorization')
+    if auth_header and auth_header.startswith('Bearer '):
+        return auth_header.split(' ')[1]
+    return request.args.get('token')
+
+
 def token_required(f):
     @wraps(f)
     def decorated(*args, **kwargs):
-        auth_header = request.headers.get('Authorization')
-        if not auth_header or not auth_header.startswith('Bearer '):
+        token = _extract_token()
+        if not token:
             return {'status': 'error', 'message': '请先登录'}, 401
 
-        token = auth_header.split(' ')[1]
         try:
             payload = _decode_token(token)
             user = db.session.query(User).get(payload['user_id'])
@@ -102,11 +109,10 @@ def role_required(*roles):
 def admin_required(f):
     @wraps(f)
     def decorated(*args, **kwargs):
-        auth_header = request.headers.get('Authorization')
-        if not auth_header or not auth_header.startswith('Bearer '):
+        token = _extract_token()
+        if not token:
             return {'status': 'error', 'message': '请先登录'}, 401
 
-        token = auth_header.split(' ')[1]
         try:
             payload = _decode_token(token)
             user = db.session.query(User).get(payload['user_id'])

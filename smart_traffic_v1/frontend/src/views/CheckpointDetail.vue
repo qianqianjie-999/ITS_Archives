@@ -660,6 +660,7 @@ async function downloadAttachment(id: number) {
 }
 
 async function previewAttachment(attachment: Attachment) {
+  const token = localStorage.getItem("token") || sessionStorage.getItem("token")
   const filename = attachment.original_filename.toLowerCase()
   previewFilename.value = attachment.original_filename
 
@@ -668,10 +669,10 @@ async function previewAttachment(attachment: Attachment) {
 
   if (isImage) {
     previewType.value = 'image'
-    previewUrl.value = `${import.meta.env.VITE_API_BASE_URL || '/api'}/attachments/${attachment.id}?preview=true`
+    previewUrl.value = `${import.meta.env.VITE_API_BASE_URL || '/api'}/attachments/${attachment.id}?preview=true&token=${token}` 
   } else if (filename.endsWith('.pdf')) {
     previewType.value = 'pdf'
-    previewUrl.value = `${import.meta.env.VITE_API_BASE_URL || '/api'}/attachments/${attachment.id}?preview=true`
+    previewUrl.value = `${import.meta.env.VITE_API_BASE_URL || '/api'}/attachments/${attachment.id}?preview=true&token=${token}` 
   } else {
     previewType.value = 'other'
   }
