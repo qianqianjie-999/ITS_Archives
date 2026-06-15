@@ -8,8 +8,6 @@ from ..models.backend_device import BackendDevice
 from ..utils.decorators import token_required, role_required
 import os
 import uuid
-from urllib.parse import quote
-
 ns = Namespace('attachments', description='附件管理')
 
 attachment_model = ns.model('Attachment', {
@@ -141,10 +139,9 @@ class AttachmentDetail(Resource):
                 response.headers['Content-Disposition'] = 'inline'
                 return response
         else:
-            encoded_filename = quote(attachment.original_filename.encode('utf-8'), safe='')
-            response = make_response(send_from_directory(upload_folder, attachment.file_name, as_attachment=True))
-            response.headers['Content-Disposition'] = f'attachment; filename="{encoded_filename}"; filename*=UTF-8\'\'{encoded_filename}'
-            return response
+            from flask import send_file
+            download_name = attachment.original_filename or 'download'
+            return send_file(file_path, as_attachment=True, download_name=download_name)
 
     @token_required
     @role_required('admin')
