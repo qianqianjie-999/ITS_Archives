@@ -81,8 +81,13 @@ fi
 # 检查.env中的数据库密码
 if [ -f "$APP_DIR/.env" ]; then
     DB_PASSWORD=$(grep "^DB_PASSWORD=" "$APP_DIR/.env" | cut -d'=' -f2)
+    if [ -z "$DB_PASSWORD" ] || [ "$DB_PASSWORD" = "your_db_password" ]; then
+        echo -e "${RED}错误: .env 中 DB_PASSWORD 未设置或仍为占位符。请先编辑 $APP_DIR/.env${NC}"
+        exit 1
+    fi
 else
-    DB_PASSWORD="smart_traffic_2024"
+    echo -e "${RED}错误: 未找到 $APP_DIR/.env，请先创建环境配置文件。${NC}"
+    exit 1
 fi
 
 # 修改db_init.sql中的密码占位符

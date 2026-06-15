@@ -118,6 +118,7 @@ extend_warranty_model = ns.model('ExtendWarranty', {
 
 @ns.route('/parking-points')
 class ParkingPointList(Resource):
+    @token_required
     def get(self):
         page = request.args.get('page', 1, type=int)
         per_page = request.args.get('per_page', 20, type=int)
@@ -161,6 +162,7 @@ class ParkingPointList(Resource):
 
 @ns.route('/parking-points/<int:point_id>')
 class ParkingPointDetail(Resource):
+    @token_required
     def get(self, point_id):
         point = db.session.query(ParkingEnforcementPoint).get(point_id)
         if not point:
@@ -217,6 +219,7 @@ class ParkingPointDetail(Resource):
 
 @ns.route('/sky-net-points')
 class SkyNetPointList(Resource):
+    @token_required
     def get(self):
         page = request.args.get('page', 1, type=int)
         per_page = request.args.get('per_page', 20, type=int)
@@ -260,6 +263,7 @@ class SkyNetPointList(Resource):
 
 @ns.route('/sky-net-points/<int:point_id>')
 class SkyNetPointDetail(Resource):
+    @token_required
     def get(self, point_id):
         point = db.session.query(SkyNetPoint).get(point_id)
         if not point:
@@ -316,6 +320,7 @@ class SkyNetPointDetail(Resource):
 
 @ns.route('/sky-net')
 class SkyNetListAll(Resource):
+    @token_required
     def get(self):
         sns = db.session.query(SkyNet).all()
         
@@ -330,6 +335,7 @@ class SkyNetListAll(Resource):
 
 @ns.route('/sky-net-points/<int:point_id>/devices')
 class SkyNetByPoint(Resource):
+    @token_required
     def get(self, point_id):
         point = db.session.query(SkyNetPoint).get(point_id)
         if not point:
@@ -465,6 +471,7 @@ class SkyNetPointExtendWarranty(Resource):
 
 @ns.route('/checkpoint-points')
 class CheckpointPointList(Resource):
+    @token_required
     def get(self):
         page = request.args.get('page', 1, type=int)
         per_page = request.args.get('per_page', 20, type=int)
@@ -508,6 +515,7 @@ class CheckpointPointList(Resource):
 
 @ns.route('/checkpoint-points/<int:point_id>')
 class CheckpointPointDetail(Resource):
+    @token_required
     def get(self, point_id):
         point = db.session.query(CheckpointPoint).get(point_id)
         if not point:
@@ -564,6 +572,7 @@ class CheckpointPointDetail(Resource):
 
 @ns.route('/parking-enforcement')
 class ParkingEnforcementListAll(Resource):
+    @token_required
     def get(self):
         pes = db.session.query(ParkingEnforcement).all()
         
@@ -577,6 +586,7 @@ class ParkingEnforcementListAll(Resource):
 
 @ns.route('/parking-points/<int:point_id>/devices')
 class ParkingEnforcementByPoint(Resource):
+    @token_required
     def get(self, point_id):
         point = db.session.query(ParkingEnforcementPoint).get(point_id)
         if not point:
@@ -642,6 +652,7 @@ class ParkingEnforcementUpdate(Resource):
 
 @ns.route('/checkpoints')
 class CheckpointListAll(Resource):
+    @token_required
     def get(self):
         checkpoints = db.session.query(Checkpoint).all()
         
@@ -656,6 +667,7 @@ class CheckpointListAll(Resource):
 
 @ns.route('/checkpoint-points/<int:point_id>/devices')
 class CheckpointByPoint(Resource):
+    @token_required
     def get(self, point_id):
         point = db.session.query(CheckpointPoint).get(point_id)
         if not point:
@@ -847,6 +859,7 @@ class CheckpointPointExtendWarranty(Resource):
 
 @ns.route('/backend-devices')
 class BackendDeviceList(Resource):
+    @token_required
     def get(self):
         page = request.args.get('page', 1, type=int)
         per_page = request.args.get('per_page', 20, type=int)

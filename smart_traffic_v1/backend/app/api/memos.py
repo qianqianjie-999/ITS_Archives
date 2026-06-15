@@ -1,11 +1,12 @@
 import os
 import uuid
-from flask import Blueprint, request, jsonify, current_app, send_from_directory, make_response
+from flask import Blueprint, request, jsonify, current_app, send_from_directory, make_response, g
 from app.models.memo import Memo, MemoAttachment
 from app.extensions import db
 from datetime import datetime, timezone
 from werkzeug.utils import secure_filename
 from flask import send_file
+from app.utils.decorators import token_required, role_required
 
 memo_bp = Blueprint('memo', __name__, url_prefix='/memos')
 
@@ -17,6 +18,7 @@ def allowed_file(filename):
 
 
 @memo_bp.route('/', methods=['GET'])
+@token_required
 def get_memos():
     # 筛选条件
     keyword = request.args.get('keyword', '')
@@ -58,12 +60,15 @@ def get_memos():
 
 
 @memo_bp.route('/<int:memo_id>', methods=['GET'])
+@token_required
 def get_memo(memo_id):
     memo = Memo.query.filter_by(id=memo_id, is_del=0).first_or_404()
     return jsonify(memo.to_dict())
 
 
 @memo_bp.route('/', methods=['POST'])
+@token_required
+@role_required('admin', 'editor')
 def create_memo():
     # 处理表单数据
     title = request.form.get('title')
@@ -114,6 +119,8 @@ def create_memo():
 
 
 @memo_bp.route('/<int:memo_id>', methods=['PUT'])
+@token_required
+@role_required('admin', 'editor')
 def update_memo(memo_id):
     memo = Memo.query.filter_by(id=memo_id, is_del=0).first_or_404()
     
@@ -161,6 +168,8 @@ def update_memo(memo_id):
 
 
 @memo_bp.route('/<int:memo_id>', methods=['DELETE'])
+@token_required
+@role_required('admin', 'editor')
 def delete_memo(memo_id):
     """软删除备忘录"""
     memo = Memo.query.filter_by(id=memo_id, is_del=0).first_or_404()
@@ -171,6 +180,8 @@ def delete_memo(memo_id):
 
 
 @memo_bp.route('/<int:memo_id>/attachments/<int:aid>', methods=['DELETE'])
+@token_required
+@role_required('admin', 'editor')
 def delete_attachment(memo_id, aid):
     """删除单个附件"""
     attachment = MemoAttachment.query.filter_by(aid=aid, memo_id=memo_id).first_or_404()
@@ -187,6 +198,7 @@ def delete_attachment(memo_id, aid):
 
 
 @memo_bp.route('/attachments/<path:filename>')
+@token_required
 def download_attachment(filename):
     """下载备忘录附件"""
     upload_folder = os.path.join(current_app.config['UPLOAD_FOLDER'], 'memos')
@@ -199,6 +211,7 @@ def download_attachment(filename):
 
 
 @memo_bp.route('/attachments/<path:filename>/preview')
+@token_required
 def preview_attachment(filename):
     """预览备忘录附件"""
     upload_folder = os.path.join(current_app.config['UPLOAD_FOLDER'], 'memos')

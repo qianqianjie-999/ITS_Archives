@@ -36,6 +36,7 @@ def check_project_referenced(project_id):
 
 @ns.route('/')
 class ProjectList(Resource):
+    @token_required
     def get(self):
         facility_type = request.args.get('facility_type')
         facility_id = request.args.get('facility_id', type=int)
@@ -101,6 +102,7 @@ class ProjectList(Resource):
 
 @ns.route('/<int:project_id>')
 class ProjectDetail(Resource):
+    @token_required
     def get(self, project_id):
         project = db.session.query(Project).get(project_id)
         if not project:

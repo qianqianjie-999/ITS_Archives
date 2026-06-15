@@ -68,6 +68,7 @@ electronic_police_model = ns.model('ElectronicPolice', {
 
 @ns.route('/')
 class IntersectionList(Resource):
+    @token_required
     def get(self):
         page = request.args.get('page', 1, type=int)
         per_page = request.args.get('per_page', 20, type=int)
@@ -111,6 +112,7 @@ class IntersectionList(Resource):
 
 @ns.route('/<int:intersection_id>')
 class IntersectionDetail(Resource):
+    @token_required
     def get(self, intersection_id):
         intersection = db.session.query(Intersection).get(intersection_id)
         if not intersection:
@@ -165,12 +167,14 @@ class IntersectionDetail(Resource):
 
 @ns.route('/traffic-lights')
 class TrafficLightListAll(Resource):
+    @token_required
     def get(self):
         traffic_lights = db.session.query(TrafficLight).all()
         return {'data': [tl.to_dict() for tl in traffic_lights]}
 
 @ns.route('/electronic-polices')
 class ElectronicPoliceListAll(Resource):
+    @token_required
     def get(self):
         electronic_polices = db.session.query(ElectronicPolice).all()
         return {'data': [ep.to_dict() for ep in electronic_polices]}

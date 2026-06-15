@@ -5,7 +5,7 @@ import jwt
 from ..extensions import db
 from ..models.user import User
 from ..config import Config
-from ..utils.decorators import token_required
+from ..utils.decorators import token_required, rate_limit
 
 ns = Namespace('auth', description='认证相关操作')
 
@@ -22,17 +22,22 @@ user_model = ns.model('User', {
 })
 
 def generate_token(user_id: int, username: str, role: str) -> str:
+    now = datetime.now(timezone.utc)
     payload = {
         'user_id': user_id,
         'username': username,
         'role': role,
-        'exp': datetime.now(timezone.utc) + timedelta(seconds=Config.JWT_ACCESS_TOKEN_EXPIRES)
+        'iss': Config.JWT_ISSUER,
+        'aud': Config.JWT_AUDIENCE,
+        'iat': now,
+        'exp': now + timedelta(seconds=Config.JWT_ACCESS_TOKEN_EXPIRES)
     }
     return jwt.encode(payload, Config.JWT_SECRET_KEY, algorithm='HS256')
 
 @ns.route('/login')
 class Login(Resource):
     @ns.expect(login_model)
+    @rate_limit(max_requests=10, window_seconds=60)
     def post(self):
         data = request.json
         username = data.get('username')

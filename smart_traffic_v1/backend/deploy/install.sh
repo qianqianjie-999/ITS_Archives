@@ -22,8 +22,12 @@ if [ "$(id -u)" != "0" ]; then
     exit 1
 fi
 
-# 配置参数
-DB_PASSWORD="smart_traffic_2024"
+# 配置参数 - 请通过环境变量或交互方式设置数据库密码
+if [ -z "$DB_PASSWORD" ]; then
+    echo -e "${RED}错误: 请设置 DB_PASSWORD 环境变量后运行此脚本${NC}"
+    echo -e "${YELLOW}示例: DB_PASSWORD=your_password bash $0${NC}"
+    exit 1
+fi
 APP_DIR="/opt/smart_traffic"
 VENV_DIR="$APP_DIR/venv"
 SERVICE_NAME="smart-traffic-backend"

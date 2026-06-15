@@ -34,6 +34,7 @@ def allowed_file(filename):
 
 @ns.route('/')
 class AttachmentList(Resource):
+    @token_required
     def get(self):
         related_entity_type = request.args.get('related_entity_type')
         related_entity_id = request.args.get('related_entity_id', type=int)
@@ -111,6 +112,7 @@ class AttachmentUpload(Resource):
 
 @ns.route('/<int:attachment_id>')
 class AttachmentDetail(Resource):
+    @token_required
     def get(self, attachment_id):
         attachment = db.session.query(Attachment).get(attachment_id)
         if not attachment:

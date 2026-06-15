@@ -1,21 +1,26 @@
 import os
-import warnings
 from dotenv import load_dotenv
 
 load_dotenv()
 
-class Config:
-    _secret_key = os.environ.get('SECRET_KEY')
-    if not _secret_key:
-        warnings.warn('SECRET_KEY 未在环境变量中设置，使用不安全的默认值。生产环境请务必设置！', RuntimeWarning)
-        _secret_key = 'dev-secret-key-change-in-production'
 
-    SECRET_KEY = _secret_key.encode() if isinstance(_secret_key, str) else _secret_key
+def _require_env(name: str) -> str:
+    """获取必需的环境变量，未设置则抛出错误。"""
+    value = os.environ.get(name)
+    if not value:
+        raise ValueError(
+            f'环境变量 {name} 未设置。请检查 .env 文件或系统环境变量。'
+        )
+    return value
+
+
+class Config:
+    SECRET_KEY = _require_env('SECRET_KEY').encode()
 
     DB_HOST = os.environ.get('DB_HOST', 'localhost')
     DB_PORT = int(os.environ.get('DB_PORT', 3306))
-    DB_USER = os.environ.get('DB_USER', 'root')
-    DB_PASSWORD = os.environ.get('DB_PASSWORD', '123456')
+    DB_USER = os.environ.get('DB_USER', 'smart_traffic')
+    DB_PASSWORD = _require_env('DB_PASSWORD')
     DB_NAME = os.environ.get('DB_NAME', 'smart_traffic')
 
     SQLALCHEMY_DATABASE_URI = (
@@ -32,13 +37,10 @@ class Config:
     MAX_CONTENT_LENGTH = 16 * 1024 * 1024
     ALLOWED_EXTENSIONS = {'pdf', 'doc', 'docx', 'xls', 'xlsx', 'jpg', 'jpeg', 'png', 'zip', 'rar'}
 
-    _jwt_key = os.environ.get('JWT_SECRET_KEY')
-    if not _jwt_key:
-        warnings.warn('JWT_SECRET_KEY 未在环境变量中设置，使用不安全的默认值。生产环境请务必设置！', RuntimeWarning)
-        _jwt_key = 'dev-jwt-secret-key-change-in-production'
-
-    JWT_SECRET_KEY = _jwt_key
+    JWT_SECRET_KEY = _require_env('JWT_SECRET_KEY')
     JWT_ACCESS_TOKEN_EXPIRES = 86400
+    JWT_ISSUER = os.environ.get('JWT_ISSUER', 'smart-traffic-archive')
+    JWT_AUDIENCE = os.environ.get('JWT_AUDIENCE', 'smart-traffic-api')
 
 class DevelopmentConfig(Config):
     DEBUG = True

@@ -14,7 +14,7 @@ with sync_playwright() as p:
     # 2. 填写登录信息
     print("2. 填写登录信息...")
     page.fill('input[placeholder="请输入用户名"]', 'admin')
-    page.fill('input[placeholder="请输入密码"]', 'admin123')
+    page.fill('input[placeholder="请输入密码"]', 'your-password-here')
     page.screenshot(path='/tmp/login_filled.png', full_page=True)
 
     # 3. 点击登录按钮
