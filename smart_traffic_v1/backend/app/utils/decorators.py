@@ -1,6 +1,7 @@
 from functools import wraps
 import time
 import jwt
+from typing import Optional
 from flask import request, g
 from ..models.user import User
 from ..extensions import db
@@ -63,7 +64,7 @@ def _decode_token(token: str) -> dict:
     )
 
 
-def _extract_token() -> str | None:
+def _extract_token() -> Optional[str]:
     """从 Authorization 头或 ?token= 查询参数中提取 JWT 令牌。"""
     auth_header = request.headers.get('Authorization')
     if auth_header and auth_header.startswith('Bearer '):
